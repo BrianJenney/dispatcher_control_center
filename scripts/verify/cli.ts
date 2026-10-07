@@ -6,7 +6,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from "@playwri
 import { launchApp, stopApp, waitForApp } from "../lib/app-server";
 import { databaseUrlNamed, freshDatabase } from "../lib/database";
 import { signInAsDemoUser } from "../lib/demo-session";
-import { flows, type Flow } from "./flows";
+import { flows, runStep, type Flow } from "./flows";
 import { flowDatabase } from "./flows/context";
 import { runLighthouse, type ViewportName } from "./lighthouse";
 
@@ -121,7 +121,7 @@ async function runViewport(
       steps.push({ name: step.name, outcome: "skipped" });
       continue;
     }
-    const error = await step.run(context).then(
+    const error = await runStep(step, context).then(
       () => null,
       (failure: unknown) => (failure instanceof Error ? failure.message : String(failure)),
     );

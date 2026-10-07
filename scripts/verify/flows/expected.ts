@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { formatMoney } from "@/components/format";
 import { env } from "@/env";
-import type { FlowContext } from "./types";
+import { phoneWidth, type FlowContext } from "./types";
 
 const today = `pickup_at >= (date_trunc('day', now() at time zone $1) at time zone $1)
   and pickup_at < ((date_trunc('day', now() at time zone $1) + interval '1 day') at time zone $1)`;
@@ -43,4 +43,36 @@ export async function openFromNavigation(page: Page, label: string) {
     .filter({ visible: true })
     .getByRole("link", { name: label, exact: true })
     .click();
+}
+
+export async function insertTodaysOffer(
+  context: FlowContext,
+  offer: { customer: string; hour: number; vehicleClass?: string },
+) {
+  await context.execute(
+    `with created as (
+       insert into trips (customer_name, pickup_address, dropoff_address, pickup_at, passengers, vehicle_class, fare_cents)
+       values ($1, 'Harborview Hotel', 'Regional Airport, Terminal B',
+         (date_trunc('day', now() at time zone $2) + make_interval(hours => $3)) at time zone $2, 2, $4, 15000)
+       returning id)
+     insert into trip_events (trip_id, actor_id, to_status)
+     select created.id, "user".id, 'offer' from created, "user" where "user".email = $5`,
+    [offer.customer, env.APP_TIMEZONE, offer.hour, offer.vehicleClass ?? "luxury_sedan", env.DEMO_USER_EMAIL],
+  );
+}
+
+export function viewportTag(page: Page): string {
+  return (page.viewportSize()?.width ?? 0) < phoneWidth ? "phone" : "desktop";
+}
+
+export async function expectNoSidewaysScroll(page: Page) {
+  const overflow = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    if (document.documentElement.scrollWidth <= width) return [];
+    return [...document.querySelectorAll("body *")]
+      .filter((element) => element.getBoundingClientRect().right > width + 1)
+      .slice(0, 3)
+      .map((element) => `${element.tagName.toLowerCase()} ${element.getAttribute("aria-label") ?? element.textContent.slice(0, 40)}`);
+  });
+  expect(overflow, "The page scrolls sideways on a phone. These elements stick out").toEqual([]);
 }

@@ -12,6 +12,13 @@ export function flowDatabase(databaseUrl: string) {
           const result = await pool.query<{ value: string | number | null }>(query, params);
           return Number(result.rows[0]?.value ?? 0);
         },
+        text: async (query, params = []) => {
+          const result = await pool.query<{ value: string | null }>(query, params);
+          return result.rows[0]?.value ?? null;
+        },
+        execute: async (query, params = []) => {
+          await pool.query(query, params);
+        },
       };
     },
     close: () => pool.end(),

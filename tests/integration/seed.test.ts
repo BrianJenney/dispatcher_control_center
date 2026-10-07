@@ -37,7 +37,7 @@ describe("seed", () => {
   it("records an event for every status each trip has passed through", async () => {
     const rows = await db.execute<{ missing: number }>(sql`
       select count(*)::int as missing from trips
-      where (select count(*) from trip_events where trip_id = trips.id) <> case status
+      where (select count(distinct to_status) from trip_events where trip_id = trips.id) <> case status
         when 'offer' then 1 when 'assigned' then 2 when 'en_route' then 3 when 'completed' then 4
         else 2 + (case when driver_id is null then 0 else 1 end)
       end
