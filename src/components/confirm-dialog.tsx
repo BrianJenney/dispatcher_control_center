@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useId, useState, type ReactNode, type SubmitEvent } from "react";
+import { useId, useRef, useState, type ReactNode, type SubmitEvent } from "react";
 import { unreachableMessage } from "@/components/form";
 import {
   AlertDialog,
@@ -42,10 +42,16 @@ export function ConfirmDialog({
   const [error, setError] = useState<string | null>(null);
   const mutation = useMutation({ mutationFn: onConfirm });
   const pending = mutation.isPending;
+  const inFlight = useRef(false);
 
   function confirm(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (inFlight.current) return;
+    inFlight.current = true;
     mutation.mutate(new FormData(event.currentTarget), {
+      onSettled: () => {
+        inFlight.current = false;
+      },
       onError: () => {
         setError(unreachableMessage);
       },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useId, useState, type ComponentProps, type SubmitEvent } from "react";
+import { useId, useRef, useState, type ComponentProps, type SubmitEvent } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,10 +28,11 @@ export function useActionForm<S extends z.ZodType, R>({ schema, action, onSucces
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const mutation = useMutation({ mutationFn: action });
+  const inFlight = useRef(false);
 
   function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mutation.isPending) return;
+    if (inFlight.current) return;
     const form = event.currentTarget;
     const parsed = schema.safeParse(Object.fromEntries(new FormData(form)));
     if (!parsed.success) {
@@ -39,7 +40,11 @@ export function useActionForm<S extends z.ZodType, R>({ schema, action, onSucces
       setFieldErrors(z.flattenError(parsed.error).fieldErrors);
       return;
     }
+    inFlight.current = true;
     mutation.mutate(parsed.data, {
+      onSettled: () => {
+        inFlight.current = false;
+      },
       onError: () => {
         setFormError(unreachableMessage);
       },
