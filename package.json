@@ -27,6 +27,7 @@
     "ui:add": "tsx scripts/ui-add.ts"
   },
   "dependencies": {
+    "@sentry/nextjs": "11.5.0",
     "@tanstack/react-query": "^5.104.1",
     "aws4fetch": "^1.0.20",
     "better-auth": "^1.7.7",

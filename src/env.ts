@@ -11,6 +11,8 @@ const envSchema = z.object({
   STORAGE_BUCKET: z.string().min(1),
   STORAGE_ACCESS_KEY_ID: z.string().min(1),
   STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
+  SENTRY_DSN: z.url().optional(),
+  VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
 });
 
 export const env = envSchema.parse(process.env);

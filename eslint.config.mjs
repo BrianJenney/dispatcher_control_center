@@ -81,7 +81,7 @@ export default defineConfig([
   },
   {
     files: ["**/src/**"],
-    ignores: ["**/src/env.ts"],
+    ignores: ["**/src/env.ts", "**/src/env-client.ts"],
     rules: {
       "no-restricted-properties": [
         "error",
