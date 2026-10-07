@@ -80,10 +80,20 @@ export function FormError({ message }: { message: string | null }) {
   );
 }
 
-export function SubmitButton({ pending, children }: { pending: boolean; children: string }) {
+export function SubmitButton({
+  pending,
+  children,
+  pendingLabel = "Saving…",
+  className,
+}: {
+  pending: boolean;
+  children: string;
+  pendingLabel?: string;
+  className?: string;
+}) {
   return (
-    <Button type="submit" disabled={pending} aria-busy={pending}>
-      {pending ? "Saving…" : children}
+    <Button type="submit" disabled={pending} aria-busy={pending} className={className}>
+      {pending ? pendingLabel : children}
     </Button>
   );
 }
