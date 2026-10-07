@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeRedirectPath, signInInput } from "@/domain/auth";
+import { inAppPath, safeRedirectPath, signInInput } from "@/domain/auth";
 
 describe("signInInput", () => {
   it("asks for an email in plain language", () => {
@@ -34,4 +34,14 @@ describe("safeRedirectPath", () => {
       expect(safeRedirectPath.parse(path)).toBe("/");
     },
   );
+});
+
+describe("inAppPath", () => {
+  it.each(["/", "/jobs/new"])("accepts %s", (path) => {
+    expect(inAppPath.test(path)).toBe(true);
+  });
+
+  it.each(["//evil.example", "/\\evil.example", "https://evil.example", "/jobs new"])("refuses %s", (path) => {
+    expect(inAppPath.test(path)).toBe(false);
+  });
 });

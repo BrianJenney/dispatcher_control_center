@@ -1,5 +1,6 @@
 import type { Route } from "next";
+import { inAppPath } from "@/domain/auth";
 
 export function isAppRoute(path: string): path is Route {
-  return path.startsWith("/") && !path.startsWith("//");
+  return inAppPath.test(path);
 }
