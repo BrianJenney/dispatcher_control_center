@@ -18,6 +18,8 @@ function layer(...patterns) {
   return ["error", { patterns: [aliasOnly, strayCnPackage, ...patterns] }];
 }
 
+const outsideSrc = ["error", { patterns: [strayCnPackage] }];
+
 const noDatabase = {
   group: ["@/db", "@/db/*", "drizzle-orm", "drizzle-orm/*", "pg"],
   message: "Only src/server touches the database. Call a query or an action instead.",
@@ -63,12 +65,16 @@ export default defineConfig([
       "local/no-comments": "error",
       "local/no-fetch-in-effect": "error",
       "local/no-hardcoded-secrets": "error",
-      "no-restricted-imports": layer(),
+      "no-restricted-imports": outsideSrc,
     },
   },
   {
-    files: ["src/**"],
-    ignores: ["src/env.ts"],
+    files: ["**/src/**"],
+    rules: { "no-restricted-imports": layer() },
+  },
+  {
+    files: ["**/src/**"],
+    ignores: ["**/src/env.ts"],
     rules: {
       "no-restricted-properties": [
         "error",
