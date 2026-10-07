@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { z } from "zod";
 import { EditDriverForm } from "@/app/(app)/drivers/driver-form";
 import { DriverPhotoPanel } from "@/app/(app)/drivers/[id]/driver-photo";
 import { PageHeader } from "@/components/page-header";
@@ -23,8 +22,7 @@ export default function DriverPage({ params }: PageProps<"/drivers/[id]">) {
 
 async function DriverProfile({ params }: Pick<PageProps<"/drivers/[id]">, "params">) {
   await connection();
-  const id = z.uuid().safeParse((await params).id);
-  const driver = id.success ? await getDriverProfile(id.data) : null;
+  const driver = await getDriverProfile((await params).id);
   if (!driver) notFound();
   return (
     <>

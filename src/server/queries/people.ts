@@ -4,6 +4,7 @@ import { documents, drivers, trips, vehicles } from "@/db/schema";
 import { tripsTodayByDriver } from "@/domain/kpis";
 import type { DriverRow, VehicleRow } from "@/domain/people";
 import { dayRange } from "@/domain/time";
+import { recordId } from "@/domain/result";
 import { uploadIdOf, type DocumentRow } from "@/domain/uploads";
 import { env } from "@/env";
 
@@ -66,7 +67,9 @@ function toDocumentRows(rows: (typeof documents.$inferSelect)[]): DocumentRow[] 
   }));
 }
 
-export async function getDriverProfile(driverId: string) {
+export async function getDriverProfile(id: unknown) {
+  const driverId = recordId(id);
+  if (!driverId) return null;
   const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId) });
   if (!driver) return null;
   const licenses = await db.query.documents.findMany({
@@ -84,7 +87,9 @@ export async function getDriverProfile(driverId: string) {
   };
 }
 
-export async function getVehicleProfile(vehicleId: string) {
+export async function getVehicleProfile(id: unknown) {
+  const vehicleId = recordId(id);
+  if (!vehicleId) return null;
   const vehicle = await db.query.vehicles.findFirst({ where: eq(vehicles.id, vehicleId) });
   if (!vehicle) return null;
   const registrations = await db.query.documents.findMany({
@@ -94,12 +99,16 @@ export async function getVehicleProfile(vehicleId: string) {
   return { ...vehicle, documents: toDocumentRows(registrations) };
 }
 
-export async function getDocumentFile(documentId: string) {
+export async function getDocumentFile(id: unknown) {
+  const documentId = recordId(id);
+  if (!documentId) return null;
   const document = await db.query.documents.findFirst({ where: eq(documents.id, documentId) });
   return document ? { key: document.storageKey, fileName: document.fileName } : null;
 }
 
-export async function getDriverPhoto(driverId: string) {
+export async function getDriverPhoto(id: unknown) {
+  const driverId = recordId(id);
+  if (!driverId) return null;
   const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId), columns: { photoKey: true, name: true } });
-  return driver?.photoKey ? { key: driver.photoKey, fileName: `${driver.name}.jpg` } : null;
+  return driver?.photoKey ? { key: driver.photoKey, fileName: driver.photoKey.split("/").at(-1) ?? driver.name } : null;
 }

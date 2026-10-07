@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { trips } from "@/db/schema";
+import { recordId } from "@/domain/result";
 import { centsToDollars } from "@/domain/trip-form";
 import { wallTimeOf } from "@/domain/time";
 import type { TripStatus } from "@/domain/trip-status";
@@ -21,7 +22,9 @@ export type TripEditorValues = {
   fare: string;
 };
 
-export async function getTripForEditing(tripId: string): Promise<TripEditorValues | null> {
+export async function getTripForEditing(id: unknown): Promise<TripEditorValues | null> {
+  const tripId = recordId(id);
+  if (!tripId) return null;
   const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
   if (!trip) return null;
   const { date, time } = wallTimeOf(trip.pickupAt, env.APP_TIMEZONE);

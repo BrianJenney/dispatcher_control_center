@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { z } from "zod";
 import { RefreshingStatusSwitch } from "@/app/(app)/fleet/[id]/refreshing-status-switch";
 import { EditVehicleForm } from "@/app/(app)/fleet/vehicle-form";
 import { PageHeader } from "@/components/page-header";
@@ -22,8 +21,7 @@ export default function VehiclePage({ params }: PageProps<"/fleet/[id]">) {
 
 async function VehicleProfile({ params }: Pick<PageProps<"/fleet/[id]">, "params">) {
   await connection();
-  const id = z.uuid().safeParse((await params).id);
-  const vehicle = id.success ? await getVehicleProfile(id.data) : null;
+  const vehicle = await getVehicleProfile((await params).id);
   if (!vehicle) notFound();
   return (
     <>

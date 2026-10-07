@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { z } from "zod";
 import { EditTripForm } from "@/app/(app)/jobs/trip-form";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, LoadingState } from "@/components/states";
@@ -23,8 +22,7 @@ export default function EditTripPage({ params }: PageProps<"/jobs/[id]/edit">) {
 
 async function EditTrip({ params }: Pick<PageProps<"/jobs/[id]/edit">, "params">) {
   await connection();
-  const id = z.uuid().safeParse((await params).id);
-  const trip = id.success ? await getTripForEditing(id.data) : null;
+  const trip = await getTripForEditing((await params).id);
   if (!trip) notFound();
   return (
     <>

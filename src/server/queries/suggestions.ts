@@ -3,12 +3,15 @@ import { db } from "@/db/client";
 import { drivers, trips } from "@/db/schema";
 import type { DriverSuggestions } from "@/domain/jobs";
 import { tripsTodayByDriver } from "@/domain/kpis";
+import { recordId } from "@/domain/result";
 import { matchDrivers } from "@/domain/matching";
 import { dayRange } from "@/domain/time";
 import { activeStatuses } from "@/domain/trip-status";
 import { env } from "@/env";
 
-export async function getSuggestions(tripId: string): Promise<DriverSuggestions | null> {
+export async function getSuggestions(id: unknown): Promise<DriverSuggestions | null> {
+  const tripId = recordId(id);
+  if (!tripId) return null;
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, tripId),
     columns: { id: true, vehicleClass: true, pickupAt: true, durationMinutes: true },
