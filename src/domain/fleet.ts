@@ -8,6 +8,13 @@ export const vehicleClassLabels: Record<VehicleClass, string> = {
   executive_van: "Executive van",
 };
 
+export const maxPassengers: Record<VehicleClass, number> = {
+  luxury_sedan: 3,
+  executive_suv: 5,
+  group_suv: 6,
+  executive_van: 12,
+};
+
 export const vehicleStatuses = ["ready", "in_service"] as const;
 export type VehicleStatus = (typeof vehicleStatuses)[number];
 

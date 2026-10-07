@@ -11,13 +11,12 @@ import {
   fakePhone,
   fareBaseCents,
   inTurn,
-  maxPassengers,
   seedDrivers,
   seedVehicles,
   type Random,
 } from "@/db/seed-data";
 import { applyTransitions, insertOffers, type NewTrip } from "@/db/trip-writes";
-import type { VehicleClass } from "@/domain/fleet";
+import { maxPassengers, type VehicleClass } from "@/domain/fleet";
 import { dayRange, shiftDays, tripWindow, type TimeRange } from "@/domain/time";
 import { transitionTrip, tripStatuses, type TripState, type TripStatus } from "@/domain/trip-status";
 

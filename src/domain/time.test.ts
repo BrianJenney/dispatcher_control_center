@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayRange, isWithin, rangesOverlap, shiftDays, tripWindow } from "@/domain/time";
+import { dayRange, isWithin, rangesOverlap, shiftDays, tripWindow, wallTimeOf, zonedWallTime } from "@/domain/time";
 
 const iso = (range: { start: Date; end: Date }) => [range.start.toISOString(), range.end.toISOString()];
 
@@ -85,5 +85,38 @@ describe("ranges", () => {
     expect(rangesOverlap(range, tripWindow(new Date("2026-10-07T10:59:00Z"), 30))).toBe(true);
     expect(rangesOverlap(tripWindow(new Date("2026-10-07T09:30:00Z"), 30), range)).toBe(false);
     expect(rangesOverlap(tripWindow(new Date("2026-10-07T09:30:00Z"), 31), range)).toBe(true);
+  });
+});
+
+describe("zonedWallTime", () => {
+  it("reads a New York wall clock time in daylight time", () => {
+    expect(zonedWallTime("2026-10-07", "15:30", "America/New_York").toISOString()).toBe("2026-10-07T19:30:00.000Z");
+  });
+
+  it("reads a New York wall clock time in standard time", () => {
+    expect(zonedWallTime("2026-12-01", "09:05", "America/New_York").toISOString()).toBe("2026-12-01T14:05:00.000Z");
+  });
+
+  it("handles the morning after clocks spring forward", () => {
+    expect(zonedWallTime("2026-03-08", "08:00", "America/Los_Angeles").toISOString()).toBe("2026-03-08T15:00:00.000Z");
+  });
+
+  it("handles a zone east of UTC across its clock change", () => {
+    expect(zonedWallTime("2026-09-27", "00:30", "Pacific/Auckland").toISOString()).toBe("2026-09-26T12:30:00.000Z");
+  });
+
+  it("refuses text that is not a time", () => {
+    expect(() => zonedWallTime("tomorrow", "noon", "America/New_York")).toThrow("Not a wall clock time");
+  });
+});
+
+describe("wallTimeOf", () => {
+  it("is the inverse of zonedWallTime", () => {
+    const instant = zonedWallTime("2026-11-01", "01:30", "America/New_York");
+    expect(wallTimeOf(instant, "America/New_York")).toEqual({ date: "2026-11-01", time: "01:30" });
+  });
+
+  it("pads single digits", () => {
+    expect(wallTimeOf(new Date("2026-01-05T14:05:00Z"), "UTC")).toEqual({ date: "2026-01-05", time: "14:05" });
   });
 });

@@ -47,6 +47,26 @@ export function dayRange(instant: Date, timeZone: string): TimeRange {
   };
 }
 
+const wallClock = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+
+export function zonedWallTime(date: string, time: string, timeZone: string): Date {
+  const match = wallClock.exec(`${date}T${time}`);
+  if (!match) throw new Error(`Not a wall clock time: ${date} ${time}`);
+  const [, year, month, day, hour, minute] = match.map(Number);
+  const asUtc = Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1, hour ?? 0, minute ?? 0);
+  const firstGuess = asUtc - zoneOffsetMs(new Date(asUtc), timeZone);
+  return new Date(asUtc - zoneOffsetMs(new Date(firstGuess), timeZone));
+}
+
+export function wallTimeOf(instant: Date, timeZone: string): { date: string; time: string } {
+  const zoned = zonedDate(instant, timeZone);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return {
+    date: `${String(zoned.year)}-${pad(zoned.month)}-${pad(zoned.day)}`,
+    time: `${pad(zoned.hour)}:${pad(zoned.minute)}`,
+  };
+}
+
 export function shiftDays(day: TimeRange, days: number, timeZone: string): TimeRange {
   const middayOfTarget = day.start.getTime() + days * 24 * 60 * minuteMs + 12 * 60 * minuteMs;
   return dayRange(new Date(middayOfTarget), timeZone);

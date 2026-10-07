@@ -107,13 +107,6 @@ export const fareBaseCents: Record<VehicleClass, number> = {
   executive_van: 22_500,
 };
 
-export const maxPassengers: Record<VehicleClass, number> = {
-  luxury_sedan: 3,
-  executive_suv: 5,
-  group_suv: 6,
-  executive_van: 12,
-};
-
 export const cancelReasons = [
   "Client changed plans",
   "Flight cancelled",
