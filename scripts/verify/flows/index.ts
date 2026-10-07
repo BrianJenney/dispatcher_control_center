@@ -3,6 +3,7 @@ import { dashboard } from "./dashboard";
 import { health } from "./health";
 import { jobsCancel, jobsCreate, jobsEdit, jobsSearch } from "./jobs";
 import { login } from "./login";
+import { documents, drivers, fleet } from "./people";
 import { schedule } from "./schedule";
 import { status } from "./status";
 import type { Flow } from "./types";
@@ -27,5 +28,8 @@ export const flows: Record<string, Flow> = {
   assign,
   status,
   schedule,
+  drivers,
+  fleet,
+  documents,
   health,
 };
