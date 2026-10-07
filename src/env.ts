@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const optionalUrl = z
+  .union([z.url(), z.literal("")])
+  .optional()
+  .transform((value) => value || undefined);
+
 const envSchema = z.object({
   DATABASE_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
@@ -11,7 +16,7 @@ const envSchema = z.object({
   STORAGE_BUCKET: z.string().min(1),
   STORAGE_ACCESS_KEY_ID: z.string().min(1),
   STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
-  SENTRY_DSN: z.url().optional(),
+  SENTRY_DSN: optionalUrl,
   VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
 });
 
