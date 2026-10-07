@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/providers";
 import { cn } from "@/components/ui/utils";
+import { env } from "@/env";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={cn("h-full font-sans antialiased", geist.variable)}>
       <body className="min-h-full bg-background text-foreground">
-        <Providers>{children}</Providers>
+        <Providers timeZone={env.APP_TIMEZONE}>{children}</Providers>
       </body>
     </html>
   );

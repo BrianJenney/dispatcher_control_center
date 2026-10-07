@@ -73,11 +73,11 @@
     --border: oklch(0.905 0.01 85);
     --input: oklch(0.88 0.012 85);
     --ring: oklch(0.6 0.08 258);
-    --status-offer: oklch(0.62 0.14 65);
-    --status-assigned: oklch(0.5 0.13 255);
-    --status-en-route: oklch(0.52 0.15 300);
-    --status-completed: oklch(0.52 0.12 155);
-    --status-cancelled: oklch(0.55 0.02 260);
+    --status-offer: oklch(0.5 0.12 60);
+    --status-assigned: oklch(0.46 0.13 255);
+    --status-en-route: oklch(0.46 0.15 300);
+    --status-completed: oklch(0.46 0.11 155);
+    --status-cancelled: oklch(0.47 0.02 260);
     --chart-1: oklch(0.27 0.045 258);
     --chart-2: oklch(0.74 0.1 78);
     --chart-3: oklch(0.52 0.12 155);
@@ -143,6 +143,12 @@
     }
   html {
     @apply font-sans;
+    }
+  [data-sonner-toaster] {
+    --normal-bg: var(--popover);
+    --normal-text: var(--popover-foreground);
+    --normal-border: var(--border);
+    --border-radius: var(--radius);
     }
   h1, h2, h3 {
     @apply tracking-tight;
