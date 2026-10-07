@@ -1,5 +1,5 @@
 import { expect, request as apiRequest, type Page } from "@playwright/test";
-import { expectTilesMatchDatabase, openFromNavigation, viewportTag } from "./expected";
+import { expectTilesMatchDatabase, openFromNavigation, tile, viewportTag } from "./expected";
 import type { Flow } from "./types";
 
 const onePixelPng = Buffer.from(
@@ -30,14 +30,20 @@ export const drivers: Flow = {
       },
     },
     {
-      name: "putting a driver on duty updates the dashboard tile",
+      name: "putting a driver on duty updates a dashboard in another tab within one polling interval",
       run: async (context) => {
         const { page } = context;
+        const dashboard = await page.context().newPage();
+        await dashboard.goto("/");
+        const before = await context.number(`select count(*) as value from drivers where on_duty`);
+        await expect(tile(dashboard, "Drivers on duty")).toHaveText(String(before));
         const card = page.getByRole("list", { name: "Drivers" }).getByRole("article").filter({ hasText: "Off duty" }).first();
         const name = (await card.getAttribute("aria-label")) ?? "";
         await card.getByRole("switch", { name: `${name} on duty` }).click();
         await expect(page.getByRole("article", { name, exact: true }).getByText("On duty", { exact: true })).toBeVisible();
         await expect.poll(() => context.number(`select count(*) as value from drivers where name = $1 and on_duty`, [name])).toBe(1);
+        await expect(tile(dashboard, "Drivers on duty")).toHaveText(String(before + 1), { timeout: 7_000 });
+        await dashboard.close();
         await openFromNavigation(page, "Dashboard");
         await expectTilesMatchDatabase(context);
       },
@@ -91,14 +97,21 @@ export const fleet: Flow = {
       },
     },
     {
-      name: "sending a vehicle to service updates the Fleet ready tile",
+      name: "sending a vehicle to service updates a dashboard in another tab within one polling interval",
       run: async (context) => {
         const { page } = context;
+        const dashboard = await page.context().newPage();
+        await dashboard.goto("/");
+        const ready = await context.number(`select count(*) as value from vehicles where status = 'ready'`);
+        const total = await context.number(`select count(*) as value from vehicles`);
+        await expect(tile(dashboard, "Fleet ready")).toHaveText(`${String(ready)}/${String(total)}`);
         const card = page.getByRole("list", { name: "Vehicles" }).getByRole("article").filter({ hasText: "Ready" }).first();
         const unit = (await card.getAttribute("aria-label")) ?? "";
         await card.getByRole("switch", { name: `${unit} ready` }).click();
         await expect(page.getByRole("article", { name: unit, exact: true }).getByText("In service", { exact: true })).toBeVisible();
         await expect.poll(() => context.number(`select count(*) as value from vehicles where unit_number = $1 and status = 'in_service'`, [unit])).toBe(1);
+        await expect(tile(dashboard, "Fleet ready")).toHaveText(`${String(ready - 1)}/${String(total)}`, { timeout: 7_000 });
+        await dashboard.close();
         await openFromNavigation(page, "Dashboard");
         await expectTilesMatchDatabase(context);
       },
