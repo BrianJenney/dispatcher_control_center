@@ -24,13 +24,9 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
   const format = useFormat();
   const { data, isError, refetch } = useLiveQuery(liveQueries.schedule, initialData);
   const [filter, setFilter] = useState<TripFilter>({ status: null, driverId: null });
-  const [showFinished, setShowFinished] = useState(false);
-  const filtered = filter.status !== null || filter.driverId !== null;
-  const hidesFinished = !showFinished && filter.status === null;
-  const finishedCount = data.trips.filter((trip) => isFinal(trip.status)).length;
-  const matching = filterTrips([...data.trips].sort(byPickupTime), filter);
-  const visible = hidesFinished ? matching.filter((trip) => !isFinal(trip.status)) : matching;
+  const visible = filterTrips([...data.trips].sort(byPickupTime), filter);
   const groups = groupByHour(visible, format.hour);
+  const filtered = filter.status !== null || filter.driverId !== null;
 
   return (
     <div className="space-y-6">
@@ -88,23 +84,9 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
           </Button>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          {visible.length} of {data.trips.length} trips on {format.day(data.today.start)}
-        </p>
-        {finishedCount > 0 && filter.status === null ? (
-          <Button
-            variant="outline"
-            className="h-11 sm:h-8"
-            aria-pressed={showFinished}
-            onClick={() => {
-              setShowFinished((current) => !current);
-            }}
-          >
-            {showFinished ? "Hide finished trips" : `Show ${String(finishedCount)} finished trips`}
-          </Button>
-        ) : null}
-      </div>
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {visible.length} of {data.trips.length} trips on {format.day(data.today.start)}
+      </p>
       {isError ? (
         <LiveUpdatesPaused what="the schedule" onRetry={() => void refetch()} />
       ) : null}
@@ -123,7 +105,7 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
               <ul className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {group.trips.map((trip) => (
                   <li key={trip.id}>
-                    <TripCard trip={trip} actions={<TripActions trip={trip} />} />
+                    <TripCard trip={trip} compact={isFinal(trip.status)} actions={<TripActions trip={trip} />} />
                   </li>
                 ))}
               </ul>

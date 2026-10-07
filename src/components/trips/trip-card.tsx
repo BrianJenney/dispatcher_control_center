@@ -7,8 +7,44 @@ import { StatusBadge } from "@/components/trips/status-badge";
 import { vehicleClassLabels } from "@/domain/fleet";
 import type { TripRow } from "@/domain/trip-row";
 
-export function TripCard({ trip, actions, showDate = false }: { trip: TripRow; actions?: ReactNode; showDate?: boolean }) {
+export function TripCard({
+  trip,
+  actions,
+  showDate = false,
+  compact = false,
+}: {
+  trip: TripRow;
+  actions?: ReactNode;
+  showDate?: boolean;
+  compact?: boolean;
+}) {
   const format = useFormat();
+  if (compact) {
+    return (
+      <article
+        aria-label={`Trip ${String(trip.reference)} for ${trip.customerName}`}
+        data-pickup-at={trip.pickupAt}
+        className="rounded-xl border bg-card px-4 py-3 shadow-xs"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm">
+              <span className="font-semibold tabular-nums">{format.time(trip.pickupAt)}</span>{" "}
+              <span className="font-medium">{trip.customerName}</span>
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              <span data-testid="trip-driver">{trip.driver ? trip.driver.name : "No driver yet"}</span> · #{trip.reference}
+              {trip.status === "cancelled" && trip.cancelReason ? <span> · Cancelled: {trip.cancelReason}</span> : null}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <StatusBadge status={trip.status} />
+            <span className="text-xs font-semibold tabular-nums">{format.money(trip.fareCents)}</span>
+          </div>
+        </div>
+      </article>
+    );
+  }
   return (
     <article
       aria-label={`Trip ${String(trip.reference)} for ${trip.customerName}`}

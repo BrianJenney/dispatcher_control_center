@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import { dashboardSnapshot } from "@/domain/dashboard";
 import { healthSnapshot } from "@/domain/health-check";
+import { insightsSnapshot } from "@/domain/insights";
 import { driverSuggestions, jobsSnapshot } from "@/domain/jobs";
 import { driversSnapshot, fleetSnapshot } from "@/domain/people";
 import { scheduleSnapshot } from "@/domain/schedule";
@@ -14,6 +15,7 @@ export const fleetQueryKey = ["fleet"] as const;
 export const liveQueries = {
   health: { queryKey: ["health"], url: "/api/health", schema: healthSnapshot },
   dashboard: { queryKey: [...tripsQueryKey, "dashboard"], url: "/api/dashboard", schema: dashboardSnapshot },
+  insights: { queryKey: [...tripsQueryKey, "insights"], url: "/api/insights", schema: insightsSnapshot },
   schedule: { queryKey: [...tripsQueryKey, "schedule"], url: "/api/schedule", schema: scheduleSnapshot },
   jobs: (search: string) => ({ queryKey: [...tripsQueryKey, "jobs", search], url: `/api/jobs?${search}`, schema: jobsSnapshot }),
   drivers: { queryKey: driversQueryKey, url: "/api/drivers", schema: driversSnapshot },

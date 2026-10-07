@@ -27,6 +27,7 @@ export function useFormat() {
   const day = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long", month: "long", day: "numeric" });
   const hour = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric" });
   const shortDay = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short", month: "short", day: "numeric" });
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" });
   return {
     money: formatMoney,
     fileSize: formatFileSize,
@@ -34,5 +35,6 @@ export function useFormat() {
     day: (iso: string) => day.format(new Date(iso)),
     hour: (iso: string) => hour.format(new Date(iso)),
     shortDay: (iso: string) => shortDay.format(new Date(iso)),
+    weekday: (iso: string) => weekday.format(new Date(iso)),
   };
 }
