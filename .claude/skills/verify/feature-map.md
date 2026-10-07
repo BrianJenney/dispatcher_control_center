@@ -4,6 +4,7 @@ How a user reaches each feature and what "working" means. Routes and shortcuts a
 
 | Flow | Feature | Route | Reach by click | Reach by keyboard | True when it works |
 |---|---|---|---|---|---|
+| `health` | Paved path example | `/health` | Open the URL directly | Tab to "Check name", type, Enter records; Tab to "Clear all checks", Enter, Tab to "Clear checks", Enter | The database badge reads Connected; an empty name shows "Give the check a short name."; a recorded check appears as the latest; clearing asks for confirmation and then shows "No checks yet" |
 | `login` | 01 Login | | | | Demo user signs in and lands on the dashboard; signing out returns to login; a protected URL while logged out redirects to login |
 | `dashboard` | 02 Dashboard | | | | Four tiles show active jobs, drivers on duty, fleet ready, today's revenue, and match the database |
 | `jobs-create` | 03 Jobs | | | | A trip is created with all fields and appears in the list as Offer |
