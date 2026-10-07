@@ -19,6 +19,14 @@ describe("seed", () => {
     expect(await statusesBetween(today.start, today.end)).toEqual([...tripStatuses].sort());
   });
 
+  it("puts at least three trips in each status today", async () => {
+    const rows = await db.execute<{ fewest: number }>(sql`
+      select min(count)::int as fewest from (
+        select count(*) from trips where pickup_at >= ${today.start.toISOString()} and pickup_at < ${today.end.toISOString()}
+        group by status) as per_status`);
+    expect(rows.rows[0]?.fewest).toBeGreaterThanOrEqual(3);
+  });
+
   it("spreads trips across each of the last seven days", async () => {
     const rows = await db.execute<{ days: number }>(sql`
       select count(distinct date_trunc('day', pickup_at at time zone ${env.APP_TIMEZONE}))::int as days

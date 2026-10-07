@@ -93,12 +93,19 @@ function todayStatus(random: Random, window: TimeRange, now: Date): TripStatus {
   return roll < 0.9 ? "assigned" : "cancelled";
 }
 
+const minimumPerStatusToday = 3;
+
 function ensureEveryStatus(plans: PlannedTrip[]) {
-  const missing = tripStatuses.filter((status) => !plans.some((plan) => plan.target === status));
-  missing.forEach((status, index) => {
-    const plan = plans[index * 2];
-    if (plan) plan.target = status;
-  });
+  for (const status of tripStatuses) {
+    let shortBy = minimumPerStatusToday - plans.filter((plan) => plan.target === status).length;
+    for (const plan of plans) {
+      if (shortBy <= 0) break;
+      const donorCount = plans.filter((candidate) => candidate.target === plan.target).length;
+      if (plan.target === status || donorCount <= minimumPerStatusToday) continue;
+      plan.target = status;
+      shortBy -= 1;
+    }
+  }
 }
 
 function planRecentTrips(random: Random, seeded: SeedDriver[], now: Date, timeZone: string): PlannedTrip[] {
