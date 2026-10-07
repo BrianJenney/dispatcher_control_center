@@ -34,6 +34,7 @@ export default defineConfig([
     "src/db/migrations/**",
     "tests/lint/fixtures/**",
     ".stryker-tmp/**",
+    "stryker-setup-*.js",
     "reports/**",
     ".verify/**",
     "playwright-report/**",
@@ -88,6 +89,15 @@ export default defineConfig([
       "no-restricted-imports": layer({
         regex: "^(?!zod$|@/domain/)",
         message: "src/domain is pure. Import only zod and other @/domain modules.",
+      }),
+    },
+  },
+  {
+    files: ["**/src/domain/**/*.test.ts"],
+    rules: {
+      "no-restricted-imports": layer({
+        regex: "^(?!zod$|vitest$|@/domain/)",
+        message: "Domain tests import only vitest, zod and @/domain modules.",
       }),
     },
   },
