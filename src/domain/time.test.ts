@@ -120,3 +120,9 @@ describe("wallTimeOf", () => {
     expect(wallTimeOf(new Date("2026-01-05T14:05:00Z"), "UTC")).toEqual({ date: "2026-01-05", time: "14:05" });
   });
 });
+
+describe("zonedWallTime input", () => {
+  it.each([["x2026-10-07", "15:30"], ["2026-10-07", "15:30:00"]])("refuses %s %s", (date, time) => {
+    expect(() => zonedWallTime(date, time, "UTC")).toThrow("Not a wall clock time");
+  });
+});

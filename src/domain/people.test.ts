@@ -32,3 +32,23 @@ describe("vehicleInput", () => {
     expect(result.error?.issues[0]?.message).toBe("Enter the fleet number, like DL-112.");
   });
 });
+
+describe("anchored and trimmed fields", () => {
+  const base = { name: "A", vehicleClass: "luxury_sedan" };
+
+  it.each(["call 212 555 0142", "212 555 0142 later", "+1 (212) 555-0142 x"])("refuses the phone %j", (phone) => {
+    expect(driverInput.safeParse({ ...base, phone }).success).toBe(false);
+  });
+
+  it("accepts an international number", () => {
+    expect(driverInput.safeParse({ ...base, phone: "+1 (212) 555-0142" }).success).toBe(true);
+  });
+
+  it("refuses a model, fleet number or plate that is only spaces", () => {
+    const vehicle = { model: "BMW", unitNumber: "DL-1", plate: "AB 12", vehicleClass: "luxury_sedan" };
+    expect(vehicleInput.safeParse({ ...vehicle, model: "   " }).success).toBe(false);
+    expect(vehicleInput.safeParse({ ...vehicle, unitNumber: "   " }).success).toBe(false);
+    expect(vehicleInput.safeParse({ ...vehicle, plate: "    " }).success).toBe(false);
+    expect(vehicleInput.parse({ ...vehicle, unitNumber: " DL-1 " }).unitNumber).toBe("DL-1");
+  });
+});

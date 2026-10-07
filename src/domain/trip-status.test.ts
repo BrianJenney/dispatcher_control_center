@@ -4,6 +4,7 @@ import {
   canTransition,
   isActive,
   isFinal,
+  moveTripInput,
   transitionTrip,
   tripMessages,
   tripStatuses,
@@ -115,5 +116,24 @@ describe("transitionTrip", () => {
     expect(() => transitionTrip(tripIn("completed"), { to: "en_route", actorId: "user-1" })).toThrow(
       "A trip that is completed cannot move to en route.",
     );
+  });
+});
+
+describe("moveTripInput", () => {
+  const move = { tripId: "00000000-0000-4000-8000-000000000001", from: "assigned", to: "cancelled" };
+
+  it("trims a short reason", () => {
+    expect(moveTripInput.parse({ ...move, reason: "  Flight cancelled " }).reason).toBe("Flight cancelled");
+  });
+
+  it("refuses a reason over 200 characters", () => {
+    expect(moveTripInput.safeParse({ ...move, reason: "x".repeat(201) }).error?.issues[0]?.message).toBe(
+      "Keep the reason to 200 characters or fewer.",
+    );
+    expect(moveTripInput.safeParse({ ...move, reason: "x".repeat(200) }).success).toBe(true);
+  });
+
+  it("refuses an unknown status", () => {
+    expect(moveTripInput.safeParse({ ...move, to: "parked" }).success).toBe(false);
   });
 });

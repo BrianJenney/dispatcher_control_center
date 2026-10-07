@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centsToDollars, dollarsToCents, tripInput } from "@/domain/trip-form";
+import { centsToDollars, dollarsToCents, tripInput, updateTripInput } from "@/domain/trip-form";
 
 const valid = {
   customerName: " Arden Ashdown ",
@@ -68,5 +68,29 @@ describe("money", () => {
     [18_505, "185.05"],
   ])("writes %i cents back as %s", (cents, amount) => {
     expect(centsToDollars(cents)).toBe(amount);
+  });
+});
+
+describe("tripInput details", () => {
+  it.each(["185", " 185 ", "185.5", "0.99"])("accepts the fare %j", (fare) => {
+    expect(tripInput.safeParse({ ...valid, fare }).success).toBe(true);
+  });
+
+  it.each(["9:30", "x09:30", "09:30x", "24:00"])("refuses the time %j", (pickupTime) => {
+    expect(tripInput.safeParse({ ...valid, pickupTime }).success).toBe(false);
+  });
+
+  it("trims every text field", () => {
+    const parsed = tripInput.parse({ ...valid, pickupAddress: " Harborview Hotel ", dropoffAddress: " Airport ", fare: " 99 " });
+    expect([parsed.pickupAddress, parsed.dropoffAddress, parsed.fare]).toEqual(["Harborview Hotel", "Airport", "99"]);
+  });
+
+  it("refuses addresses that are only spaces", () => {
+    expect(messageFor("dropoffAddress", { dropoffAddress: "   " })).toBe("Enter where the trip ends.");
+  });
+
+  it("needs a trip id to update", () => {
+    expect(updateTripInput.safeParse(valid).success).toBe(false);
+    expect(updateTripInput.safeParse({ ...valid, tripId: "00000000-0000-4000-8000-000000000001" }).success).toBe(true);
   });
 });
