@@ -1,11 +1,45 @@
 import { hashPassword } from "better-auth/crypto";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Database } from "@/db/client";
-import { account, user } from "@/db/schema";
+import { account, drivers, tripEvents, trips, user, vehicles } from "@/db/schema";
+import {
+  cancelReasons,
+  createRandom,
+  fakeAddress,
+  fakeCustomer,
+  fakeLoadDriverName,
+  fakePhone,
+  fareBaseCents,
+  maxPassengers,
+  seedDrivers,
+  seedVehicles,
+  type Random,
+} from "@/db/seed-data";
+import type { VehicleClass } from "@/domain/fleet";
+import { dayRange, shiftDays, tripWindow, type TimeRange } from "@/domain/time";
+import { transitionTrip, tripStatuses, type TripState, type TripStatus } from "@/domain/trip-status";
 
 export type SeedOptions = {
   demoUser: { email: string; password: string };
+  now: Date;
+  timeZone: string;
+  loadTrips?: number;
 };
+
+type SeedDriver = { id: string; vehicleClass: VehicleClass };
+
+type PlannedTrip = {
+  values: typeof trips.$inferInsert & { id: string };
+  driverId: string;
+  target: TripStatus;
+  cancelAfterSteps: number;
+};
+
+const hourMs = 3_600_000;
+const slotHours = [7, 9, 11, 13, 15, 17, 19, 21] as const;
+const durations = [45, 60, 75, 90] as const;
+const forwardPath: readonly TripStatus[] = ["assigned", "en_route", "completed"];
+const batchSize = 1_000;
 
 async function seedDemoUser(db: Database, demo: SeedOptions["demoUser"]) {
   const existing = await db.query.user.findFirst({ where: eq(user.email, demo.email) });
@@ -24,7 +58,165 @@ async function seedDemoUser(db: Database, demo: SeedOptions["demoUser"]) {
   return id;
 }
 
+function planTrip(random: Random, driver: SeedDriver, day: TimeRange, slotHour: number, target: TripStatus): PlannedTrip {
+  const vehicleClass = driver.vehicleClass;
+  const fareCents = fareBaseCents[vehicleClass] + Math.floor(random.next() * 24) * 500;
+  return {
+    values: {
+      id: crypto.randomUUID(),
+      customerName: fakeCustomer(random),
+      pickupAddress: fakeAddress(random),
+      dropoffAddress: fakeAddress(random),
+      pickupAt: new Date(day.start.getTime() + slotHour * hourMs + Math.floor(random.next() * 2) * 15 * 60_000),
+      durationMinutes: random.pick(durations),
+      passengers: 1 + Math.floor(random.next() * maxPassengers[vehicleClass]),
+      vehicleClass,
+      fareCents,
+    },
+    driverId: driver.id,
+    target,
+    cancelAfterSteps: Math.floor(random.next() * 3),
+  };
+}
+
+function pastStatus(random: Random): TripStatus {
+  return random.next() < 0.88 ? "completed" : "cancelled";
+}
+
+function todayStatus(random: Random, window: TimeRange, now: Date): TripStatus {
+  const roll = random.next();
+  if (window.end <= now) return roll < 0.9 ? "completed" : "cancelled";
+  if (window.start <= now) return "en_route";
+  if (roll < 0.3) return "offer";
+  return roll < 0.9 ? "assigned" : "cancelled";
+}
+
+function ensureEveryStatus(plans: PlannedTrip[]) {
+  const missing = tripStatuses.filter((status) => !plans.some((plan) => plan.target === status));
+  missing.forEach((status, index) => {
+    const plan = plans[index * 2];
+    if (plan) plan.target = status;
+  });
+}
+
+function planRecentTrips(random: Random, seeded: SeedDriver[], now: Date, timeZone: string): PlannedTrip[] {
+  const today = dayRange(now, timeZone);
+  const plans: PlannedTrip[] = [];
+  for (let daysAgo = 7; daysAgo >= 1; daysAgo--) {
+    const day = shiftDays(today, -daysAgo, timeZone);
+    for (const driver of seeded) {
+      for (const hour of slotHours) {
+        if (random.next() < 0.28) plans.push(planTrip(random, driver, day, hour, pastStatus(random)));
+      }
+    }
+  }
+  const todays: PlannedTrip[] = [];
+  for (const driver of seeded) {
+    for (const hour of slotHours) {
+      if (random.next() >= 0.45) continue;
+      const plan = planTrip(random, driver, today, hour, "offer");
+      const pickupAt = plan.values.pickupAt;
+      plan.target = todayStatus(random, tripWindow(pickupAt, plan.values.durationMinutes ?? 60), now);
+      todays.push(plan);
+    }
+  }
+  ensureEveryStatus(todays);
+  return [...plans, ...todays];
+}
+
+function planLoadTrips(random: Random, seeded: SeedDriver[], count: number, now: Date, timeZone: string) {
+  const today = dayRange(now, timeZone);
+  const plans: PlannedTrip[] = [];
+  for (let daysAgo = 1; plans.length < count; daysAgo++) {
+    const day = shiftDays(today, -daysAgo, timeZone);
+    for (const driver of seeded) {
+      for (const hour of slotHours) {
+        if (plans.length < count) plans.push(planTrip(random, driver, day, hour, pastStatus(random)));
+      }
+    }
+  }
+  return plans;
+}
+
+function pathTo(plan: PlannedTrip): readonly TripStatus[] {
+  if (plan.target === "cancelled") return [...forwardPath.slice(0, plan.cancelAfterSteps), "cancelled"];
+  return forwardPath.slice(0, forwardPath.indexOf(plan.target) + 1);
+}
+
+async function writeTrips(db: Database, plans: PlannedTrip[], actorId: string, random: Random) {
+  for (let offset = 0; offset < plans.length; offset += batchSize) {
+    const batch = plans.slice(offset, offset + batchSize);
+    await db.transaction(async (tx) => {
+      await tx.insert(trips).values(batch.map((plan) => plan.values));
+      await tx
+        .insert(tripEvents)
+        .values(batch.map((plan) => ({ tripId: plan.values.id, actorId, fromStatus: null, toStatus: "offer" as const })));
+
+      const states = new Map<string, TripState>(
+        batch.map((plan) => [plan.values.id, { status: "offer", driverId: null, cancelReason: null }]),
+      );
+      for (let step = 0; step < forwardPath.length; step++) {
+        const moves = batch.flatMap((plan) => {
+          const to = pathTo(plan)[step];
+          const state = states.get(plan.values.id);
+          if (!to || !state) return [];
+          const moved = transitionTrip(state, { to, actorId, driverId: plan.driverId, reason: random.pick(cancelReasons) });
+          states.set(plan.values.id, moved.trip);
+          return [{ tripId: plan.values.id, ...moved }];
+        });
+        if (moves.length === 0) break;
+        const rows = sql.join(
+          moves.map(
+            (move) =>
+              sql`(${move.tripId}::uuid, ${move.trip.status}::trip_status, ${move.trip.driverId}::uuid, ${move.trip.cancelReason})`,
+          ),
+          sql`, `,
+        );
+        await tx.execute(sql`
+          update trips set status = moves.status, driver_id = moves.driver_id, cancel_reason = moves.cancel_reason, updated_at = now()
+          from (values ${rows}) as moves (id, status, driver_id, cancel_reason)
+          where trips.id = moves.id`);
+        await tx.insert(tripEvents).values(moves.map((move) => ({ tripId: move.tripId, ...move.event })));
+      }
+    });
+  }
+}
+
 export async function seed(db: Database, options: SeedOptions) {
+  const random = createRandom(20261011);
   const demoUserId = await seedDemoUser(db, options.demoUser);
-  return { demoUserId };
+  if ((await db.$count(drivers)) > 0) return { demoUserId, trips: 0 };
+
+  const insertedDrivers = await db
+    .insert(drivers)
+    .values(seedDrivers.map((driver, index) => ({ ...driver, phone: fakePhone(index) })))
+    .returning({ id: drivers.id, vehicleClass: drivers.vehicleClass });
+  await db.insert(vehicles).values(
+    seedVehicles.map((vehicle, index) => ({
+      ...vehicle,
+      unitNumber: `DL-${String(101 + index)}`,
+      plate: `DSP ${String(4100 + index * 7)}`,
+    })),
+  );
+
+  const plans = planRecentTrips(random, insertedDrivers, options.now, options.timeZone);
+  await writeTrips(db, plans, demoUserId, random);
+
+  const loadTrips = options.loadTrips ?? 0;
+  if (loadTrips > 0) {
+    const loadDrivers = await db
+      .insert(drivers)
+      .values(
+        Array.from({ length: 60 }, (_, index) => ({
+          name: fakeLoadDriverName(index),
+          phone: fakePhone(index + seedDrivers.length),
+          vehicleClass: seedDrivers[index % seedDrivers.length]?.vehicleClass ?? "luxury_sedan",
+          onDuty: false,
+        })),
+      )
+      .returning({ id: drivers.id, vehicleClass: drivers.vehicleClass });
+    await writeTrips(db, planLoadTrips(random, loadDrivers, loadTrips, options.now, options.timeZone), demoUserId, random);
+  }
+
+  return { demoUserId, trips: plans.length + loadTrips };
 }

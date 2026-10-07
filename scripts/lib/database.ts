@@ -4,6 +4,15 @@ import { runMigrations } from "@/db/migrate";
 import { seed } from "@/db/seed";
 import { env } from "@/env";
 
+export function seedOptions(loadTrips = 0) {
+  return {
+    demoUser: { email: env.DEMO_USER_EMAIL, password: env.DEMO_USER_PASSWORD },
+    now: new Date(),
+    timeZone: env.APP_TIMEZONE,
+    loadTrips,
+  };
+}
+
 export function databaseUrlNamed(name: string) {
   const url = new URL(env.DATABASE_URL);
   url.pathname = `/${name}`;
@@ -35,7 +44,7 @@ export async function freshDatabase(url: string, options: { seed: boolean }) {
   try {
     await runMigrations(db);
     if (options.seed) {
-      await seed(db, { demoUser: { email: env.DEMO_USER_EMAIL, password: env.DEMO_USER_PASSWORD } });
+      await seed(db, seedOptions());
     }
   } finally {
     await pool.end();
