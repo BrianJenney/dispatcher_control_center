@@ -10,6 +10,7 @@ import { documents, drivers, fleet } from "./people";
 import { schedule } from "./schedule";
 import { status } from "./status";
 import { theme } from "./theme";
+import { guidedTour } from "./tour";
 import type { Flow } from "./types";
 
 import { expectNoSidewaysScroll } from "./expected";
@@ -35,6 +36,7 @@ export const flows: Record<string, Flow> = {
   insights,
   activity,
   theme,
+  tour: guidedTour,
   "jobs-export": exportTrips,
   drivers,
   fleet,

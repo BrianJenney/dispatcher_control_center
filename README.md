@@ -114,6 +114,30 @@ Proves: the status flow is enforced on the server and in the database, and live 
 5. "Delete" asks for confirmation first.
 6. Repeat for a vehicle's Registrations on the Fleet detail page.
 
+### Stretch features
+
+**Insights** (`/insights`)
+1. Open Insights. Four tiles cover the last seven days: trips, completion rate, cancellation rate and revenue.
+2. "Needs attention" lists offers due within two hours, offers whose pickup time has passed, and assigned trips not started 15 minutes after pickup. Book an offer for the next hour and it appears within 5 seconds.
+3. The charts show trips per day (completed, still open, cancelled), revenue per day (completed trips only), why trips were cancelled, and trips per driver today, so an uneven load is visible at a glance.
+
+**Activity log** (`/activity`, from the "Activity log" button on Insights)
+1. Every booking, assignment, driver change, status move and cancellation is listed newest first, with who did it and the cancel reason.
+2. Book a trip in another tab and the entry appears here within 5 seconds. "Show more" loads older entries.
+
+**CSV export** (Jobs, "Export CSV")
+1. Press "Export CSV" with no filters for every trip, newest first.
+2. Choose a status or type a customer name first and the file contains only those trips.
+3. Cells that start with `=`, `+`, `-` or `@` are prefixed with an apostrophe so a spreadsheet cannot run them as formulas.
+
+**Theme switcher** (button beside sign out)
+1. It cycles Light, Dark and Match my device. The choice survives a reload and applies before the page paints, so there is no flash.
+2. On Match my device, changing the operating system theme changes the app too.
+
+**Guided tour**
+1. On a first visit a five step tour opens by itself. Next, Back, Skip tour and Escape all work.
+2. The question mark button beside the theme button opens it again. Some steps link to the page they describe.
+
 ### Trying to break it
 
 - **Double submit:** press "Book trip" twice fast. One trip is created.

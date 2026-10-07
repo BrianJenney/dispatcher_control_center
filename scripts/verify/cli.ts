@@ -5,7 +5,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { launchApp, stopApp, waitForApp } from "../lib/app-server";
 import { databaseUrlNamed, freshDatabase } from "../lib/database";
-import { signInAsDemoUser } from "../lib/demo-session";
+import { dismissTourOnEveryPage, signInAsDemoUser, withTourDismissed } from "../lib/demo-session";
 import { startLocalStorage } from "../lib/storage-server";
 import { flows, runStep, type Flow } from "./flows";
 import { flowDatabase } from "./flows/context";
@@ -87,7 +87,7 @@ type Session = Awaited<ReturnType<BrowserContext["storageState"]>>;
 async function signedInSession(browser: Browser, baseUrl: string): Promise<Session> {
   const context = await browser.newContext();
   await signInAsDemoUser(context.request, baseUrl);
-  const session = await context.storageState();
+  const session = withTourDismissed(await context.storageState(), baseUrl);
   await context.close();
   return session;
 }
@@ -110,6 +110,7 @@ async function runViewport(
     ...(flow.startsSignedIn ? { storageState: session } : {}),
   });
   const page = await browserContext.newPage();
+  if (!flow.startsSignedIn) await dismissTourOnEveryPage(page);
   const watched = watch(page, baseUrl);
   const database = flowDatabase(databaseUrl);
   const context = database.contextFor(page);

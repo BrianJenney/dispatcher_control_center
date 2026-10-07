@@ -1,5 +1,6 @@
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme";
+import { TourButton } from "@/components/tour";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/utils";
 import { signOut } from "@/server/actions/auth";
@@ -22,6 +23,7 @@ export function UserMenu({ user, tone = "dark" }: { user: SignedInUser; tone?: "
         <span className="block truncate font-medium">{user.name}</span>
         <span className="block truncate text-xs text-sidebar-foreground/60">{user.email}</span>
       </span>
+      <TourButton />
       <ThemeToggle tone={tone} />
       <form action={signOut}>
         <Button

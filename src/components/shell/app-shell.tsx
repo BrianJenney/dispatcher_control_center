@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Brand } from "@/components/shell/brand";
 import { BottomNav, SidebarNav } from "@/components/shell/nav";
+import { GuidedTour } from "@/components/tour";
 import { UserMenu } from "@/components/shell/user-menu";
 import type { SignedInUser } from "@/server/session";
 
@@ -32,6 +33,7 @@ export function AppShell({ user, children }: { user: SignedInUser | null; childr
         </main>
       </div>
       <BottomNav />
+      {user ? <GuidedTour /> : null}
     </div>
   );
 }

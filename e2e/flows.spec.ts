@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { databaseUrlNamed } from "../scripts/lib/database";
+import { dismissTourOnEveryPage } from "../scripts/lib/demo-session";
 import { flows, runStep } from "../scripts/verify/flows";
 import { flowDatabase } from "../scripts/verify/flows/context";
 
@@ -8,6 +9,7 @@ for (const [name, flow] of Object.entries(flows)) {
     if (!flow.startsSignedIn) test.use({ storageState: { cookies: [], origins: [] } });
 
     test(`${name} flow from the feature map`, async ({ page }) => {
+      if (!flow.startsSignedIn) await dismissTourOnEveryPage(page);
       const consoleErrors: string[] = [];
       page.on("console", (message) => {
         if (message.type() === "error") consoleErrors.push(message.text());
