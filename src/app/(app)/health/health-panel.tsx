@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { healthQuery } from "@/app/health/health-query";
+import { healthQuery } from "@/app/(app)/health/health-query";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormError, FormField, SubmitButton, useActionForm } from "@/components/form";
 import { useLiveQuery } from "@/components/live-query";
