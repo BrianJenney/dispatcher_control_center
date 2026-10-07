@@ -11,7 +11,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint --max-warnings 0 . && tsx scripts/check-feature-map.ts",
+    "lint": "eslint --max-warnings 0 . && tsx --env-file-if-exists=.env scripts/check-feature-map.ts",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run --project unit --project lint",
@@ -23,7 +23,7 @@
     "db:seed": "tsx --env-file-if-exists=.env scripts/db-seed.ts",
     "db:reset": "tsx --env-file-if-exists=.env scripts/db-reset.ts",
     "verify": "tsx --env-file-if-exists=.env scripts/verify/cli.ts",
-    "check:feature-map": "tsx scripts/check-feature-map.ts"
+    "check:feature-map": "tsx --env-file-if-exists=.env scripts/check-feature-map.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",

@@ -90,7 +90,7 @@ async function runViewport(browser: Browser, baseUrl: string, flow: Flow, viewpo
   });
   const page = await context.newPage();
   const watched = watch(page, baseUrl);
-  await signInAsDemoUser(page.request, baseUrl);
+  if (flow.startsSignedIn) await signInAsDemoUser(page.request, baseUrl);
 
   const steps: StepResult[] = [];
   for (const [index, step] of flow.steps.entries()) {

@@ -8,6 +8,9 @@ test("health page works by keyboard alone", async ({ page, baseURL }) => {
   await expect(page.getByText("Connected")).toBeVisible();
 
   await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Tab");
   await expect(page.getByLabel("Check name")).toBeFocused();
   await page.keyboard.type("Keyboard check");
   await page.keyboard.press("Enter");
