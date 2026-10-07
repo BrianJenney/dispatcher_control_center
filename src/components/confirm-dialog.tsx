@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode, type SubmitEvent } from "react";
+import { unreachableMessage } from "@/components/form";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -12,7 +13,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { unreachableMessage } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/domain/result";
 
@@ -21,18 +21,31 @@ type ConfirmDialogProps = {
   title: string;
   description: string;
   confirmLabel: string;
-  onConfirm: () => Promise<ActionResult<unknown>>;
+  keepLabel?: string;
+  onConfirm: (form: FormData) => Promise<ActionResult<unknown>>;
   onConfirmed?: () => void;
+  children?: ReactNode;
 };
 
-export function ConfirmDialog({ trigger, title, description, confirmLabel, onConfirm, onConfirmed }: ConfirmDialogProps) {
+export function ConfirmDialog({
+  trigger,
+  title,
+  description,
+  confirmLabel,
+  keepLabel = "Keep it",
+  onConfirm,
+  onConfirmed,
+  children,
+}: ConfirmDialogProps) {
+  const formId = useId();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mutation = useMutation({ mutationFn: onConfirm });
   const pending = mutation.isPending;
 
-  function confirm() {
-    mutation.mutate(undefined, {
+  function confirm(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    mutation.mutate(new FormData(event.currentTarget), {
       onError: () => {
         setError(unreachableMessage);
       },
@@ -61,14 +74,17 @@ export function ConfirmDialog({ trigger, title, description, confirmLabel, onCon
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        {error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        ) : null}
+        <form id={formId} onSubmit={confirm} noValidate className="space-y-3">
+          {children}
+          {error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+        </form>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Keep it</AlertDialogCancel>
-          <Button variant="destructive" onClick={confirm} disabled={pending} aria-busy={pending}>
+          <AlertDialogCancel disabled={pending}>{keepLabel}</AlertDialogCancel>
+          <Button type="submit" form={formId} variant="destructive" disabled={pending} aria-busy={pending}>
             {pending ? "Working…" : confirmLabel}
           </Button>
         </AlertDialogFooter>

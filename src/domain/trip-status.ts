@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { DomainError } from "@/domain/result";
 
 export const tripStatuses = ["offer", "assigned", "en_route", "completed", "cancelled"] as const;
@@ -17,6 +18,14 @@ export const transitions: Record<TripStatus, readonly TripStatus[]> = {
   en_route: ["completed", "cancelled"],
   completed: [],
   cancelled: [],
+};
+
+const statusPhrases: Record<TripStatus, string> = {
+  offer: "still an offer",
+  assigned: "assigned",
+  en_route: "en route",
+  completed: "completed",
+  cancelled: "cancelled",
 };
 
 export const tripMessages = {
@@ -75,7 +84,7 @@ function cancelReason(request: TransitionRequest): string | null {
 export function transitionTrip(trip: TripState, request: TransitionRequest): { trip: TripState; event: TripEvent } {
   if (!canTransition(trip.status, request.to)) {
     throw new DomainError(
-      `A trip that is ${statusLabels[trip.status].toLowerCase()} cannot move to ${statusLabels[request.to].toLowerCase()}.`,
+      `A trip that is ${statusPhrases[trip.status]} cannot move to ${statusLabels[request.to].toLowerCase()}.`,
     );
   }
   const reason = cancelReason(request);
@@ -84,3 +93,16 @@ export function transitionTrip(trip: TripState, request: TransitionRequest): { t
     event: { fromStatus: trip.status, toStatus: request.to, actorId: request.actorId, reason },
   };
 }
+
+export const moveTripInput = z.object({
+  tripId: z.uuid(),
+  from: z.enum(tripStatuses),
+  to: z.enum(tripStatuses),
+  driverId: z.uuid().optional(),
+  reason: z.string().trim().max(200, "Keep the reason to 200 characters or fewer.").optional(),
+});
+
+export const nextStep: Partial<Record<TripStatus, { to: TripStatus; label: string }>> = {
+  assigned: { to: "en_route", label: "Start trip" },
+  en_route: { to: "completed", label: "Complete trip" },
+};
