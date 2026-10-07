@@ -3,9 +3,9 @@ import { mkdirSync, openSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type Browser, type Page } from "@playwright/test";
-import { env } from "@/env";
 import { launchApp, stopApp, waitForApp } from "../lib/app-server";
 import { databaseUrlNamed, freshDatabase } from "../lib/database";
+import { signInAsDemoUser } from "../lib/demo-session";
 import { flows, type Flow } from "./flows";
 import { runLighthouse, type ViewportName } from "./lighthouse";
 
@@ -49,14 +49,6 @@ function slug(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-async function signIn(page: Page, baseUrl: string) {
-  const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
-    data: { email: env.DEMO_USER_EMAIL, password: env.DEMO_USER_PASSWORD },
-    headers: { origin: baseUrl },
-  });
-  if (!response.ok()) throw new Error(`Demo sign-in failed with status ${String(response.status())}`);
-}
-
 function watch(page: Page, baseUrl: string) {
   const consoleEntries: ConsoleEntry[] = [];
   const timings: Timing[] = [];
@@ -98,7 +90,7 @@ async function runViewport(browser: Browser, baseUrl: string, flow: Flow, viewpo
   });
   const page = await context.newPage();
   const watched = watch(page, baseUrl);
-  await signIn(page, baseUrl);
+  await signInAsDemoUser(page.request, baseUrl);
 
   const steps: StepResult[] = [];
   for (const [index, step] of flow.steps.entries()) {
