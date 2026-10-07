@@ -1,0 +1,56 @@
+import { z } from "zod";
+import { vehicleClasses, vehicleStatuses } from "@/domain/fleet";
+
+export const driverInput = z.object({
+  name: z.string().trim().min(1, "Enter the driver's name.").max(80, "Keep the name to 80 characters."),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[\d\s().-]{7,20}$/, "Enter a phone number, like (212) 555-0142."),
+  vehicleClass: z.enum(vehicleClasses, "Choose the class this driver drives."),
+});
+
+export const updateDriverInput = driverInput.extend({ driverId: z.uuid() });
+
+export const driverRow = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  phone: z.string(),
+  vehicleClass: z.enum(vehicleClasses),
+  onDuty: z.boolean(),
+  photoVersion: z.string().nullable(),
+  tripsToday: z.number().int(),
+  licenses: z.number().int(),
+});
+
+export type DriverRow = z.infer<typeof driverRow>;
+
+export const driversSnapshot = z.object({ drivers: z.array(driverRow) });
+
+export const vehicleInput = z.object({
+  model: z.string().trim().min(1, "Enter the make and model.").max(80, "Keep the model to 80 characters."),
+  unitNumber: z.string().trim().min(1, "Enter the fleet number, like DL-112.").max(20, "Keep the fleet number to 20 characters."),
+  plate: z
+    .string()
+    .trim()
+    .min(2, "Enter the plate as it appears on the vehicle.")
+    .max(12, "Plates are 12 characters or fewer.")
+    .transform((plate) => plate.toUpperCase()),
+  vehicleClass: z.enum(vehicleClasses, "Choose the vehicle class."),
+});
+
+export const updateVehicleInput = vehicleInput.extend({ vehicleId: z.uuid() });
+
+export const vehicleRow = z.object({
+  id: z.uuid(),
+  model: z.string(),
+  unitNumber: z.string(),
+  plate: z.string(),
+  vehicleClass: z.enum(vehicleClasses),
+  status: z.enum(vehicleStatuses),
+  registrations: z.number().int(),
+});
+
+export type VehicleRow = z.infer<typeof vehicleRow>;
+
+export const fleetSnapshot = z.object({ vehicles: z.array(vehicleRow) });
