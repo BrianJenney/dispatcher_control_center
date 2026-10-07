@@ -14,7 +14,7 @@
     "lint": "eslint --max-warnings 0 .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:unit": "vitest run --project domain --project lint",
+    "test:unit": "vitest run --project unit --project lint",
     "test:integration": "vitest run --project integration",
     "e2e": "playwright test",
     "mutate": "stryker run",
@@ -63,6 +63,6 @@
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.1",
-    "vitest": "^5.0.3"
+    "vitest": "^4.1.11"
   }
 }
