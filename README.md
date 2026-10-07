@@ -24,3 +24,7 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm e2e
 ```
 
 Integration tests use a separate `dispatch_test` database and e2e tests use `dispatch_e2e`. Both are recreated on every run.
+
+## Adding shadcn components
+
+Use `pnpm ui:add <component>`, not the shadcn CLI directly. The shadcn CLI sometimes adds an unrelated npm package called `cn` and imports from it; the script removes it and points the imports at `@/components/ui/utils`. Lint blocks the stray import either way.
