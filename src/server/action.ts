@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db, type Transaction } from "@/db/client";
 import { DomainError, type ActionResult } from "@/domain/result";
+import { friendlyDatabaseError } from "@/server/database-errors";
 import { currentUser } from "@/server/session";
 
 type ActionContext = { tx: Transaction; userId: string };
@@ -31,6 +32,8 @@ export function defineAction<S extends z.ZodType, R>(
       return { ok: true, data };
     } catch (error) {
       if (error instanceof DomainError) return failure(error.message);
+      const message = friendlyDatabaseError(error);
+      if (message) return failure(message);
       throw error;
     }
   };

@@ -8,6 +8,27 @@
       "when": 1791390309712,
       "tag": "0000_auth_and_health_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791391983426,
+      "tag": "0001_extensions",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791391984409,
+      "tag": "0002_domain_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791391998789,
+      "tag": "0003_trip_rules",
+      "breakpoints": true
     }
   ]
 }
