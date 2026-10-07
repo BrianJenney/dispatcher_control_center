@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useFormat } from "@/components/format";
-import { readJson } from "@/components/live-query";
+import { useOnDemandQuery } from "@/components/live-query";
+import { liveQueries } from "@/components/queries";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useTripMove, useTripReassign } from "@/components/trips/use-trip-move";
 import { Button } from "@/components/ui/button";
@@ -16,16 +16,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { vehicleClassLabels } from "@/domain/fleet";
-import { driverSuggestions } from "@/domain/jobs";
 import type { TripRow } from "@/domain/trip-row";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0))
-    .join("");
-}
+import { initials } from "@/components/initials";
 
 export function AssignDialog({ trip }: { trip: TripRow }) {
   const format = useFormat();
@@ -33,12 +25,7 @@ export function AssignDialog({ trip }: { trip: TripRow }) {
   const move = useTripMove();
   const reassign = useTripReassign();
   const reassigning = trip.status === "assigned";
-  const suggestions = useQuery({
-    queryKey: ["suggestions", trip.id],
-    queryFn: () => readJson(`/api/trips/${trip.id}/suggestions`, driverSuggestions),
-    enabled: open,
-    staleTime: 0,
-  });
+  const suggestions = useOnDemandQuery(liveQueries.suggestions(trip.id), open);
   const choices = (suggestions.data?.suggestions ?? []).filter((driver) => driver.id !== trip.driver?.id);
 
   function choose(driver: { id: string; name: string }) {

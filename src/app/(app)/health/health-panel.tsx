@@ -1,10 +1,11 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { healthQuery } from "@/app/(app)/health/health-query";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormError, FormField, SubmitButton, useActionForm } from "@/components/form";
+import { useFormat } from "@/components/format";
 import { useLiveQuery } from "@/components/live-query";
+import { liveQueries } from "@/components/queries";
 import { EmptyState, ErrorState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,13 +13,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { recordHealthCheckInput, type HealthSnapshot } from "@/domain/health-check";
 import { clearHealthChecks, recordHealthCheck } from "@/server/actions/health";
 
-const timeFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
-
 export function HealthPanel({ initialData }: { initialData: HealthSnapshot }) {
   const queryClient = useQueryClient();
-  const { data, isError, refetch } = useLiveQuery({ ...healthQuery, initialData });
+  const format = useFormat();
+  const { data, isError, refetch } = useLiveQuery(liveQueries.health, initialData);
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: healthQuery.queryKey });
+    void queryClient.invalidateQueries({ queryKey: liveQueries.health.queryKey });
   };
 
   return (
@@ -42,7 +42,7 @@ export function HealthPanel({ initialData }: { initialData: HealthSnapshot }) {
               <dd className="font-medium" data-testid="latest-check">
                 {data.latestCheck.label}
               </dd>
-              <dd className="text-muted-foreground">{timeFormat.format(new Date(data.latestCheck.recordedAt))}</dd>
+              <dd className="text-muted-foreground">{format.shortDay(data.latestCheck.recordedAt)}, {format.time(data.latestCheck.recordedAt)}</dd>
             </dl>
           ) : (
             <EmptyState title="No checks yet" description="Record one below to prove the write path works." />

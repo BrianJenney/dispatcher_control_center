@@ -3,14 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/utils";
 import { signOut } from "@/server/actions/auth";
 import type { SignedInUser } from "@/server/session";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
+import { initials } from "@/components/initials";
 
 export function UserMenu({ user, tone = "dark" }: { user: SignedInUser; tone?: "dark" | "light" }) {
   return (

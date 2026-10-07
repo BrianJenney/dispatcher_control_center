@@ -5,14 +5,14 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useRef, useTransition } from "react";
 import { useLiveQuery } from "@/components/live-query";
-import { EmptyState, ErrorState } from "@/components/states";
+import { liveQueries } from "@/components/queries";
+import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
-import { tripsQueryKey } from "@/components/trips/use-trip-move";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
-import { jobsPageSize, jobsSearch, jobsSnapshot, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
+import { jobsPageSize, jobsSearch, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { statusLabels, tripStatuses } from "@/domain/trip-status";
 
 const statusTabs = [{ value: null, label: "All" }, ...tripStatuses.map((value) => ({ value, label: statusLabels[value] }))];
@@ -27,12 +27,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
   const [navigating, startNavigation] = useTransition();
   const typing = useRef<ReturnType<typeof setTimeout>>(undefined);
   const search = jobsSearch(filter);
-  const { data, isError, refetch } = useLiveQuery({
-    queryKey: [...tripsQueryKey, "jobs", search],
-    url: `/api/jobs?${search}`,
-    schema: jobsSnapshot,
-    initialData,
-  });
+  const { data, isError, refetch } = useLiveQuery(liveQueries.jobs(search), initialData);
 
   function show(next: JobsFilter) {
     startNavigation(() => {
@@ -81,7 +76,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
         </div>
       </div>
       {isError ? (
-        <ErrorState title="Live updates paused" description="We could not refresh the jobs list." onRetry={() => void refetch()} />
+        <LiveUpdatesPaused what="the jobs list" onRetry={() => void refetch()} />
       ) : null}
       <div aria-busy={navigating} className={cn("transition-opacity", navigating && "opacity-60")}>
         {data.trips.length === 0 ? (

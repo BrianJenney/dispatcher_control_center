@@ -3,18 +3,17 @@
 import { useState } from "react";
 import { useFormat } from "@/components/format";
 import { useLiveQuery } from "@/components/live-query";
-import { EmptyState, ErrorState } from "@/components/states";
+import { liveQueries } from "@/components/queries";
+import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
-import { tripsQueryKey } from "@/components/trips/use-trip-move";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { groupByHour, scheduleSnapshot, type ScheduleSnapshot } from "@/domain/schedule";
+import { groupByHour, type ScheduleSnapshot } from "@/domain/schedule";
 import { byPickupTime, filterTrips, type TripFilter } from "@/domain/trip-row";
 import { statusLabels, tripStatuses } from "@/domain/trip-status";
 
-const scheduleQuery = { queryKey: [...tripsQueryKey, "schedule"] as const, url: "/api/schedule", schema: scheduleSnapshot };
 const everyone = "all";
 
 function isStatus(value: string): value is (typeof tripStatuses)[number] {
@@ -23,7 +22,7 @@ function isStatus(value: string): value is (typeof tripStatuses)[number] {
 
 export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot }) {
   const format = useFormat();
-  const { data, isError, refetch } = useLiveQuery({ ...scheduleQuery, initialData });
+  const { data, isError, refetch } = useLiveQuery(liveQueries.schedule, initialData);
   const [filter, setFilter] = useState<TripFilter>({ status: null, driverId: null });
   const visible = filterTrips([...data.trips].sort(byPickupTime), filter);
   const groups = groupByHour(visible, format.hour);
@@ -89,7 +88,7 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
         {visible.length} of {data.trips.length} trips on {format.day(data.today.start)}
       </p>
       {isError ? (
-        <ErrorState title="Live updates paused" description="We could not refresh the schedule." onRetry={() => void refetch()} />
+        <LiveUpdatesPaused what="the schedule" onRetry={() => void refetch()} />
       ) : null}
       {groups.length === 0 ? (
         filtered ? (

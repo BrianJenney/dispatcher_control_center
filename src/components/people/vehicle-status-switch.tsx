@@ -1,14 +1,12 @@
 "use client";
 
-import { tripsQueryKey } from "@/components/trips/use-trip-move";
+import { fleetQueryKey, tripsQueryKey } from "@/components/queries";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useOptimisticAction } from "@/components/use-optimistic-action";
 import { vehicleStatusLabels, type VehicleStatus } from "@/domain/fleet";
 import type { VehicleRow } from "@/domain/people";
 import { setVehicleStatus } from "@/server/actions/people";
-
-export const fleetQueryKey = ["fleet"] as const;
 
 type StatusRequest = { vehicleId: string; unitNumber: string; status: VehicleStatus };
 

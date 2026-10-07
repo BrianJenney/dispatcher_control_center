@@ -1,13 +1,13 @@
 "use client";
 
 import type { z } from "zod";
+import { tripsQueryKey } from "@/components/queries";
 import { useOptimisticAction } from "@/components/use-optimistic-action";
 import type { ActionResult } from "@/domain/result";
 import { patchTrips, type TripPatch, type TripRow } from "@/domain/trip-row";
 import { statusLabels, type moveTripInput } from "@/domain/trip-status";
 import { moveTrip, reassignDriver } from "@/server/actions/trips";
 
-export const tripsQueryKey = ["trips"] as const;
 
 type TripLists = { trips: TripRow[] };
 

@@ -6,18 +6,12 @@ import { useId } from "react";
 import { useFormat } from "@/components/format";
 import { KpiTile } from "@/components/kpi-tile";
 import { useLiveQuery } from "@/components/live-query";
-import { EmptyState, ErrorState } from "@/components/states";
+import { liveQueries } from "@/components/queries";
+import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
-import { tripsQueryKey } from "@/components/trips/use-trip-move";
-import { dashboardSnapshot, summarizeDashboard, type DashboardSnapshot } from "@/domain/dashboard";
+import { summarizeDashboard, type DashboardSnapshot } from "@/domain/dashboard";
 import { byPickupTime, type TripRow } from "@/domain/trip-row";
-
-export const dashboardQuery = {
-  queryKey: [...tripsQueryKey, "dashboard"] as const,
-  url: "/api/dashboard",
-  schema: dashboardSnapshot,
-};
 
 const listLimit = 5;
 
@@ -27,7 +21,7 @@ function isToday(trip: TripRow, today: DashboardSnapshot["today"]) {
 
 export function DashboardView({ initialData }: { initialData: DashboardSnapshot }) {
   const format = useFormat();
-  const { data, isError, refetch } = useLiveQuery({ ...dashboardQuery, initialData });
+  const { data, isError, refetch } = useLiveQuery(liveQueries.dashboard, initialData);
   const kpis = summarizeDashboard(data);
   const sorted = [...data.trips].sort(byPickupTime);
   const needsDriver = sorted.filter((trip) => trip.status === "offer" && isToday(trip, data.today));
@@ -38,11 +32,7 @@ export function DashboardView({ initialData }: { initialData: DashboardSnapshot 
     <div className="space-y-8">
       <p className="-mt-4 text-sm text-muted-foreground lg:-mt-6">{format.day(data.today.start)}</p>
       {isError ? (
-        <ErrorState
-          title="Live updates paused"
-          description="We could not refresh the numbers. They will update again once the connection is back."
-          onRetry={() => void refetch()}
-        />
+        <LiveUpdatesPaused what="the numbers" onRetry={() => void refetch()} />
       ) : null}
       <section aria-label="Key numbers" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KpiTile

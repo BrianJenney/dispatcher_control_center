@@ -1,13 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/components/ui/utils";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
+import { initials } from "@/components/initials";
 
 export function DriverAvatar({
   driver,

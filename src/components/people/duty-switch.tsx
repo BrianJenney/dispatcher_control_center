@@ -1,13 +1,11 @@
 "use client";
 
-import { tripsQueryKey } from "@/components/trips/use-trip-move";
+import { driversQueryKey, tripsQueryKey } from "@/components/queries";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useOptimisticAction } from "@/components/use-optimistic-action";
 import type { DriverRow } from "@/domain/people";
 import { setDriverDuty } from "@/server/actions/people";
-
-export const driversQueryKey = ["drivers"] as const;
 
 type DutyRequest = { driverId: string; name: string; onDuty: boolean };
 

@@ -53,6 +53,16 @@ export function ErrorState({
   );
 }
 
+export function LiveUpdatesPaused({ what, onRetry }: { what: string; onRetry: () => void }) {
+  return (
+    <ErrorState
+      title="Live updates paused"
+      description={`We could not refresh ${what}. It will update again once the connection is back.`}
+      onRetry={onRetry}
+    />
+  );
+}
+
 export function LoadingState({ label, rows = 3 }: { label: string; rows?: number }) {
   return (
     <div aria-busy="true" aria-live="polite" className="space-y-3">

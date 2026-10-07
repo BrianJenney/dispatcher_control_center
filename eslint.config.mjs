@@ -14,8 +14,14 @@ const strayCnPackage = {
   message: "Import cn from @/components/ui/utils. shadcn sometimes rewrites it to an unrelated npm package.",
 };
 
+const queriesThroughLiveQuery = {
+  name: "@tanstack/react-query",
+  importNames: ["useQuery", "useSuspenseQuery", "useQueries"],
+  message: "Read data with useLiveQuery or useOnDemandQuery and a definition from @/components/queries.",
+};
+
 function layer(...patterns) {
-  return ["error", { patterns: [aliasOnly, strayCnPackage, ...patterns] }];
+  return ["error", { paths: [queriesThroughLiveQuery], patterns: [aliasOnly, strayCnPackage, ...patterns] }];
 }
 
 const outsideSrc = ["error", { patterns: [strayCnPackage] }];
@@ -123,6 +129,12 @@ export default defineConfig([
     files: ["**/src/app/**", "**/src/components/**"],
     rules: {
       "no-restricted-imports": layer(noDatabase),
+    },
+  },
+  {
+    files: ["**/src/components/live-query.ts"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [aliasOnly, strayCnPackage, noDatabase] }],
     },
   },
 ]);

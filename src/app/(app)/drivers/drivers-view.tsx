@@ -4,18 +4,14 @@ import { Phone } from "lucide-react";
 import Link from "next/link";
 import { useLiveQuery } from "@/components/live-query";
 import { DriverAvatar } from "@/components/people/driver-avatar";
-import { driversQueryKey, DutySwitch } from "@/components/people/duty-switch";
-import { EmptyState, ErrorState } from "@/components/states";
+import { DutySwitch } from "@/components/people/duty-switch";
+import { liveQueries } from "@/components/queries";
+import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { vehicleClassLabels } from "@/domain/fleet";
-import { driversSnapshot, type DriverRow } from "@/domain/people";
+import type { DriverRow } from "@/domain/people";
 
 export function DriversView({ initialData }: { initialData: { drivers: DriverRow[] } }) {
-  const { data, isError, refetch } = useLiveQuery({
-    queryKey: driversQueryKey,
-    url: "/api/drivers",
-    schema: driversSnapshot,
-    initialData,
-  });
+  const { data, isError, refetch } = useLiveQuery(liveQueries.drivers, initialData);
   const onDuty = data.drivers.filter((driver) => driver.onDuty).length;
 
   return (
@@ -23,7 +19,7 @@ export function DriversView({ initialData }: { initialData: { drivers: DriverRow
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {onDuty} of {data.drivers.length} drivers on duty
       </p>
-      {isError ? <ErrorState title="Live updates paused" description="We could not refresh the drivers." onRetry={() => void refetch()} /> : null}
+      {isError ? <LiveUpdatesPaused what="the drivers" onRetry={() => void refetch()} /> : null}
       {data.drivers.length === 0 ? (
         <EmptyState title="No drivers yet" description="Add your first chauffeur to start assigning trips." />
       ) : (

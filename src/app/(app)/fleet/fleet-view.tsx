@@ -3,14 +3,15 @@
 import { CarFront } from "lucide-react";
 import Link from "next/link";
 import { useLiveQuery } from "@/components/live-query";
-import { fleetQueryKey, VehicleStatusSwitch } from "@/components/people/vehicle-status-switch";
-import { EmptyState, ErrorState } from "@/components/states";
+import { VehicleStatusSwitch } from "@/components/people/vehicle-status-switch";
+import { liveQueries } from "@/components/queries";
+import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { cn } from "@/components/ui/utils";
 import { vehicleClassLabels } from "@/domain/fleet";
-import { fleetSnapshot, type VehicleRow } from "@/domain/people";
+import type { VehicleRow } from "@/domain/people";
 
 export function FleetView({ initialData }: { initialData: { vehicles: VehicleRow[] } }) {
-  const { data, isError, refetch } = useLiveQuery({ queryKey: fleetQueryKey, url: "/api/fleet", schema: fleetSnapshot, initialData });
+  const { data, isError, refetch } = useLiveQuery(liveQueries.fleet, initialData);
   const ready = data.vehicles.filter((vehicle) => vehicle.status === "ready").length;
 
   return (
@@ -18,7 +19,7 @@ export function FleetView({ initialData }: { initialData: { vehicles: VehicleRow
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {ready} of {data.vehicles.length} vehicles ready
       </p>
-      {isError ? <ErrorState title="Live updates paused" description="We could not refresh the fleet." onRetry={() => void refetch()} /> : null}
+      {isError ? <LiveUpdatesPaused what="the fleet" onRetry={() => void refetch()} /> : null}
       {data.vehicles.length === 0 ? (
         <EmptyState title="No vehicles yet" description="Add the first vehicle to track whether it is ready." />
       ) : (
