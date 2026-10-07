@@ -2,11 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { ReactNode, SubmitEvent } from "react";
-import { FormError, FormField, FormSelect, SubmitButton, useActionForm } from "@/components/form";
+import type { ReactNode } from "react";
+import { FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { vehicleClasses, vehicleClassLabels, type VehicleClass } from "@/domain/fleet";
-import type { FieldErrors } from "@/domain/result";
 import { jobsPageSize, jobsSearch } from "@/domain/jobs";
 import { durationOptions, tripInput, updateTripInput } from "@/domain/trip-form";
 import { createTrip, updateTrip } from "@/server/actions/trips";
@@ -55,20 +54,13 @@ export function EditTripForm({ tripId, values }: { tripId: string; values: TripF
   );
 }
 
-type FormState = {
-  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
-  pending: boolean;
-  formError: string | null;
-  fieldErrors: FieldErrors;
-};
-
 function TripFields({
   form,
   values,
   submitLabel,
   children,
 }: {
-  form: FormState;
+  form: ActionFormState;
   values: TripFormValues;
   submitLabel: string;
   children?: ReactNode;

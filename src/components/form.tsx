@@ -11,13 +11,20 @@ import type { ActionResult, FieldErrors } from "@/domain/result";
 
 export const unreachableMessage = "We could not reach the server. Check your connection and try again.";
 
+export type ActionFormState = {
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
+  pending: boolean;
+  formError: string | null;
+  fieldErrors: FieldErrors;
+};
+
 type ActionForm<S extends z.ZodType, R> = {
   schema: S;
   action: (input: z.output<S>) => Promise<ActionResult<R>>;
   onSuccess?: (data: R) => void;
 };
 
-export function useActionForm<S extends z.ZodType, R>({ schema, action, onSuccess }: ActionForm<S, R>) {
+export function useActionForm<S extends z.ZodType, R>({ schema, action, onSuccess }: ActionForm<S, R>): ActionFormState {
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const mutation = useMutation({ mutationFn: action });
