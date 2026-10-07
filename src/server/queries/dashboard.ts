@@ -17,7 +17,6 @@ export async function getDashboard(): Promise<DashboardSnapshot> {
     db.select({ status: vehicles.status }).from(vehicles),
   ]);
   return {
-    timeZone: env.APP_TIMEZONE,
     today: { start: today.start.toISOString(), end: today.end.toISOString() },
     trips: rows,
     drivers: driverRows,

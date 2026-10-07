@@ -4,13 +4,9 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { unreachableMessage } from "@/components/form";
-import type { ActionResult } from "@/domain/result";
+import { failure, type ActionResult } from "@/domain/result";
 import { uploadProblem, type UploadPurpose } from "@/domain/uploads";
 import { prepareUpload, saveUpload } from "@/server/actions/uploads";
-
-function failure(message: string): ActionResult<never> {
-  return { ok: false, message, fieldErrors: {} };
-}
 
 async function upload(purpose: UploadPurpose, ownerId: string, file: File): Promise<ActionResult<unknown>> {
   const problem = uploadProblem(purpose, file);

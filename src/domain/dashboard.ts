@@ -4,7 +4,6 @@ import { dashboardKpis, type DashboardKpis } from "@/domain/kpis";
 import { tripRow } from "@/domain/trip-row";
 
 export const dashboardSnapshot = z.object({
-  timeZone: z.string(),
   today: z.object({ start: z.iso.datetime({ offset: true }), end: z.iso.datetime({ offset: true }) }),
   trips: z.array(tripRow),
   drivers: z.array(z.object({ onDuty: z.boolean() })),

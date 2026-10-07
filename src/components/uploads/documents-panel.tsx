@@ -9,13 +9,9 @@ import { EmptyState } from "@/components/states";
 import { FilePicker } from "@/components/uploads/file-picker";
 import { useUpload } from "@/components/uploads/use-upload";
 import { Button } from "@/components/ui/button";
-import { documentContentTypes } from "@/domain/fleet";
+import { documentContentTypes, maxDocumentBytes } from "@/domain/fleet";
 import type { DocumentRow, UploadPurpose } from "@/domain/uploads";
 import { deleteDocument } from "@/server/actions/uploads";
-
-function size(bytes: number) {
-  return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${String(Math.max(1, Math.round(bytes / 1024)))} KB`;
-}
 
 export function DocumentsPanel({
   title,
@@ -36,7 +32,9 @@ export function DocumentsPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold">{title}</h2>
-          <p className="text-xs text-muted-foreground">PDF or image, up to 10 MB. Only signed in staff can open these.</p>
+          <p className="text-xs text-muted-foreground">
+            PDF or image, up to {format.fileSize(maxDocumentBytes)}. Only signed in staff can open these.
+          </p>
         </div>
         <FilePicker
           label={`Upload ${title.toLowerCase().replace(/s$/, "")}`}
@@ -57,7 +55,7 @@ export function DocumentsPanel({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium">{document.fileName}</span>
                 <span className="block text-xs text-muted-foreground">
-                  {size(document.sizeBytes)} · added {format.shortDay(document.uploadedAt)}
+                  {format.fileSize(document.sizeBytes)} · added {format.shortDay(document.uploadedAt)}
                 </span>
               </span>
               <Button asChild size="sm" variant="ghost">
