@@ -26,6 +26,7 @@ const banned = [
     rule: "@typescript-eslint/consistent-type-assertions",
   },
   { pattern: "a hard-coded secret", fixture: "server/hardcoded-secret.ts", rule: "local/no-hardcoded-secrets" },
+  { pattern: "a secret as a default value", fixture: "server/secret-default.ts", rule: "local/no-hardcoded-secrets" },
   { pattern: "process.env outside @/env", fixture: "server/reads-process-env.ts", rule: "no-restricted-properties" },
   { pattern: "a relative parent import", fixture: "server/relative-parent-import.ts", rule: "no-restricted-imports" },
   { pattern: "importing src/db outside src/server", fixture: "app/imports-db.tsx", rule: "no-restricted-imports" },

@@ -12,6 +12,11 @@ const secretName = /(secret|password|passwd|token|api_?key|private_?key)/i;
 
 function stringValue(node) {
   if (!node) return null;
+  if (node.type === "CallExpression" && node.callee.type === "MemberExpression") {
+    const isDefault = node.callee.property.type === "Identifier" && node.callee.property.name === "default";
+    const fromArguments = isDefault ? node.arguments.map(stringValue).find((value) => value !== null) : undefined;
+    return fromArguments ?? stringValue(node.callee.object);
+  }
   if (node.type === "Literal" && typeof node.value === "string") return node.value;
   if (node.type === "TemplateLiteral" && node.expressions.length === 0) {
     return node.quasis.map((quasi) => quasi.value.cooked ?? "").join("");

@@ -6,7 +6,7 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z.url(),
   APP_TIMEZONE: z.string().default("America/New_York"),
   DEMO_USER_EMAIL: z.email().default("dispatcher@example.com"),
-  DEMO_USER_PASSWORD: z.string().min(8).default("demo-dispatch-2026"),
+  DEMO_USER_PASSWORD: z.string().min(8),
 });
 
 export const env = envSchema.parse(process.env);
