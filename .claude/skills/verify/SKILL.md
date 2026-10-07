@@ -9,30 +9,34 @@ You do not claim a change works. You show it. This skill has two parts: a CLI th
 
 ## The CLI
 
-Built in task T3. Until then this section is the spec.
+`scripts/verify/cli.ts`. Flows live in `scripts/verify/flows.ts`, one entry per row of the feature map.
 
 ```
-pnpm verify <flow>          Run one flow from the feature map
-pnpm verify --all           Run every flow
-pnpm verify <flow> --phone  Phone width only (375px)
+pnpm verify <flow>               Run one flow from the feature map
+pnpm verify --all                Run every flow
+pnpm verify <flow> --phone       Phone width only (375px)
+pnpm verify <flow> --skip-build  Reuse the last production build while iterating
 ```
 
 Each run:
 
-1. Starts a fresh database and seeds it
-2. Boots the app
+1. Starts a fresh database (`dispatch_verify`) and seeds it
+2. Builds the app and boots it with `next start` on port 3200
 3. Logs in as the demo user
 4. Drives the flow with Playwright
 5. Writes evidence to `.verify/<flow>/`
 
 Evidence written per flow:
 
-- `phone.png`, `desktop.png` at each step
+- `<NN-step>/phone.png`, `<NN-step>/desktop.png` at each step, taken once animations settle
 - `console.json`: any console errors or warnings
 - `axe.json`: accessibility findings
-- `lighthouse.json`: performance, accessibility, best practices
+- `lighthouse.json`: performance, accessibility, best practices (phone uses the Lighthouse mobile profile), plus `lighthouse-<viewport>.html`
 - `timings.json`: server response times per request
 - `summary.md`: pass or fail per step, in plain words
+- `.verify/server.log`: the app's own output for the run
+
+A run fails when a step fails or the console logs an error. axe and Lighthouse findings are reported, never blocking.
 
 Never write a one off script to check something. If the CLI cannot do it, extend the CLI.
 

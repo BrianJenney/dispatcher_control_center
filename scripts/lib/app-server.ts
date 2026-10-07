@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, type ChildProcess, type StdioOptions } from "node:child_process";
 
 export type AppMode = "dev" | "start";
 
@@ -6,7 +6,7 @@ type LaunchOptions = {
   port: number;
   databaseUrl: string;
   mode: AppMode;
-  quiet?: boolean;
+  stdio?: StdioOptions;
   ownProcessGroup?: boolean;
 };
 
@@ -14,7 +14,7 @@ export function launchApp(options: LaunchOptions) {
   const baseUrl = `http://localhost:${options.port}`;
   const child = spawn("pnpm", ["exec", "next", options.mode, "-p", String(options.port)], {
     env: { ...process.env, DATABASE_URL: options.databaseUrl, BETTER_AUTH_URL: baseUrl },
-    stdio: options.quiet ? "ignore" : "inherit",
+    stdio: options.stdio ?? "inherit",
     detached: options.ownProcessGroup ?? true,
   });
   return { baseUrl, child };
