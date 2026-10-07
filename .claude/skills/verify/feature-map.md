@@ -1,0 +1,18 @@
+# Feature map
+
+How a user reaches each feature and what "working" means. Routes and shortcuts are filled in as features land. Keep one row per flow.
+
+| Flow | Feature | Route | Reach by click | Reach by keyboard | True when it works |
+|---|---|---|---|---|---|
+| `login` | 01 Login | | | | Demo user signs in and lands on the dashboard; signing out returns to login; a protected URL while logged out redirects to login |
+| `dashboard` | 02 Dashboard | | | | Four tiles show active jobs, drivers on duty, fleet ready, today's revenue, and match the database |
+| `jobs-create` | 03 Jobs | | | | A trip is created with all fields and appears in the list as Offer |
+| `jobs-edit` | 03 Jobs | | | | Edited fields persist |
+| `jobs-cancel` | 03 Jobs | | | | Cancel asks for confirmation and a reason; trip shows Cancelled |
+| `jobs-search` | 03 Jobs | | | | Search and status filters narrow the list |
+| `assign` | 04 Assign driver | | | | Top 3 suggestions respect all four rules; one click assigns; three clicks or fewer from dashboard |
+| `status` | 05 Status updates | | | | Trip moves Offer to Completed step by step; illegal moves are not offered; tiles change without refresh |
+| `drivers` | 06 Drivers | | | | Add and edit with photo, phone, class; on duty toggle changes the tile |
+| `fleet` | 07 Fleet | | | | Vehicle status change updates the Fleet ready tile |
+| `schedule` | 08 Schedule | | | | Today's trips in time order; driver and status filters work |
+| `documents` | 09 Documents | | | | Upload, view, delete; 10 MB and file type limits enforced; link refused when logged out |
