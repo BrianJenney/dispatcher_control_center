@@ -14,15 +14,15 @@
     "lint": "eslint --max-warnings 0 .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:unit": "vitest run --project unit",
+    "test:unit": "vitest run --project domain --project lint",
     "test:integration": "vitest run --project integration",
     "e2e": "playwright test",
     "mutate": "stryker run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/db-migrate.ts",
-    "db:seed": "tsx scripts/db-seed.ts",
-    "db:reset": "tsx scripts/db-reset.ts",
-    "verify": "tsx scripts/verify/cli.ts",
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/db-migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=.env scripts/db-seed.ts",
+    "db:reset": "tsx --env-file-if-exists=.env scripts/db-reset.ts",
+    "verify": "tsx --env-file-if-exists=.env scripts/verify/cli.ts",
     "check:feature-map": "tsx scripts/check-feature-map.ts"
   },
   "dependencies": {
@@ -63,7 +63,6 @@
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.1",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.3"
   }
 }
