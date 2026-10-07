@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { activitySnapshot } from "@/domain/activity";
 import { dashboardSnapshot } from "@/domain/dashboard";
 import { healthSnapshot } from "@/domain/health-check";
 import { insightsSnapshot } from "@/domain/insights";
@@ -17,6 +18,7 @@ export const liveQueries = {
   dashboard: { queryKey: [...tripsQueryKey, "dashboard"], url: "/api/dashboard", schema: dashboardSnapshot },
   insights: { queryKey: [...tripsQueryKey, "insights"], url: "/api/insights", schema: insightsSnapshot },
   schedule: { queryKey: [...tripsQueryKey, "schedule"], url: "/api/schedule", schema: scheduleSnapshot },
+  activity: (show: number) => ({ queryKey: [...tripsQueryKey, "activity", show], url: `/api/activity?show=${String(show)}`, schema: activitySnapshot }),
   jobs: (search: string) => ({ queryKey: [...tripsQueryKey, "jobs", search], url: `/api/jobs?${search}`, schema: jobsSnapshot }),
   drivers: { queryKey: driversQueryKey, url: "/api/drivers", schema: driversSnapshot },
   fleet: { queryKey: fleetQueryKey, url: "/api/fleet", schema: fleetSnapshot },
@@ -25,4 +27,7 @@ export const liveQueries = {
     url: `/api/trips/${tripId}/suggestions`,
     schema: driverSuggestions,
   }),
-} satisfies Record<string, LiveQueryDefinition<unknown> | ((value: string) => LiveQueryDefinition<unknown>)>;
+} satisfies Record<
+  string,
+  LiveQueryDefinition<unknown> | ((value: string) => LiveQueryDefinition<unknown>) | ((value: number) => LiveQueryDefinition<unknown>)
+>;

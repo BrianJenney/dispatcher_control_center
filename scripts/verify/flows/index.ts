@@ -1,3 +1,4 @@
+import { activity } from "./activity";
 import { assign } from "./assign";
 import { dashboard } from "./dashboard";
 import { health } from "./health";
@@ -30,6 +31,7 @@ export const flows: Record<string, Flow> = {
   status,
   schedule,
   insights,
+  activity,
   drivers,
   fleet,
   documents,
