@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/trips/status-badge";
 import { vehicleClassLabels } from "@/domain/fleet";
 import type { TripRow } from "@/domain/trip-row";
 
-export function TripCard({ trip, actions }: { trip: TripRow; actions?: ReactNode }) {
+export function TripCard({ trip, actions, showDate = false }: { trip: TripRow; actions?: ReactNode; showDate?: boolean }) {
   const format = useFormat();
   return (
     <article
@@ -17,6 +17,7 @@ export function TripCard({ trip, actions }: { trip: TripRow; actions?: ReactNode
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
+          {showDate ? <p className="text-xs font-medium text-muted-foreground">{format.shortDay(trip.pickupAt)}</p> : null}
           <p className="text-lg font-semibold tabular-nums">{format.time(trip.pickupAt)}</p>
           <p className="truncate text-sm font-medium">{trip.customerName}</p>
         </div>

@@ -1,9 +1,15 @@
-import { asc, eq, type SQL } from "drizzle-orm";
+import { asc, desc, eq, type SQL } from "drizzle-orm";
 import { db } from "@/db/client";
 import { drivers, trips } from "@/db/schema";
 import type { TripRow } from "@/domain/trip-row";
 
-export async function tripRows(where: SQL | undefined, limit?: number): Promise<TripRow[]> {
+export async function tripRows(
+  where: SQL | undefined,
+  options: { limit?: number; newestFirst?: boolean } = {},
+): Promise<TripRow[]> {
+  const order = options.newestFirst
+    ? [desc(trips.pickupAt), desc(trips.reference)]
+    : [asc(trips.pickupAt), asc(trips.reference)];
   const query = db
     .select({
       id: trips.id,
@@ -24,9 +30,9 @@ export async function tripRows(where: SQL | undefined, limit?: number): Promise<
     .from(trips)
     .leftJoin(drivers, eq(trips.driverId, drivers.id))
     .where(where)
-    .orderBy(asc(trips.pickupAt), asc(trips.reference))
+    .orderBy(...order)
     .$dynamic();
-  const rows = await (limit ? query.limit(limit) : query);
+  const rows = await (options.limit ? query.limit(options.limit) : query);
   return rows.map(({ driverId, driverName, pickupAt, ...row }) => ({
     ...row,
     pickupAt: pickupAt.toISOString(),
