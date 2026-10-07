@@ -36,6 +36,121 @@ Integration tests use a separate `dispatch_test` database and e2e tests use `dis
 
 Use `pnpm ui:add <component>`, not the shadcn CLI directly. The shadcn CLI sometimes adds an unrelated npm package called `cn` and imports from it; the script removes it and points the imports at `@/components/ui/utils`. Lint blocks the stray import either way.
 
+## Database schema
+
+```mermaid
+erDiagram
+    user ||--o{ session : "signs in with"
+    user ||--o{ account : "has"
+    user ||--o{ trip_events : "performs"
+    user ||--o{ documents : "uploads"
+    drivers ||--o{ trips : "drives"
+    drivers ||--o{ documents : "has licence"
+    vehicles ||--o{ documents : "has registration"
+    trips ||--o{ trip_events : "records history in"
+
+    trips {
+        uuid id PK
+        int reference UK "starts at 1001"
+        text customer_name
+        timestamptz pickup_at
+        int duration_minutes "15 to 720"
+        int passengers "1 to 14"
+        enum vehicle_class
+        int fare_cents "never negative"
+        enum status "offer to completed, or cancelled"
+        uuid driver_id FK "null while an offer"
+        text cancel_reason "required when cancelled"
+    }
+    drivers {
+        uuid id PK
+        text name
+        text phone
+        text photo_key "object storage key"
+        enum vehicle_class
+        bool on_duty
+    }
+    vehicles {
+        uuid id PK
+        text model
+        text unit_number UK
+        text plate UK
+        enum vehicle_class
+        enum status "ready or in_service"
+    }
+    trip_events {
+        uuid id PK
+        uuid trip_id FK
+        text actor_id FK
+        enum from_status
+        enum to_status
+        text reason
+        timestamptz created_at "append only"
+    }
+    documents {
+        uuid id PK
+        enum kind "driver_license or vehicle_registration"
+        uuid driver_id FK
+        uuid vehicle_id FK
+        text storage_key UK
+        int size_bytes "1 byte to 10 MB"
+        text content_type "PDF or image only"
+    }
+```
+
+The rules that matter are enforced by the database as well as the app, so they hold even if the app has a bug:
+
+- **Status flow:** a trigger allows only `offer -> assigned -> en route -> completed`, plus `cancelled` from any step before completed. Completed and cancelled are final.
+- **Driver and status agree:** an offer has no driver, and every later status has one. A cancel needs a reason.
+- **No double booking:** an exclusion constraint rejects two active trips for one driver whose time ranges overlap.
+- **History:** every status change writes a `trip_events` row in the same transaction, and that table cannot be edited or deleted from.
+- **Documents:** a licence belongs to a driver and a registration to a vehicle, only PDFs and images, 10 MB at most.
+- **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name keep search and lists fast at 100,000 trips.
+
+## How a request flows
+
+```mermaid
+flowchart LR
+    Browser["Browser<br/>React client components"] -- "first paint" --> Page["Server Component<br/>src/app"]
+    Browser -- "polls every 5 seconds" --> Route["Route handler<br/>/api/..."]
+    Browser -- "button press" --> Action["Server action<br/>src/server/actions"]
+    Page --> Query["Query<br/>src/server/queries"]
+    Route --> Query
+    Action --> Domain["Domain rules<br/>src/domain, pure functions"]
+    Action --> Writes["Single write path<br/>src/db/trip-writes.ts"]
+    Query --> DB[("Neon Postgres")]
+    Writes --> DB
+    Browser -- "presigned link, expires in 5 minutes" --> R2[("Cloudflare R2<br/>private bucket")]
+    Action -- "creates the link" --> R2
+```
+
+Reads go through a query function, called by the page for first paint and by a route handler for polling. Writes go through a server action: check the session, validate with zod, call the domain, write in one transaction. Status changes pass through `transitionTrip()` and nowhere else.
+
+## Where to look in the code
+
+| If you want to see | Open |
+|---|---|
+| The status rules | `src/domain/trip-status.ts`, then `src/db/migrations` for the database copy |
+| Driver matching | `src/domain/matching.ts` and `src/domain/matching.test.ts` |
+| How a write is guarded | `src/server/action.ts`, then `src/server/actions/trips.ts` |
+| The single place status is written | `src/db/trip-writes.ts` |
+| Live polling and optimistic updates | `src/components/live-query.ts`, `src/components/use-optimistic-action.ts` |
+| How private files work | `src/server/storage.ts`, `src/app/api/documents/[id]/route.ts` |
+| Rules the linter enforces | `eslint.config.mjs` and `eslint-rules/` |
+| Proof the rules work | `tests/integration/trip-rules.test.ts`, `e2e/break.spec.ts` |
+
+## Key decisions
+
+**Why Neon, in plain terms.** Think of the production database as the master copy of a contract. Before anyone edits a contract, you want to try the change on a copy, not the original. Normally copying a large database takes minutes or hours and costs as much storage as the original, so teams skip it and test on made-up data, and that is how a change that looked fine ends up breaking real bookings.
+
+Neon makes a "branch": an instant copy that only stores what changes. It is ready in seconds however large the database is, and it costs almost nothing until someone edits it. That gives this project three things:
+
+1. **Every proposed change is tried on a real copy first.** Each preview deploy gets its own branch, so a reviewer can click around a working version of the app without touching the live data.
+2. **Mistakes are cheap to undo.** If a change goes wrong, delete the branch. Production never knew about it. Neon can also rewind a database to a moment in the past, which is how the backup restore drill works.
+3. **It scales to zero.** A branch that nobody is using costs nothing, which keeps the monthly bill small for a project this size.
+
+The same property is why the app's local development uses a `local-dev` branch instead of a risky shared database.
+
 ## Demo walkthrough
 
 Test cases to show, in order. Each one lists the clicks, what you should see, and the rule being proved. Use the demo account (`dispatcher@example.com`). Run the whole walkthrough once at phone width (375px, browser dev tools) and once on desktop.
