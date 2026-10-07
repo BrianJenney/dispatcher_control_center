@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { unreachableMessage } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/domain/result";
 
@@ -33,7 +34,7 @@ export function ConfirmDialog({ trigger, title, description, confirmLabel, onCon
   function confirm() {
     mutation.mutate(undefined, {
       onError: () => {
-        setError("We could not reach the server. Check your connection and try again.");
+        setError(unreachableMessage);
       },
       onSuccess: (result) => {
         if (!result.ok) {

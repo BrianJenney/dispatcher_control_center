@@ -10,7 +10,13 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { documentKinds, maxDocumentBytes, vehicleClasses, vehicleStatuses } from "@/domain/fleet";
+import {
+  documentContentTypes,
+  documentKinds,
+  maxDocumentBytes,
+  vehicleClasses,
+  vehicleStatuses,
+} from "@/domain/fleet";
 import { tripStatuses } from "@/domain/trip-status";
 
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -228,7 +234,7 @@ export const documents = pgTable(
     ),
     check(
       "documents_content_type_allowed",
-      sql`${table.contentType} in ('application/pdf', 'image/jpeg', 'image/png', 'image/webp')`,
+      sql`${table.contentType} in (${sql.raw(documentContentTypes.map((type) => `'${type}'`).join(", "))})`,
     ),
     check("documents_size_limit", sql`${table.sizeBytes} between 1 and ${sql.raw(String(maxDocumentBytes))}`),
     index("documents_driver_id_idx").on(table.driverId),

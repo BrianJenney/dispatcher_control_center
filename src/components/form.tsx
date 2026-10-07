@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ActionResult, FieldErrors } from "@/domain/result";
 
-const unreachable = "We could not reach the server. Check your connection and try again.";
+export const unreachableMessage = "We could not reach the server. Check your connection and try again.";
 
 type ActionForm<S extends z.ZodType, R> = {
   schema: S;
@@ -33,7 +33,7 @@ export function useActionForm<S extends z.ZodType, R>({ schema, action, onSucces
     }
     mutation.mutate(parsed.data, {
       onError: () => {
-        setFormError(unreachable);
+        setFormError(unreachableMessage);
       },
       onSuccess: (result) => {
         if (!result.ok) {
