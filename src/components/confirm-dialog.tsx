@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useState, type ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -26,17 +27,22 @@ type ConfirmDialogProps = {
 export function ConfirmDialog({ trigger, title, description, confirmLabel, onConfirm, onConfirmed }: ConfirmDialogProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const mutation = useMutation({ mutationFn: onConfirm });
+  const pending = mutation.isPending;
 
   function confirm() {
-    startTransition(async () => {
-      const result = await onConfirm().catch(() => null);
-      if (!result || !result.ok) {
-        setError(result?.message ?? "We could not reach the server. Check your connection and try again.");
-        return;
-      }
-      setOpen(false);
-      onConfirmed?.();
+    mutation.mutate(undefined, {
+      onError: () => {
+        setError("We could not reach the server. Check your connection and try again.");
+      },
+      onSuccess: (result) => {
+        if (!result.ok) {
+          setError(result.message);
+          return;
+        }
+        setOpen(false);
+        onConfirmed?.();
+      },
     });
   }
 

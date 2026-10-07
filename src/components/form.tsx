@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useState, useTransition, type ComponentProps, type SubmitEvent } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useId, useState, type ComponentProps, type SubmitEvent } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,11 +19,11 @@ type ActionForm<S extends z.ZodType, R> = {
 export function useActionForm<S extends z.ZodType, R>({ schema, action, onSuccess }: ActionForm<S, R>) {
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [pending, startTransition] = useTransition();
+  const mutation = useMutation({ mutationFn: action });
 
   function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return;
+    if (mutation.isPending) return;
     const form = event.currentTarget;
     const parsed = schema.safeParse(Object.fromEntries(new FormData(form)));
     if (!parsed.success) {
@@ -30,25 +31,25 @@ export function useActionForm<S extends z.ZodType, R>({ schema, action, onSucces
       setFieldErrors(z.flattenError(parsed.error).fieldErrors);
       return;
     }
-    startTransition(async () => {
-      const result = await action(parsed.data).catch(() => null);
-      if (!result) {
+    mutation.mutate(parsed.data, {
+      onError: () => {
         setFormError(unreachable);
-        return;
-      }
-      if (!result.ok) {
-        setFormError(result.message);
-        setFieldErrors(result.fieldErrors);
-        return;
-      }
-      setFormError(null);
-      setFieldErrors({});
-      form.reset();
-      onSuccess?.(result.data);
+      },
+      onSuccess: (result) => {
+        if (!result.ok) {
+          setFormError(result.message);
+          setFieldErrors(result.fieldErrors);
+          return;
+        }
+        setFormError(null);
+        setFieldErrors({});
+        form.reset();
+        onSuccess?.(result.data);
+      },
     });
   }
 
-  return { onSubmit, pending, formError, fieldErrors };
+  return { onSubmit, pending: mutation.isPending, formError, fieldErrors };
 }
 
 export function FormField({
