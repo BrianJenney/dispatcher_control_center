@@ -17,7 +17,7 @@
     "test:unit": "vitest run --project unit --project lint",
     "test:integration": "vitest run --project integration",
     "e2e": "playwright test",
-    "mutate": "stryker run",
+    "mutate": "next typegen && stryker run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env scripts/db-migrate.ts",
     "db:seed": "tsx --env-file-if-exists=.env scripts/db-seed.ts",
