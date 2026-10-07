@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/providers";
+import { themeBootScript } from "@/components/theme-script";
 import { cn } from "@/components/ui/utils";
 import { env } from "@/env";
 
@@ -19,7 +20,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={cn("h-full font-sans antialiased", geist.variable)}>
+    <html lang="en" suppressHydrationWarning className={cn("h-full font-sans antialiased", geist.variable)}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className="min-h-full bg-background text-foreground">
         <Providers timeZone={env.APP_TIMEZONE}>{children}</Providers>
       </body>
