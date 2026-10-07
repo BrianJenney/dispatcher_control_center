@@ -6,6 +6,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from "@playwri
 import { launchApp, stopApp, waitForApp } from "../lib/app-server";
 import { databaseUrlNamed, freshDatabase } from "../lib/database";
 import { signInAsDemoUser } from "../lib/demo-session";
+import { startLocalStorage } from "../lib/storage-server";
 import { flows, runStep, type Flow } from "./flows";
 import { flowDatabase } from "./flows/context";
 import { runLighthouse, type ViewportName } from "./lighthouse";
@@ -269,6 +270,7 @@ async function main() {
   }
 
   mkdirSync(evidenceRoot, { recursive: true });
+  const storage = await startLocalStorage(".storage/verify");
   const serverLog = openSync(path.join(evidenceRoot, "server.log"), "w");
   const { baseUrl, child } = launchApp({ port, databaseUrl, mode: "start", stdio: ["ignore", serverLog, serverLog] });
   const browser = await chromium.launch();
@@ -287,6 +289,7 @@ async function main() {
   } finally {
     await browser.close();
     stopApp(child);
+    await storage.stop();
   }
   process.exit(allPassed ? 0 : 1);
 }

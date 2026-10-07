@@ -14,6 +14,10 @@ env:
   BETTER_AUTH_URL: http://localhost:3100
   APP_TIMEZONE: America/New_York
   DEMO_USER_PASSWORD: ci-demo-password-${{ github.run_id }}
+  STORAGE_ENDPOINT: http://127.0.0.1:4568
+  STORAGE_BUCKET: dispatch-documents
+  STORAGE_ACCESS_KEY_ID: S3RVER
+  STORAGE_SECRET_ACCESS_KEY: S3RVER
 
 jobs:
   static:

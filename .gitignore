@@ -9,6 +9,7 @@
 /playwright-report/
 /playwright/.auth/
 /.verify/
+/.storage/
 .DS_Store
 *.pem
 *.tsbuildinfo

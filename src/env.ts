@@ -7,6 +7,10 @@ const envSchema = z.object({
   APP_TIMEZONE: z.string().default("America/New_York"),
   DEMO_USER_EMAIL: z.email().default("dispatcher@example.com"),
   DEMO_USER_PASSWORD: z.string().min(8),
+  STORAGE_ENDPOINT: z.url(),
+  STORAGE_BUCKET: z.string().min(1),
+  STORAGE_ACCESS_KEY_ID: z.string().min(1),
+  STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
 });
 
 export const env = envSchema.parse(process.env);

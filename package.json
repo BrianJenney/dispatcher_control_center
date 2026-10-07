@@ -8,7 +8,7 @@
     "node": ">=22.19"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx --env-file-if-exists=.env scripts/dev.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next typegen && eslint --max-warnings 0 . && tsx --env-file-if-exists=.env scripts/check-feature-map.ts",
@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",
+    "aws4fetch": "^1.0.20",
     "better-auth": "^1.7.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -55,12 +56,14 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/s3rver": "^3.7.4",
     "@vitejs/plugin-react": "^6.1.2",
     "chrome-launcher": "^1.2.2",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.4.0",
     "lighthouse": "^13.5.0",
+    "s3rver": "^3.7.1",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
