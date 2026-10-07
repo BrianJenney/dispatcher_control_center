@@ -19,6 +19,12 @@ export const transitions: Record<TripStatus, readonly TripStatus[]> = {
   cancelled: [],
 };
 
+export const tripMessages = {
+  driverRequired: "Choose a driver before assigning the trip.",
+  cancelReasonRequired: "Give a reason for cancelling the trip.",
+  changedElsewhere: "Someone else changed this trip first. Refresh to see its latest status.",
+};
+
 export const activeStatuses: readonly TripStatus[] = ["assigned", "en_route"];
 
 export function canTransition(from: TripStatus, to: TripStatus): boolean {
@@ -55,14 +61,14 @@ export type TripEvent = {
 
 function nextDriver(trip: TripState, request: TransitionRequest): string | null {
   if (request.to !== "assigned") return trip.driverId;
-  if (!request.driverId) throw new DomainError("Choose a driver before assigning the trip.");
+  if (!request.driverId) throw new DomainError(tripMessages.driverRequired);
   return request.driverId;
 }
 
 function cancelReason(request: TransitionRequest): string | null {
   if (request.to !== "cancelled") return null;
   const reason = request.reason?.trim();
-  if (!reason) throw new DomainError("Give a reason for cancelling the trip.");
+  if (!reason) throw new DomainError(tripMessages.cancelReasonRequired);
   return reason;
 }
 

@@ -1,7 +1,7 @@
 import { hashPassword } from "better-auth/crypto";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { Database } from "@/db/client";
-import { account, drivers, tripEvents, trips, user, vehicles } from "@/db/schema";
+import { account, drivers, user, vehicles } from "@/db/schema";
 import {
   cancelReasons,
   createRandom,
@@ -10,11 +10,13 @@ import {
   fakeLoadDriverName,
   fakePhone,
   fareBaseCents,
+  inTurn,
   maxPassengers,
   seedDrivers,
   seedVehicles,
   type Random,
 } from "@/db/seed-data";
+import { applyTransitions, insertOffers, type NewTrip } from "@/db/trip-writes";
 import type { VehicleClass } from "@/domain/fleet";
 import { dayRange, shiftDays, tripWindow, type TimeRange } from "@/domain/time";
 import { transitionTrip, tripStatuses, type TripState, type TripStatus } from "@/domain/trip-status";
@@ -29,7 +31,7 @@ export type SeedOptions = {
 type SeedDriver = { id: string; vehicleClass: VehicleClass };
 
 type PlannedTrip = {
-  values: typeof trips.$inferInsert & { id: string };
+  values: NewTrip & { durationMinutes: number };
   driverId: string;
   target: TripStatus;
   cancelAfterSteps: number;
@@ -116,7 +118,7 @@ function planRecentTrips(random: Random, seeded: SeedDriver[], now: Date, timeZo
       if (random.next() >= 0.45) continue;
       const plan = planTrip(random, driver, today, hour, "offer");
       const pickupAt = plan.values.pickupAt;
-      plan.target = todayStatus(random, tripWindow(pickupAt, plan.values.durationMinutes ?? 60), now);
+      plan.target = todayStatus(random, tripWindow(pickupAt, plan.values.durationMinutes), now);
       todays.push(plan);
     }
   }
@@ -147,11 +149,7 @@ async function writeTrips(db: Database, plans: PlannedTrip[], actorId: string, r
   for (let offset = 0; offset < plans.length; offset += batchSize) {
     const batch = plans.slice(offset, offset + batchSize);
     await db.transaction(async (tx) => {
-      await tx.insert(trips).values(batch.map((plan) => plan.values));
-      await tx
-        .insert(tripEvents)
-        .values(batch.map((plan) => ({ tripId: plan.values.id, actorId, fromStatus: null, toStatus: "offer" as const })));
-
+      await insertOffers(tx, actorId, batch.map((plan) => plan.values));
       const states = new Map<string, TripState>(
         batch.map((plan) => [plan.values.id, { status: "offer", driverId: null, cancelReason: null }]),
       );
@@ -164,19 +162,7 @@ async function writeTrips(db: Database, plans: PlannedTrip[], actorId: string, r
           states.set(plan.values.id, moved.trip);
           return [{ tripId: plan.values.id, ...moved }];
         });
-        if (moves.length === 0) break;
-        const rows = sql.join(
-          moves.map(
-            (move) =>
-              sql`(${move.tripId}::uuid, ${move.trip.status}::trip_status, ${move.trip.driverId}::uuid, ${move.trip.cancelReason})`,
-          ),
-          sql`, `,
-        );
-        await tx.execute(sql`
-          update trips set status = moves.status, driver_id = moves.driver_id, cancel_reason = moves.cancel_reason, updated_at = now()
-          from (values ${rows}) as moves (id, status, driver_id, cancel_reason)
-          where trips.id = moves.id`);
-        await tx.insert(tripEvents).values(moves.map((move) => ({ tripId: move.tripId, ...move.event })));
+        await applyTransitions(tx, moves);
       }
     });
   }
@@ -210,7 +196,7 @@ export async function seed(db: Database, options: SeedOptions) {
         Array.from({ length: 60 }, (_, index) => ({
           name: fakeLoadDriverName(index),
           phone: fakePhone(index + seedDrivers.length),
-          vehicleClass: seedDrivers[index % seedDrivers.length]?.vehicleClass ?? "luxury_sedan",
+          vehicleClass: inTurn(seedDrivers, index).vehicleClass,
           onDuty: false,
         })),
       )

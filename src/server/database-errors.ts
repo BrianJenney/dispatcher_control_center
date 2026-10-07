@@ -1,8 +1,10 @@
+import { tripMessages } from "@/domain/trip-status";
+
 const messages: Record<string, string> = {
   trips_no_overlapping_driver_trips: "That driver already has a trip at that time. Choose another driver.",
-  trips_status_transition: "Someone else changed this trip first. Refresh to see its latest status.",
-  trips_driver_matches_status: "Choose a driver before assigning the trip.",
-  trips_cancel_reason_matches_status: "Give a reason for cancelling the trip.",
+  trips_status_transition: tripMessages.changedElsewhere,
+  trips_driver_matches_status: tripMessages.driverRequired,
+  trips_cancel_reason_matches_status: tripMessages.cancelReasonRequired,
   vehicles_unit_number_unique: "Another vehicle already uses that unit number.",
   vehicles_plate_unique: "Another vehicle already uses that plate.",
   documents_size_limit: "Files must be 10 MB or smaller.",

@@ -19,11 +19,16 @@ export function createRandom(seed: number) {
 
 export type Random = ReturnType<typeof createRandom>;
 
+export function inTurn<T>(items: readonly T[], index: number): T {
+  const item = items[index % items.length];
+  if (item === undefined) throw new Error("Cannot take a turn from an empty list.");
+  return item;
+}
+
 const areaCodes = ["212", "415", "617", "802"] as const;
 
 export function fakePhone(index: number): string {
-  const areaCode = areaCodes[index % areaCodes.length] ?? "555";
-  return `(${areaCode}) 555-01${String(index % 100).padStart(2, "0")}`;
+  return `(${inTurn(areaCodes, index)}) 555-01${String(index % 100).padStart(2, "0")}`;
 }
 
 export const seedDrivers: readonly { name: string; vehicleClass: VehicleClass; onDuty: boolean }[] = [
@@ -92,9 +97,7 @@ export function fakeAddress(random: Random): string {
 }
 
 export function fakeLoadDriverName(index: number): string {
-  const first = firstNames[index % firstNames.length] ?? "Driver";
-  const last = lastNames[Math.floor(index / firstNames.length) % lastNames.length] ?? "Load";
-  return `${first} ${last} ${String(index + 1)}`;
+  return `${inTurn(firstNames, index)} ${inTurn(lastNames, Math.floor(index / firstNames.length))} ${String(index + 1)}`;
 }
 
 export const fareBaseCents: Record<VehicleClass, number> = {

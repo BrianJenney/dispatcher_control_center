@@ -5,6 +5,7 @@ import {
   isActive,
   isFinal,
   transitionTrip,
+  tripMessages,
   tripStatuses,
   type TripState,
   type TripStatus,
@@ -100,6 +101,10 @@ describe("transitionTrip", () => {
       transitionTrip(tripIn(from), { to, actorId: "user-1", driverId: "driver-2", reason: "Because" });
     expect(attempt).toThrow(DomainError);
     expect(attempt).toThrow(/^A trip that is [a-z ]+ cannot move to [a-z ]+\.$/);
+  });
+
+  it.each(Object.entries(tripMessages))("words the %s message as a plain sentence", (_key, message) => {
+    expect(message).toMatch(/^[A-Z][^_]{10,}\.$/);
   });
 
   it("labels its errors as domain errors", () => {
