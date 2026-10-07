@@ -1,16 +1,18 @@
 "use client";
 
-import type { ReactNode } from "react";
+import Link from "next/link";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { AssignDialog } from "@/components/trips/assign-dialog";
 import { useTripMove } from "@/components/trips/use-trip-move";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { isEditable } from "@/domain/assignment";
 import type { ActionResult } from "@/domain/result";
 import type { TripRow } from "@/domain/trip-row";
 import { isFinal, nextStep, tripMessages } from "@/domain/trip-status";
 
-export function TripActions({ trip, assign }: { trip: TripRow; assign?: ReactNode }) {
+export function TripActions({ trip }: { trip: TripRow }) {
   const move = useTripMove();
   const step = nextStep[trip.status];
 
@@ -23,7 +25,6 @@ export function TripActions({ trip, assign }: { trip: TripRow; assign?: ReactNod
 
   return (
     <>
-      {trip.status === "offer" ? assign : null}
       {step ? (
         <Button
           size="sm"
@@ -33,6 +34,14 @@ export function TripActions({ trip, assign }: { trip: TripRow; assign?: ReactNod
           }}
         >
           {step.label}
+        </Button>
+      ) : null}
+      {trip.status === "offer" || trip.status === "assigned" ? <AssignDialog trip={trip} /> : null}
+      {isEditable(trip.status) ? (
+        <Button asChild size="sm" variant="ghost">
+          <Link href={`/jobs/${trip.id}/edit`} aria-label={`Edit trip ${String(trip.reference)}`}>
+            Edit
+          </Link>
         </Button>
       ) : null}
       {isFinal(trip.status) ? null : (
