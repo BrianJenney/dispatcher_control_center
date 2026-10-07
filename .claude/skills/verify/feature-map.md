@@ -12,8 +12,8 @@ How a user reaches each feature and what "working" means. Routes and shortcuts a
 | `jobs-cancel` | 03 Jobs | | | | Cancel asks for confirmation and a reason; trip shows Cancelled |
 | `jobs-search` | 03 Jobs | | | | Search and status filters narrow the list |
 | `assign` | 04 Assign driver | | | | Top 3 suggestions respect all four rules; one click assigns; three clicks or fewer from dashboard |
-| `status` | 05 Status updates | | | | Trip moves Offer to Completed step by step; illegal moves are not offered; tiles change without refresh |
+| `status` | 05 Status updates | `/schedule` and `/` | "Start trip", "Complete trip" and "Cancel trip" on each trip card on the dashboard or schedule | Tab to the trip's button, Enter; in the cancel dialog type the reason, Tab to "Cancel trip", Enter | Trip moves Offer to Completed step by step; illegal moves are not offered; tiles change without refresh |
 | `drivers` | 06 Drivers | | | | Add and edit with photo, phone, class; on duty toggle changes the tile |
 | `fleet` | 07 Fleet | | | | Vehicle status change updates the Fleet ready tile |
-| `schedule` | 08 Schedule | | | | Today's trips in time order; driver and status filters work |
+| `schedule` | 08 Schedule | `/schedule` | "Schedule" in the sidebar (desktop) or bottom bar (phone) | Tab to "Schedule" in the main navigation, Enter; Tab to the Status and Driver filters, Space opens, arrows choose, Enter | Today's trips in time order; driver and status filters work |
 | `documents` | 09 Documents | | | | Upload, view, delete; 10 MB and file type limits enforced; link refused when logged out |

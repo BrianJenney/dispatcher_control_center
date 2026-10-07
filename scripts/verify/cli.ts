@@ -2,11 +2,12 @@ import { execSync, spawnSync } from "node:child_process";
 import { mkdirSync, openSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
-import { chromium, type Browser, type Page } from "@playwright/test";
+import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { launchApp, stopApp, waitForApp } from "../lib/app-server";
 import { databaseUrlNamed, freshDatabase } from "../lib/database";
 import { signInAsDemoUser } from "../lib/demo-session";
 import { flows, type Flow } from "./flows";
+import { flowDatabase } from "./flows/context";
 import { runLighthouse, type ViewportName } from "./lighthouse";
 
 const port = 3200;
@@ -80,17 +81,37 @@ async function settle(page: Page) {
     .catch(() => undefined);
 }
 
-async function runViewport(browser: Browser, baseUrl: string, flow: Flow, viewport: ViewportName, outDir: string) {
+type Session = Awaited<ReturnType<BrowserContext["storageState"]>>;
+
+async function signedInSession(browser: Browser, baseUrl: string): Promise<Session> {
+  const context = await browser.newContext();
+  await signInAsDemoUser(context.request, baseUrl);
+  const session = await context.storageState();
+  await context.close();
+  return session;
+}
+
+async function runViewport(
+  browser: Browser,
+  baseUrl: string,
+  session: Session,
+  databaseUrl: string,
+  flow: Flow,
+  viewport: ViewportName,
+  outDir: string,
+) {
   const size = viewportSizes[viewport];
-  const context = await browser.newContext({
+  const browserContext = await browser.newContext({
     baseURL: baseUrl,
     viewport: { width: size.width, height: size.height },
     isMobile: size.isMobile,
     hasTouch: size.isMobile,
+    ...(flow.startsSignedIn ? { storageState: session } : {}),
   });
-  const page = await context.newPage();
+  const page = await browserContext.newPage();
   const watched = watch(page, baseUrl);
-  if (flow.startsSignedIn) await signInAsDemoUser(page.request, baseUrl);
+  const database = flowDatabase(databaseUrl);
+  const context = database.contextFor(page);
 
   const steps: StepResult[] = [];
   for (const [index, step] of flow.steps.entries()) {
@@ -100,7 +121,7 @@ async function runViewport(browser: Browser, baseUrl: string, flow: Flow, viewpo
       steps.push({ name: step.name, outcome: "skipped" });
       continue;
     }
-    const error = await step.run(page).then(
+    const error = await step.run(context).then(
       () => null,
       (failure: unknown) => (failure instanceof Error ? failure.message : String(failure)),
     );
@@ -109,9 +130,10 @@ async function runViewport(browser: Browser, baseUrl: string, flow: Flow, viewpo
     steps.push(error ? { name: step.name, outcome: "fail", error } : { name: step.name, outcome: "pass" });
   }
 
+  await database.close();
   const axe = await new AxeBuilder({ page }).analyze();
-  const cookie = (await context.cookies()).map((entry) => `${entry.name}=${entry.value}`).join("; ");
-  await context.close();
+  const cookie = (await browserContext.cookies()).map((entry) => `${entry.name}=${entry.value}`).join("; ");
+  await browserContext.close();
 
   return {
     viewport,
@@ -191,7 +213,15 @@ function summarize(flowName: string, flow: Flow, runs: ViewportRun[]) {
   return { passed: passed && errors.length === 0, markdown: lines.join("\n") };
 }
 
-async function verifyFlow(browser: Browser, baseUrl: string, flowName: string, flow: Flow, viewports: ViewportName[]) {
+async function verifyFlow(
+  browser: Browser,
+  baseUrl: string,
+  session: Session,
+  databaseUrl: string,
+  flowName: string,
+  flow: Flow,
+  viewports: ViewportName[],
+) {
   const outDir = path.join(evidenceRoot, flowName);
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(outDir, { recursive: true });
@@ -199,7 +229,7 @@ async function verifyFlow(browser: Browser, baseUrl: string, flowName: string, f
   const runs: ViewportRun[] = [];
   for (const viewport of viewports) {
     console.log(`  ${flowName} at ${viewport} width`);
-    const { cookie, ...run } = await runViewport(browser, baseUrl, flow, viewport, outDir);
+    const { cookie, ...run } = await runViewport(browser, baseUrl, session, databaseUrl, flow, viewport, outDir);
     const lighthouse = await runLighthouse({
       url: `${baseUrl}${flow.route}`,
       chromePath: chromium.executablePath(),
@@ -245,10 +275,11 @@ async function main() {
   let allPassed = true;
   try {
     await waitForApp(baseUrl);
+    const session = await signedInSession(browser, baseUrl);
     for (const flowName of args.flowNames) {
       const flow = flows[flowName];
       if (!flow) continue;
-      const summary = await verifyFlow(browser, baseUrl, flowName, flow, args.viewports);
+      const summary = await verifyFlow(browser, baseUrl, session, databaseUrl, flowName, flow, args.viewports);
       allPassed &&= summary.passed;
       console.log(`\n${summary.markdown}`);
       console.log(`Evidence written to ${path.join(evidenceRoot, flowName)}/`);

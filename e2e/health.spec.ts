@@ -1,9 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { signInAsDemoUser } from "../scripts/lib/demo-session";
 
-test("health page works by keyboard alone", async ({ page, baseURL }) => {
+test("health page works by keyboard alone", async ({ page }) => {
   test.skip(test.info().project.name === "phone", "Keyboard use is checked at desktop width");
-  await signInAsDemoUser(page.request, baseURL ?? "");
   await page.goto("/health");
   await expect(page.getByText("Connected")).toBeVisible();
 
