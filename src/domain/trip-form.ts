@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { withArticle } from "@/domain/assignment";
-import { maxPassengers, vehicleClasses, vehicleClassLabels } from "@/domain/fleet";
+import { maxPassengers, mostSeatsInAnyClass, vehicleClasses, vehicleClassLabels } from "@/domain/fleet";
 
 function capitalized(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -24,7 +24,7 @@ const tripFields = z.object({
       .number("Enter how many passengers are riding.")
       .int("Enter a whole number of passengers.")
       .min(1, "At least one passenger rides.")
-      .max(14, "No vehicle seats more than 14 passengers."),
+      .max(mostSeatsInAnyClass, `No vehicle seats more than ${String(mostSeatsInAnyClass)} passengers.`),
     vehicleClass: z.enum(vehicleClasses, "Choose a vehicle class."),
     fare: z.string().trim().regex(dollars, "Enter the fare in dollars, like 185 or 185.50."),
 });

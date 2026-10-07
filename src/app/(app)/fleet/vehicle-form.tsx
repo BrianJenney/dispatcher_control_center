@@ -4,11 +4,10 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
-import { vehicleClasses, vehicleClassLabels, type VehicleClass } from "@/domain/fleet";
+import { vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { updateVehicleInput, vehicleInput } from "@/domain/people";
 import { createVehicle, updateVehicle } from "@/server/actions/people";
 
-const classOptions = vehicleClasses.map((value) => ({ value, label: vehicleClassLabels[value] }));
 
 type VehicleValues = { model: string; unitNumber: string; plate: string; vehicleClass: VehicleClass };
 
@@ -63,7 +62,7 @@ function VehicleFields({
         <FormField label="Fleet number" name="unitNumber" defaultValue={values.unitNumber} autoComplete="off" errors={form.fieldErrors.unitNumber} />
         <FormField label="Plate" name="plate" defaultValue={values.plate} autoComplete="off" errors={form.fieldErrors.plate} />
       </div>
-      <FormSelect label="Class" name="vehicleClass" options={classOptions} defaultValue={values.vehicleClass} errors={form.fieldErrors.vehicleClass} />
+      <FormSelect label="Class" name="vehicleClass" options={vehicleClassOptions} defaultValue={values.vehicleClass} errors={form.fieldErrors.vehicleClass} />
       <div className="space-y-3 pt-1">
         <FormError message={form.formError} />
         <SubmitButton pending={form.pending}>{submitLabel}</SubmitButton>

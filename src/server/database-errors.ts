@@ -1,4 +1,5 @@
 import { tripMessages } from "@/domain/trip-status";
+import { uploadMessages } from "@/domain/uploads";
 
 const messages: Record<string, string> = {
   trips_no_overlapping_driver_trips: "That driver already has a trip at that time. Choose another driver.",
@@ -7,8 +8,8 @@ const messages: Record<string, string> = {
   trips_cancel_reason_matches_status: tripMessages.cancelReasonRequired,
   vehicles_unit_number_unique: "Another vehicle already uses that unit number.",
   vehicles_plate_unique: "Another vehicle already uses that plate.",
-  documents_size_limit: "Files must be 10 MB or smaller.",
-  documents_content_type_allowed: "Upload a PDF or an image (JPEG, PNG or WebP).",
+  documents_size_limit: uploadMessages.tooBig,
+  documents_content_type_allowed: uploadMessages.notADocument,
 };
 
 export function violatedConstraint(error: unknown): string | null {

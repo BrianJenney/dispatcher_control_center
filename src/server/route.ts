@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { missingRecord } from "@/domain/result";
 import { currentUser } from "@/server/session";
 import { storage } from "@/server/storage";
 
@@ -30,7 +31,7 @@ export function fileRoute({ read }: { read: (params: RouteParams) => Promise<Sto
     await connection();
     if (!(await currentUser())) return Response.json({ message: "Sign in to see this file." }, { status: 401 });
     const file = await read(await context.params);
-    if (!file) return Response.json({ message: "That file no longer exists." }, { status: 404 });
+    if (!file) return Response.json({ message: missingRecord.file }, { status: 404 });
     return Response.redirect(await storage.downloadUrl(file.key, file.fileName), 302);
   };
 }

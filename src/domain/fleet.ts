@@ -15,6 +15,10 @@ export const maxPassengers: Record<VehicleClass, number> = {
   executive_van: 12,
 };
 
+export const mostSeatsInAnyClass = Math.max(...Object.values(maxPassengers));
+
+export const vehicleClassOptions = vehicleClasses.map((value) => ({ value, label: vehicleClassLabels[value] }));
+
 export const vehicleStatuses = ["ready", "in_service"] as const;
 export type VehicleStatus = (typeof vehicleStatuses)[number];
 

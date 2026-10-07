@@ -1,14 +1,10 @@
 import { z } from "zod";
 import { db, type Transaction } from "@/db/client";
-import { DomainError, type ActionResult } from "@/domain/result";
+import { DomainError, failure, type ActionResult } from "@/domain/result";
 import { friendlyDatabaseError } from "@/server/database-errors";
 import { currentUser } from "@/server/session";
 
 type ActionContext = { tx: Transaction; userId: string };
-
-export function failure(message: string): ActionResult<never> {
-  return { ok: false, message, fieldErrors: {} };
-}
 
 export function parseInput<S extends z.ZodType>(schema: S, input: unknown) {
   const parsed = schema.safeParse(input);

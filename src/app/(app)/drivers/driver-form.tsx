@@ -4,11 +4,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
 import { FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
-import { vehicleClasses, vehicleClassLabels, type VehicleClass } from "@/domain/fleet";
+import { vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { driverInput, updateDriverInput } from "@/domain/people";
 import { createDriver, updateDriver } from "@/server/actions/people";
 
-const classOptions = vehicleClasses.map((value) => ({ value, label: vehicleClassLabels[value] }));
 
 type DriverValues = { name: string; phone: string; vehicleClass: VehicleClass };
 
@@ -58,7 +57,7 @@ function DriverFields({
       {children}
       <FormField label="Full name" name="name" defaultValue={values.name} autoComplete="off" errors={form.fieldErrors.name} />
       <FormField label="Phone" name="phone" type="tel" defaultValue={values.phone} autoComplete="off" errors={form.fieldErrors.phone} />
-      <FormSelect label="Drives" name="vehicleClass" options={classOptions} defaultValue={values.vehicleClass} errors={form.fieldErrors.vehicleClass} />
+      <FormSelect label="Drives" name="vehicleClass" options={vehicleClassOptions} defaultValue={values.vehicleClass} errors={form.fieldErrors.vehicleClass} />
       <div className="space-y-3 pt-1">
         <FormError message={form.formError} />
         <SubmitButton pending={form.pending}>{submitLabel}</SubmitButton>

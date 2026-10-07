@@ -5,8 +5,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { z } from "zod";
 import { signInInput } from "@/domain/auth";
-import type { ActionResult } from "@/domain/result";
-import { failure, parseInput } from "@/server/action";
+import { failure, type ActionResult } from "@/domain/result";
+import { parseInput } from "@/server/action";
 import { auth } from "@/server/auth";
 
 export async function signIn(input: z.input<typeof signInInput>): Promise<ActionResult<null>> {

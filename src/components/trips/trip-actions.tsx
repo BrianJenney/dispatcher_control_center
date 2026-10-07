@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { isEditable } from "@/domain/assignment";
-import type { ActionResult } from "@/domain/result";
+import { failure, type ActionResult } from "@/domain/result";
 import type { TripRow } from "@/domain/trip-row";
 import { isFinal, nextStep, tripMessages } from "@/domain/trip-status";
 
@@ -19,7 +19,7 @@ export function TripActions({ trip }: { trip: TripRow }) {
   async function cancel(form: FormData): Promise<ActionResult<unknown>> {
     const entry = form.get("reason");
     const reason = typeof entry === "string" ? entry.trim() : "";
-    if (!reason) return { ok: false, message: tripMessages.cancelReasonRequired, fieldErrors: {} };
+    if (!reason) return failure(tripMessages.cancelReasonRequired);
     return move.mutateAsync({ tripId: trip.id, from: trip.status, to: "cancelled", reason, reference: trip.reference });
   }
 

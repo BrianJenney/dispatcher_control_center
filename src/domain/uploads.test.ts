@@ -54,3 +54,12 @@ describe("uploadIdOf", () => {
     expect(uploadIdOf(null)).toBeNull();
   });
 });
+
+describe("recordId", () => {
+  it("accepts a uuid and refuses anything else", async () => {
+    const { recordId } = await import("@/domain/result");
+    expect(recordId("4f1c2b8e-3a6d-4e2f-9b1a-7c5d8e9f0a1b")).toBe("4f1c2b8e-3a6d-4e2f-9b1a-7c5d8e9f0a1b");
+    expect(recordId("../etc/passwd")).toBeNull();
+    expect(recordId(["4f1c2b8e-3a6d-4e2f-9b1a-7c5d8e9f0a1b"])).toBeNull();
+  });
+});

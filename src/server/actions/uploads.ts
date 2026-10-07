@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { Transaction } from "@/db/client";
 import { documents, drivers, vehicles } from "@/db/schema";
-import { DomainError } from "@/domain/result";
+import { DomainError, missingRecord } from "@/domain/result";
 import { keyBelongsTo, savedUpload, storageKey, uploadRequest, type UploadPurpose } from "@/domain/uploads";
 import { defineAction } from "@/server/action";
 import { storage } from "@/server/storage";
@@ -12,7 +12,7 @@ import { storage } from "@/server/storage";
 async function ownerExists(tx: Transaction, purpose: UploadPurpose, ownerId: string) {
   const table = purpose === "vehicle_registration" ? vehicles : drivers;
   const [owner] = await tx.select({ id: table.id }).from(table).where(eq(table.id, ownerId));
-  if (!owner) throw new DomainError(purpose === "vehicle_registration" ? "That vehicle no longer exists." : "That driver no longer exists.");
+  if (!owner) throw new DomainError(purpose === "vehicle_registration" ? missingRecord.vehicle : missingRecord.driver);
 }
 
 export const prepareUpload = defineAction(uploadRequest, async (input, { tx }) => {

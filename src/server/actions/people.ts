@@ -5,7 +5,7 @@ import { z } from "zod";
 import { drivers, vehicles } from "@/db/schema";
 import { vehicleStatuses } from "@/domain/fleet";
 import { driverInput, updateDriverInput, updateVehicleInput, vehicleInput } from "@/domain/people";
-import { DomainError } from "@/domain/result";
+import { DomainError, missingRecord } from "@/domain/result";
 import { defineAction } from "@/server/action";
 
 export const createDriver = defineAction(driverInput, async (input, { tx }) => {
@@ -16,7 +16,7 @@ export const createDriver = defineAction(driverInput, async (input, { tx }) => {
 
 export const updateDriver = defineAction(updateDriverInput, async ({ driverId, ...input }, { tx }) => {
   const [updated] = await tx.update(drivers).set(input).where(eq(drivers.id, driverId)).returning({ id: drivers.id, name: drivers.name });
-  if (!updated) throw new DomainError("That driver no longer exists.");
+  if (!updated) throw new DomainError(missingRecord.driver);
   return updated;
 });
 
@@ -28,7 +28,7 @@ export const setDriverDuty = defineAction(
       .set({ onDuty: input.onDuty })
       .where(eq(drivers.id, input.driverId))
       .returning({ onDuty: drivers.onDuty });
-    if (!updated) throw new DomainError("That driver no longer exists.");
+    if (!updated) throw new DomainError(missingRecord.driver);
     return updated;
   },
 );
@@ -48,7 +48,7 @@ export const updateVehicle = defineAction(updateVehicleInput, async ({ vehicleId
     .set(input)
     .where(eq(vehicles.id, vehicleId))
     .returning({ id: vehicles.id, unitNumber: vehicles.unitNumber });
-  if (!updated) throw new DomainError("That vehicle no longer exists.");
+  if (!updated) throw new DomainError(missingRecord.vehicle);
   return updated;
 });
 
@@ -60,7 +60,7 @@ export const setVehicleStatus = defineAction(
       .set({ status: input.status })
       .where(eq(vehicles.id, input.vehicleId))
       .returning({ status: vehicles.status });
-    if (!updated) throw new DomainError("That vehicle no longer exists.");
+    if (!updated) throw new DomainError(missingRecord.vehicle);
     return updated;
   },
 );

@@ -7,7 +7,7 @@ import { drivers, trips } from "@/db/schema";
 import { applyTransitions, insertOffers, updateTripDetails, type TripDetails } from "@/db/trip-writes";
 import { assignmentProblem, isEditable, reassignTrip, withArticle } from "@/domain/assignment";
 import { vehicleClassLabels } from "@/domain/fleet";
-import { DomainError } from "@/domain/result";
+import { DomainError, missingRecord } from "@/domain/result";
 import { dollarsToCents, tripInput, updateTripInput, type TripInput } from "@/domain/trip-form";
 import { zonedWallTime } from "@/domain/time";
 import { moveTripInput, transitionTrip, tripMessages } from "@/domain/trip-status";
@@ -39,7 +39,7 @@ async function lockedTrip(tx: Transaction, tripId: string) {
     .from(trips)
     .where(eq(trips.id, tripId))
     .for("update");
-  if (!trip) throw new DomainError("That trip no longer exists.");
+  if (!trip) throw new DomainError(missingRecord.trip);
   return trip;
 }
 
@@ -48,7 +48,7 @@ async function driverFor(tx: Transaction, driverId: string) {
     .select({ id: drivers.id, name: drivers.name, onDuty: drivers.onDuty, vehicleClass: drivers.vehicleClass })
     .from(drivers)
     .where(eq(drivers.id, driverId));
-  if (!driver) throw new DomainError("That driver no longer exists.");
+  if (!driver) throw new DomainError(missingRecord.driver);
   return driver;
 }
 

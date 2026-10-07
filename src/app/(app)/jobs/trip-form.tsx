@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import type { ReactNode } from "react";
 import { FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
 import { Button } from "@/components/ui/button";
-import { vehicleClasses, vehicleClassLabels, type VehicleClass } from "@/domain/fleet";
+import { mostSeatsInAnyClass, vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { jobsPageSize, jobsSearch } from "@/domain/jobs";
 import { durationOptions, tripInput, updateTripInput } from "@/domain/trip-form";
 import { createTrip, updateTrip } from "@/server/actions/trips";
@@ -22,7 +22,6 @@ export type TripFormValues = {
   fare: string;
 };
 
-const classOptions = vehicleClasses.map((value) => ({ value, label: vehicleClassLabels[value] }));
 const durationLabels = durationOptions.map((minutes) => ({
   value: String(minutes),
   label: minutes < 60 ? `${String(minutes)} minutes` : `${String(minutes / 60)} ${minutes === 60 ? "hour" : "hours"}`,
@@ -90,14 +89,14 @@ function TripFields({
       </fieldset>
       <fieldset className="grid grid-cols-1 gap-x-4 rounded-2xl border bg-card p-4 sm:grid-cols-3 sm:p-6">
         <legend className="px-1 text-sm font-semibold">Vehicle and fare</legend>
-        <FormSelect label="Vehicle class" name="vehicleClass" options={classOptions} defaultValue={values.vehicleClass} errors={errors.vehicleClass} />
+        <FormSelect label="Vehicle class" name="vehicleClass" options={vehicleClassOptions} defaultValue={values.vehicleClass} errors={errors.vehicleClass} />
         <FormField
           label="Passengers"
           name="passengers"
           type="number"
           inputMode="numeric"
           min={1}
-          max={14}
+          max={mostSeatsInAnyClass}
           defaultValue={values.passengers}
           errors={errors.passengers}
         />
