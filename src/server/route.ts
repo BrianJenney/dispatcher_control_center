@@ -35,3 +35,20 @@ export function fileRoute({ read }: { read: (params: RouteParams) => Promise<Sto
     return Response.redirect(await storage.downloadUrl(file.key, file.fileName), 302);
   };
 }
+
+type Download = { fileName: string; contentType: string; body: string };
+
+export function downloadRoute({ read }: { read: (searchParams: URLSearchParams) => Promise<Download> }) {
+  return async function GET(request: Request) {
+    await connection();
+    if (!(await currentUser())) return Response.json({ message: "Sign in to download this." }, { status: 401 });
+    const file = await read(new URL(request.url).searchParams);
+    return new Response(file.body, {
+      headers: {
+        "Content-Type": file.contentType,
+        "Content-Disposition": `attachment; filename="${file.fileName}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  };
+}

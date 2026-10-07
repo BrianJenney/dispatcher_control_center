@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useRef, useTransition } from "react";
@@ -20,6 +20,14 @@ const statusTabs = [{ value: null, label: "All" }, ...tripStatuses.map((value) =
 function jobsHref(filter: JobsFilter): Route {
   const search = jobsSearch(filter);
   return search ? `/jobs?${search}` : "/jobs";
+}
+
+function exportHref(filter: JobsFilter): string {
+  const params = new URLSearchParams();
+  if (filter.q) params.set("q", filter.q);
+  if (filter.status) params.set("status", filter.status);
+  const search = params.toString();
+  return search ? `/api/jobs/export?${search}` : "/api/jobs/export";
 }
 
 export function JobsView({ filter, initialData }: { filter: JobsFilter; initialData: JobsSnapshot }) {
@@ -54,6 +62,14 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
               }, 300);
             }}
           />
+        </div>
+        <div className="flex justify-end">
+          <Button asChild variant="outline" size="sm" className="h-11 sm:h-8">
+            <a href={exportHref(filter)} download>
+              <Download aria-hidden />
+              Export CSV
+            </a>
+          </Button>
         </div>
         <div role="group" aria-label="Filter by status" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
           {statusTabs.map((tab) => {

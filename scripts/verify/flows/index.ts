@@ -1,6 +1,7 @@
 import { activity } from "./activity";
 import { assign } from "./assign";
 import { dashboard } from "./dashboard";
+import { exportTrips } from "./export";
 import { health } from "./health";
 import { insights } from "./insights";
 import { jobsCancel, jobsCreate, jobsEdit, jobsSearch } from "./jobs";
@@ -32,6 +33,7 @@ export const flows: Record<string, Flow> = {
   schedule,
   insights,
   activity,
+  "jobs-export": exportTrips,
   drivers,
   fleet,
   documents,
