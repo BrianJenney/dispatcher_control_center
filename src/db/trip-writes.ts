@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Transaction } from "@/db/client";
 import { tripEvents, trips } from "@/db/schema";
 import { DomainError } from "@/domain/result";
@@ -8,12 +8,22 @@ export type NewTrip = typeof trips.$inferInsert & { id: string };
 
 export type TripMove = { tripId: string; trip: TripState; event: TripEvent };
 
+export type TripDetails = Omit<NewTrip, "id" | "status" | "driverId" | "cancelReason">;
+
 export async function insertOffers(tx: Transaction, actorId: string, newTrips: readonly NewTrip[]) {
-  if (newTrips.length === 0) return;
-  await tx.insert(trips).values([...newTrips]);
+  if (newTrips.length === 0) return [];
+  const created = await tx
+    .insert(trips)
+    .values([...newTrips])
+    .returning({ id: trips.id, reference: trips.reference, customerName: trips.customerName });
   await tx
     .insert(tripEvents)
     .values(newTrips.map((trip) => ({ tripId: trip.id, actorId, fromStatus: null, toStatus: "offer" as const })));
+  return created;
+}
+
+export async function updateTripDetails(tx: Transaction, tripId: string, details: TripDetails) {
+  await tx.update(trips).set(details).where(eq(trips.id, tripId));
 }
 
 export async function applyTransitions(tx: Transaction, moves: readonly TripMove[]) {

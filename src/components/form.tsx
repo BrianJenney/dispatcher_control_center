@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ActionResult, FieldErrors } from "@/domain/result";
 
 export const unreachableMessage = "We could not reach the server. Check your connection and try again.";
@@ -64,6 +65,49 @@ export function FormField({
     <div className="grid gap-2">
       <Label htmlFor={id}>{label}</Label>
       <Input id={id} aria-invalid={error ? true : undefined} aria-describedby={error ? errorId : undefined} {...inputProps} />
+      <p id={errorId} className="min-h-5 text-sm text-destructive">
+        {error}
+      </p>
+    </div>
+  );
+}
+
+export function FormSelect({
+  label,
+  name,
+  options,
+  defaultValue,
+  errors,
+}: {
+  label: string;
+  name: string;
+  options: readonly { value: string; label: string }[];
+  defaultValue: string;
+  errors?: string[];
+}) {
+  const id = useId();
+  const errorId = `${id}-error`;
+  const error = errors?.[0];
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Select name={name} defaultValue={defaultValue}>
+        <SelectTrigger
+          id={id}
+          className="w-full"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <p id={errorId} className="min-h-5 text-sm text-destructive">
         {error}
       </p>
