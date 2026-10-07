@@ -4,18 +4,25 @@ Dispatcher operations app for a luxury car service. See `docs/brief.md` for scop
 
 ## Setup
 
-Requirements: Node 22.19 or later, pnpm 10, Postgres 16 with the `btree_gist` and `pg_trgm` extensions (both ship with standard Postgres).
+Requirements: Node 22.19 or later, pnpm 10, and Postgres 16 running locally (the `btree_gist` and `pg_trgm` extensions ship with standard Postgres). Nothing else: file storage runs in-process on your machine for development.
 
 ```
 pnpm i
 cp .env.example .env
+```
+
+Set `BETTER_AUTH_SECRET` in `.env` to a random value (`openssl rand -base64 32`) and point `DATABASE_URL` at your Postgres if it is not `postgres:postgres@localhost:5432`. Then:
+
+```
 pnpm db:reset
 pnpm dev
 ```
 
-`.env` needs `BETTER_AUTH_SECRET` set to a random value (`openssl rand -base64 32`). `pnpm db:reset` recreates the local database, applies migrations and seeds it. It refuses to run against anything other than localhost.
+Open http://localhost:3000 and choose "Sign in with the demo account" (dispatcher@example.com, password from `DEMO_USER_PASSWORD`).
 
-Open http://localhost:3000/health to see the paved path example: one read, one write, one form and one confirm.
+`pnpm db:reset` recreates the local database, applies migrations and seeds a week of fake trips. It refuses to run against anything other than localhost. `pnpm dev` also starts a local S3 compatible store on port 4568 for uploads; files land in `.storage/`.
+
+For a load check, `pnpm db:reset --load` starts over with 100,000 extra historical trips (about two minutes).
 
 ## Checks
 

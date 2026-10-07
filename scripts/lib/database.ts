@@ -38,13 +38,13 @@ async function recreate(url: string) {
   }
 }
 
-export async function freshDatabase(url: string, options: { seed: boolean }) {
+export async function freshDatabase(url: string, options: { seed: boolean; loadTrips?: number }) {
   await recreate(url);
   const { db, pool } = createDatabase(url);
   try {
     await runMigrations(db);
     if (options.seed) {
-      await seed(db, seedOptions());
+      await seed(db, seedOptions(options.loadTrips));
     }
   } finally {
     await pool.end();
