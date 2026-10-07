@@ -30,6 +30,7 @@ The codebase is memory. Agents copy what exists. Never leave a workaround, a TOD
 | Tests | Vitest (unit, integration), Playwright (e2e), Stryker on `src/domain` only |
 | Alerts | Sentry for errors and slow requests, Better Stack for uptime |
 | Accessibility | Best effort. axe runs and reports, does not block |
+| Support libraries | `aws4fetch` (presigned R2 URLs), `sonner` (toasts), `s3rver` (local and CI storage), `clsx` + `tailwind-merge` (class names), `radix-ui` (shadcn primitives), `lucide-react` (icons) |
 
 Do not add a dependency or a service outside this table without asking.
 
