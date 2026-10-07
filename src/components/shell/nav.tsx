@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { isActive, navItems } from "@/components/shell/nav-items";
 import { cn } from "@/components/ui/utils";
 
-export function SidebarNav() {
-  const pathname = usePathname();
+function SidebarLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav aria-label="Main" className="flex flex-col gap-1 px-3">
       {navItems.map(({ href, label, icon: Icon }) => {
-        const active = isActive(pathname, href);
+        const active = pathname !== null && isActive(pathname, href);
         return (
           <Link
             key={href}
@@ -30,8 +30,7 @@ export function SidebarNav() {
   );
 }
 
-export function BottomNav() {
-  const pathname = usePathname();
+function BottomLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav
       aria-label="Main"
@@ -39,7 +38,7 @@ export function BottomNav() {
     >
       <ul className="mx-auto flex max-w-md justify-around">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const active = isActive(pathname, href);
+          const active = pathname !== null && isActive(pathname, href);
           return (
             <li key={href} className="flex-1">
               <Link
@@ -58,5 +57,29 @@ export function BottomNav() {
         })}
       </ul>
     </nav>
+  );
+}
+
+function CurrentSidebarLinks() {
+  return <SidebarLinks pathname={usePathname()} />;
+}
+
+function CurrentBottomLinks() {
+  return <BottomLinks pathname={usePathname()} />;
+}
+
+export function SidebarNav() {
+  return (
+    <Suspense fallback={<SidebarLinks pathname={null} />}>
+      <CurrentSidebarLinks />
+    </Suspense>
+  );
+}
+
+export function BottomNav() {
+  return (
+    <Suspense fallback={<BottomLinks pathname={null} />}>
+      <CurrentBottomLinks />
+    </Suspense>
   );
 }

@@ -31,7 +31,7 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-[repeat(2,minmax(0,14rem))_auto] sm:items-end">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(2,minmax(0,14rem))_auto] sm:items-end">
         <div className="grid gap-2">
           <Label htmlFor="schedule-status">Status</Label>
           <Select
@@ -103,7 +103,7 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
             <li key={group.hour} className="relative">
               <span aria-hidden className="absolute top-1.5 -left-[1.6rem] size-2.5 rounded-full bg-gold ring-4 ring-background sm:-left-[2.35rem]" />
               <h2 className="mb-3 text-sm font-semibold text-muted-foreground tabular-nums">{group.hour}</h2>
-              <ul className="grid gap-3 xl:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {group.trips.map((trip) => (
                   <li key={trip.id}>
                     <TripCard trip={trip} actions={<TripActions trip={trip} />} />

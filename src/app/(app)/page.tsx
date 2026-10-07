@@ -34,7 +34,7 @@ function DashboardSkeleton() {
           <KpiTileSkeleton key={index} />
         ))}
       </div>
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <LoadingState label="Loading trips that need a driver" rows={3} />
         <LoadingState label="Loading trips on the road" rows={3} />
       </div>

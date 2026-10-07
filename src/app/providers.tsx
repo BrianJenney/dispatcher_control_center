@@ -11,7 +11,7 @@ export function Providers({ timeZone, children }: { timeZone: string; children: 
     <QueryClientProvider client={queryClient}>
       <TimeZoneProvider timeZone={timeZone}>
         {children}
-        <Toaster position="top-center" richColors closeButton />
+        <Toaster position="top-center" closeButton />
       </TimeZoneProvider>
     </QueryClientProvider>
   );
