@@ -29,6 +29,13 @@
       "when": 1791391998789,
       "tag": "0003_trip_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791397741632,
+      "tag": "0004_auth_rate_limit",
+      "breakpoints": true
     }
   ]
 }

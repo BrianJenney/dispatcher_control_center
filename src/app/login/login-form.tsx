@@ -30,7 +30,7 @@ export function LoginForm({ next, demo }: LoginFormProps) {
 
   return (
     <div className="space-y-6">
-      <form name="sign-in" onSubmit={form.onSubmit} noValidate className="space-y-1">
+      <form name="sign-in" method="post" onSubmit={form.onSubmit} noValidate className="space-y-1">
         <FormField label="Email" name="email" type="email" autoComplete="username" errors={form.fieldErrors.email} />
         <FormField
           label="Password"
