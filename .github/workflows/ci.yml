@@ -13,10 +13,11 @@ env:
   BETTER_AUTH_SECRET: ci-only-throwaway-value-${{ github.run_id }}-padding
   BETTER_AUTH_URL: http://localhost:3100
   APP_TIMEZONE: America/New_York
+  DEMO_USER_PASSWORD: ci-demo-password-${{ github.run_id }}
 
 jobs:
   static:
-    name: Lint and typecheck
+    name: Lint, feature map and typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,19 +29,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-
-  feature-map:
-    name: Feature map covers every route
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check:feature-map
 
   unit:
     name: Unit tests
