@@ -54,7 +54,7 @@ export function TripCard({ trip, actions, showDate = false }: { trip: TripRow; a
       {trip.status === "cancelled" && trip.cancelReason ? (
         <p className="mt-2 text-xs text-muted-foreground">Cancelled: {trip.cancelReason}</p>
       ) : null}
-      {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="mt-4">{actions}</div> : null}
     </article>
   );
 }

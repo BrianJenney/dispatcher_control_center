@@ -24,10 +24,11 @@ export function TripActions({ trip }: { trip: TripRow }) {
   }
 
   return (
-    <>
+    <div className="grid w-full gap-2 sm:flex sm:flex-wrap">
       {step ? (
         <Button
           size="sm"
+          className="h-11 sm:h-8"
           disabled={move.isPending}
           onClick={() => {
             move.mutate({ tripId: trip.id, from: trip.status, to: step.to, reference: trip.reference });
@@ -36,9 +37,11 @@ export function TripActions({ trip }: { trip: TripRow }) {
           {step.label}
         </Button>
       ) : null}
-      {trip.status === "offer" || trip.status === "assigned" ? <AssignDialog trip={trip} /> : null}
+      {trip.status === "offer" ? <AssignDialog trip={trip} /> : null}
+      <div className="grid auto-cols-fr grid-flow-col gap-2 empty:hidden sm:contents">
+      {trip.status === "assigned" ? <AssignDialog trip={trip} /> : null}
       {isEditable(trip.status) ? (
-        <Button asChild size="sm" variant="ghost">
+        <Button asChild size="sm" variant="outline" className="h-11 sm:h-8">
           <Link href={`/jobs/${trip.id}/edit`} aria-label={`Edit trip ${String(trip.reference)}`}>
             Edit
           </Link>
@@ -47,7 +50,7 @@ export function TripActions({ trip }: { trip: TripRow }) {
       {isFinal(trip.status) ? null : (
         <ConfirmDialog
           trigger={
-            <Button size="sm" variant="ghost" className="text-muted-foreground">
+            <Button size="sm" variant="outline" className="h-11 text-muted-foreground sm:h-8">
               Cancel trip
             </Button>
           }
@@ -68,6 +71,7 @@ export function TripActions({ trip }: { trip: TripRow }) {
           </div>
         </ConfirmDialog>
       )}
-    </>
+      </div>
+    </div>
   );
 }

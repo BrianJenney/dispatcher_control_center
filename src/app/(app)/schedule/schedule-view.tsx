@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { groupByHour, type ScheduleSnapshot } from "@/domain/schedule";
 import { byPickupTime, filterTrips, type TripFilter } from "@/domain/trip-row";
-import { statusLabels, tripStatuses } from "@/domain/trip-status";
+import { isFinal, statusLabels, tripStatuses } from "@/domain/trip-status";
 
 const everyone = "all";
 
@@ -24,9 +24,13 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
   const format = useFormat();
   const { data, isError, refetch } = useLiveQuery(liveQueries.schedule, initialData);
   const [filter, setFilter] = useState<TripFilter>({ status: null, driverId: null });
-  const visible = filterTrips([...data.trips].sort(byPickupTime), filter);
-  const groups = groupByHour(visible, format.hour);
+  const [showFinished, setShowFinished] = useState(false);
   const filtered = filter.status !== null || filter.driverId !== null;
+  const hidesFinished = !showFinished && filter.status === null;
+  const finishedCount = data.trips.filter((trip) => isFinal(trip.status)).length;
+  const matching = filterTrips([...data.trips].sort(byPickupTime), filter);
+  const visible = hidesFinished ? matching.filter((trip) => !isFinal(trip.status)) : matching;
+  const groups = groupByHour(visible, format.hour);
 
   return (
     <div className="space-y-6">
@@ -84,9 +88,23 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
           </Button>
         ) : null}
       </div>
-      <p className="text-sm text-muted-foreground" aria-live="polite">
-        {visible.length} of {data.trips.length} trips on {format.day(data.today.start)}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {visible.length} of {data.trips.length} trips on {format.day(data.today.start)}
+        </p>
+        {finishedCount > 0 && filter.status === null ? (
+          <Button
+            variant="outline"
+            className="h-11 sm:h-8"
+            aria-pressed={showFinished}
+            onClick={() => {
+              setShowFinished((current) => !current);
+            }}
+          >
+            {showFinished ? "Hide finished trips" : `Show ${String(finishedCount)} finished trips`}
+          </Button>
+        ) : null}
+      </div>
       {isError ? (
         <LiveUpdatesPaused what="the schedule" onRetry={() => void refetch()} />
       ) : null}

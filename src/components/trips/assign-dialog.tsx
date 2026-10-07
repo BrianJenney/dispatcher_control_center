@@ -40,7 +40,7 @@ export function AssignDialog({ trip }: { trip: TripRow }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant={reassigning ? "outline" : "default"}>
+        <Button size="sm" variant={reassigning ? "outline" : "default"} className="h-11 sm:h-8">
           {reassigning ? "Reassign" : "Assign driver"}
         </Button>
       </DialogTrigger>

@@ -19,6 +19,10 @@ export const fromDatabase = {
     ]),
   tripsToday: (context: FlowContext) =>
     context.number(`select count(*) as value from trips where ${today}`, [env.APP_TIMEZONE]),
+  tripsTodayFinished: (context: FlowContext) =>
+    context.number(`select count(*) as value from trips where ${today} and status in ('completed', 'cancelled')`, [
+      env.APP_TIMEZONE,
+    ]),
   tripsTodayInStatus: (context: FlowContext, status: string) =>
     context.number(`select count(*) as value from trips where ${today} and status = $2`, [env.APP_TIMEZONE, status]),
 };
