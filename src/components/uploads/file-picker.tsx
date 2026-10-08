@@ -37,9 +37,11 @@ export function FilePicker({
         type="button"
         variant="outline"
         size="sm"
-        disabled={pending}
+        aria-disabled={pending}
         aria-busy={pending}
-        onClick={() => input.current?.click()}
+        onClick={() => {
+          if (!pending) input.current?.click();
+        }}
       >
         <Upload aria-hidden />
         {pending ? "Uploading…" : label}

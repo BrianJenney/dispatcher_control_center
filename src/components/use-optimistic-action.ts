@@ -11,9 +11,10 @@ type OptimisticAction<V, D> = {
   update: (data: D, request: V) => D;
   done: (request: V) => string;
   alsoRefresh?: readonly (readonly unknown[])[];
+  settled?: (request: V) => void;
 };
 
-export function useOptimisticAction<V, D>({ queryKey, action, update, done, alsoRefresh = [] }: OptimisticAction<V, D>) {
+export function useOptimisticAction<V, D>({ queryKey, action, update, done, alsoRefresh = [], settled }: OptimisticAction<V, D>) {
   const queryClient = useQueryClient();
 
   function restore(previous: [readonly unknown[], D | undefined][] | undefined) {
@@ -40,8 +41,9 @@ export function useOptimisticAction<V, D>({ queryKey, action, update, done, also
       restore(context?.previous);
       toast.error(unreachableMessage);
     },
-    onSettled: async () => {
+    onSettled: async (_result, _error, request) => {
       await Promise.all([queryKey, ...alsoRefresh].map((key) => queryClient.invalidateQueries({ queryKey: key })));
+      settled?.(request);
     },
   });
 }

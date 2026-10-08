@@ -29,8 +29,9 @@ export function TripActions({ trip }: { trip: TripRow }) {
         <Button
           size="sm"
           className="h-11 sm:h-8"
-          disabled={move.isPending}
+          aria-disabled={move.isPending}
           onClick={() => {
+            if (move.isPending) return;
             move.mutate({ tripId: trip.id, from: trip.status, to: step.to, reference: trip.reference });
           }}
         >

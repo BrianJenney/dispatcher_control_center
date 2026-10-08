@@ -47,7 +47,7 @@ export function ActivityView({ filter, initialData }: { filter: ActivityFilter; 
         <Button
           variant="outline"
           className="h-11 w-full sm:h-10 sm:w-auto"
-          disabled={loading}
+          aria-disabled={loading}
           onClick={() => {
             startLoading(() => {
               router.replace(`/activity?show=${String(filter.show + activityPageSize)}`, { scroll: false });

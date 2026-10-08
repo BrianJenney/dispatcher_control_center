@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFormat } from "@/components/format";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
@@ -24,6 +24,7 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
   const format = useFormat();
   const { data, isError, refetch } = useLiveQuery(liveQueries.schedule, initialData);
   const [filter, setFilter] = useState<TripFilter>({ status: null, driverId: null });
+  const statusFilter = useRef<HTMLButtonElement>(null);
   const visible = filterTrips([...data.trips].sort(byPickupTime), filter);
   const groups = groupByHour(visible, format.hour);
   const filtered = filter.status !== null || filter.driverId !== null;
@@ -39,7 +40,7 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
               setFilter((current) => ({ ...current, status: isStatus(value) ? value : null }));
             }}
           >
-            <SelectTrigger id="schedule-status" className="w-full">
+            <SelectTrigger ref={statusFilter} id="schedule-status" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -77,6 +78,7 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
           <Button
             variant="ghost"
             onClick={() => {
+              statusFilter.current?.focus();
               setFilter({ status: null, driverId: null });
             }}
           >

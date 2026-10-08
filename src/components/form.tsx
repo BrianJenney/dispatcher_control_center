@@ -150,7 +150,7 @@ export function SubmitButton({
   disabled?: boolean;
 }) {
   return (
-    <Button type="submit" disabled={pending || disabled} aria-busy={pending} className={className}>
+    <Button type="submit" disabled={disabled} aria-disabled={pending} aria-busy={pending} className={className}>
       {pending ? pendingLabel : children}
     </Button>
   );

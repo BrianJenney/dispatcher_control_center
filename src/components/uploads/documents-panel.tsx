@@ -2,6 +2,7 @@
 
 import { FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useFormat } from "@/components/format";
@@ -27,8 +28,14 @@ export function DocumentsPanel({
   const router = useRouter();
   const format = useFormat();
   const upload = useUpload(purpose, ownerId);
+  const panel = useRef<HTMLElement>(null);
   return (
-    <section aria-label={title} className="space-y-3 rounded-2xl border bg-card p-4 sm:p-6">
+    <section
+      ref={panel}
+      tabIndex={-1}
+      aria-label={title}
+      className="space-y-3 rounded-2xl border bg-card p-4 outline-none focus-visible:ring-3 focus-visible:ring-ring sm:p-6"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold">{title}</h2>
@@ -73,6 +80,7 @@ export function DocumentsPanel({
                 description="The file is removed from storage for good. This cannot be undone."
                 confirmLabel="Delete file"
                 onConfirm={() => deleteDocument({ documentId: document.id })}
+                returnFocus={() => panel.current}
                 onConfirmed={() => {
                   toast.success(`${document.fileName} is deleted.`);
                   router.refresh();

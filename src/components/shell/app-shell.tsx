@@ -10,7 +10,7 @@ export function AppShell({ user, children }: { user: SignedInUser | null; childr
     <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
       <a
         href="#content"
-        className="sr-only z-50 rounded-md bg-primary px-3 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        className="sr-only z-50 rounded-md bg-primary px-3 py-2 text-primary-foreground outline-none focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus-visible:ring-3 focus-visible:ring-ring"
       >
         Skip to content
       </a>
@@ -28,7 +28,7 @@ export function AppShell({ user, children }: { user: SignedInUser | null; childr
           <Brand />
           {user ? <UserMenu user={user} /> : null}
         </header>
-        <main id="content" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-24 sm:px-6 lg:px-10 lg:pt-10 lg:pb-12">
+        <main id="content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-24 outline-none sm:px-6 lg:px-10 lg:pt-10 lg:pb-12">
           {children}
         </main>
       </div>
