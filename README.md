@@ -40,11 +40,11 @@ Vercel builds with `pnpm db:deploy && pnpm build`. `db:deploy` applies migration
 
 Estimated from public vendor pricing read on 2026-10-08 (prices change, so check before quoting). Totals per month, with the range in brackets:
 
-- 20 users (about 5 dispatchers online at once): **about $40** ($40 to $102)
-- 200 users (about 40 online at once): **about $162** ($102 to $306)
-- Idle demo with almost no traffic: **about $40** ($0 to $41)
+- 20 users (about 5 dispatchers online at once): **about $30** ($30 to $93)
+- 200 users (about 40 online at once): **about $152** ($92 to $297)
+- Idle demo with almost no traffic: **about $27** ($0 to $28)
 
-The biggest drivers are the Vercel Pro fee, a Neon database that the health check keeps awake, and Sentry spans from tracing every 5 second poll. Three small changes bring the three totals down to about $25, $50 and $21. The sources, assumptions and arithmetic are in [docs/cost-estimate.md](docs/cost-estimate.md).
+The biggest drivers are the Vercel Pro fee, Neon compute that polling keeps awake during shifts, and Sentry spans from tracing every 5 second poll at 100 percent (deliberate for now). Once real traffic arrives, lowering the trace sampling rate brings the 200 user figure down to about $55. The 15 minute interval on the database health check already saves about $10 a month compared with checking every 3 minutes. The sources, assumptions and arithmetic are in [docs/cost-estimate.md](docs/cost-estimate.md). Database restore steps are in `docs/backup-restore.md`.
 
 ## Adding shadcn components
 
