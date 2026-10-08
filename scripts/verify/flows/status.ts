@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { expectTilesMatchDatabase, fromDatabase, openFromNavigation, tile } from "./expected";
 import type { Flow } from "./types";
 
@@ -14,6 +14,17 @@ async function firstAssignedTrip(page: Page) {
   const label = await card.getAttribute("aria-label");
   if (!label) throw new Error("No assigned trip is on the schedule.");
   return page.getByRole("article", { name: label, exact: true });
+}
+
+function completeDialog(page: Page) {
+  return page.getByRole("alertdialog", { name: /^Complete trip #\d+\?$/ });
+}
+
+async function completeTrip(page: Page, trip: Locator) {
+  await trip.getByRole("button", { name: "Complete trip" }).click();
+  const dialog = completeDialog(page);
+  await dialog.getByRole("button", { name: "Complete trip" }).click();
+  await expect(dialog).toHaveCount(0);
 }
 
 let movedTripLabel = "";
@@ -34,12 +45,29 @@ export const status: Flow = {
       },
     },
     {
+      name: "completing asks first, and backing out by keyboard changes nothing",
+      run: async ({ page }) => {
+        const trip = page.getByRole("article", { name: movedTripLabel, exact: true });
+        const trigger = trip.getByRole("button", { name: "Complete trip" });
+        await trigger.focus();
+        await page.keyboard.press("Enter");
+        const dialog = completeDialog(page);
+        await expect(dialog).toContainText("will count toward");
+        await expect(dialog.getByRole("button", { name: "Not yet" })).toBeFocused();
+        await page.keyboard.press("Escape");
+        await expect(dialog).toHaveCount(0);
+        await expect(trigger).toBeFocused();
+        await expect(trip.getByText("En route", { exact: true })).toBeVisible();
+      },
+    },
+    {
       name: "complete it, and no further moves are offered",
       run: async ({ page }) => {
         const trip = page.getByRole("article", { name: movedTripLabel, exact: true });
-        await trip.getByRole("button", { name: "Complete trip" }).click();
+        await completeTrip(page, trip);
         await expect(trip.getByText("Completed", { exact: true })).toBeVisible();
         await expect(trip.getByRole("button")).toHaveCount(0);
+        await expect(page.locator("body")).not.toBeFocused();
       },
     },
     {
@@ -75,7 +103,7 @@ export const status: Flow = {
         const trip = await firstAssignedTrip(page);
         await trip.getByRole("button", { name: "Start trip" }).click();
         await expect(trip.getByText("En route", { exact: true })).toBeVisible();
-        await trip.getByRole("button", { name: "Complete trip" }).click();
+        await completeTrip(page, trip);
         await expect(tile(second, "Active jobs")).toHaveText(String(before - 1), { timeout: 7_000 });
         await second.close();
       },

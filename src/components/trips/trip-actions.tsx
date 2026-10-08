@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useFormat } from "@/components/format";
 import { AssignDialog } from "@/components/trips/assign-dialog";
 import { useTripMove } from "@/components/trips/use-trip-move";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,40 @@ import { isEditable } from "@/domain/assignment";
 import { failure, type ActionResult } from "@/domain/result";
 import type { TripRow } from "@/domain/trip-row";
 import { isFinal, nextStep, tripMessages } from "@/domain/trip-status";
+
+type TripMove = ReturnType<typeof useTripMove>;
+
+function CompleteTrip({ trip, move, label }: { trip: TripRow; move: TripMove; label: string }) {
+  const format = useFormat();
+  const revenueDay = format.isToday(trip.pickupAt) ? "today's revenue" : `revenue for ${format.shortDay(trip.pickupAt)}`;
+
+  function complete(): Promise<ActionResult<unknown>> {
+    return move.mutateAsync({ tripId: trip.id, from: trip.status, to: "completed", reference: trip.reference });
+  }
+
+  return (
+    <ConfirmDialog
+      trigger={
+        <Button
+          size="sm"
+          className="h-11 sm:h-8"
+          aria-disabled={move.isPending}
+          onClick={(event) => {
+            if (move.isPending) event.preventDefault();
+          }}
+        >
+          {label}
+        </Button>
+      }
+      title={`Complete trip #${String(trip.reference)}?`}
+      description={`${trip.customerName}'s ${format.money(trip.fareCents)} fare will count toward ${revenueDay}. This cannot be undone.`}
+      confirmLabel="Complete trip"
+      confirmVariant="default"
+      keepLabel="Not yet"
+      onConfirm={complete}
+    />
+  );
+}
 
 export function TripActions({ trip }: { trip: TripRow }) {
   const move = useTripMove();
@@ -25,7 +60,9 @@ export function TripActions({ trip }: { trip: TripRow }) {
 
   return (
     <div className="grid w-full gap-2 sm:flex sm:flex-wrap">
-      {step ? (
+      {step?.to === "completed" ? (
+        <CompleteTrip trip={trip} move={move} label={step.label} />
+      ) : step ? (
         <Button
           size="sm"
           className="h-11 sm:h-8"

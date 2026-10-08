@@ -21,6 +21,7 @@ type ConfirmDialogProps = {
   title: string;
   description: string;
   confirmLabel: string;
+  confirmVariant?: "destructive" | "default";
   keepLabel?: string;
   onConfirm: (form: FormData) => Promise<ActionResult<unknown>>;
   onConfirmed?: () => void;
@@ -33,6 +34,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  confirmVariant = "destructive",
   keepLabel = "Keep it",
   onConfirm,
   onConfirmed,
@@ -99,7 +101,7 @@ export function ConfirmDialog({
         </form>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>{keepLabel}</AlertDialogCancel>
-          <Button type="submit" form={formId} variant="destructive" aria-disabled={pending} aria-busy={pending}>
+          <Button type="submit" form={formId} variant={confirmVariant} aria-disabled={pending} aria-busy={pending}>
             {pending ? "Working…" : confirmLabel}
           </Button>
         </AlertDialogFooter>

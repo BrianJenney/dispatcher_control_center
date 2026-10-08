@@ -329,7 +329,7 @@ Proves: matching rules, two clicks, keyboard access.
 ### 05 Status updates
 
 1. On an Assigned trip, "Start trip". It becomes En route. Open the dashboard in a second tab first and watch it change within 5 seconds, with no refresh.
-2. "Complete trip". The trip becomes Completed and no further buttons are offered. Today's revenue rises by its fare. A cancelled trip never adds revenue.
+2. "Complete trip". A dialog asks first, because completing is final and counts toward revenue; "Not yet" (or Escape) backs out. Confirm with "Complete trip". The trip becomes Completed and no further buttons are offered. Today's revenue rises by its fare. A cancelled trip never adds revenue.
 3. Try to move a trip backwards or skip a step. The app never offers it, and the database also refuses it (see the integration tests in `tests/integration/trip-rules.test.ts`).
 
 Proves: the status flow is enforced on the server and in the database, and live updates work.
@@ -399,6 +399,6 @@ Proves: the status flow is enforced on the server and in the database, and live 
 ### Trying to break it
 
 - **Double submit:** press "Book trip" twice fast. One trip is created.
-- **Stale tab:** open one trip in two tabs. Complete it in one, then press "Complete trip" in the other. You see a plain message, not a crash.
+- **Stale tab:** open one trip in two tabs. Complete it in one, then press "Complete trip" in the other and confirm. You see a plain message, not a crash.
 - **Overlapping assignment:** assign two trips with overlapping times to the same driver from two tabs. The second is refused by the database.
 - **Phone width:** every page above at 375px. Nothing scrolls sideways, buttons are at least 44px tall, and the bottom bar never covers content.

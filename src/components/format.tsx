@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, use, type ReactNode } from "react";
+import { dayRange, isWithin } from "@/domain/time";
 
 const TimeZoneContext = createContext<string | null>(null);
 
@@ -36,5 +37,6 @@ export function useFormat() {
     hour: (iso: string) => hour.format(new Date(iso)),
     shortDay: (iso: string) => shortDay.format(new Date(iso)),
     weekday: (iso: string) => weekday.format(new Date(iso)),
+    isToday: (iso: string) => isWithin(new Date(iso), dayRange(new Date(), timeZone)),
   };
 }
