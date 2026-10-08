@@ -6,6 +6,8 @@ const messages: Record<string, string> = {
   trips_status_transition: tripMessages.changedElsewhere,
   trips_driver_matches_status: tripMessages.driverRequired,
   trips_cancel_reason_matches_status: tripMessages.cancelReasonRequired,
+  trips_driver_class_matches: "That driver drives a different vehicle class than this trip needs. Choose a driver in the right class.",
+  drivers_class_matches_active_trips: "This driver still has trips in the current class that are assigned or under way. Reassign or finish them before changing the class.",
   vehicles_unit_number_unique: "Another vehicle already uses that unit number.",
   vehicles_plate_unique: "Another vehicle already uses that plate.",
   documents_size_limit: uploadMessages.tooBig,

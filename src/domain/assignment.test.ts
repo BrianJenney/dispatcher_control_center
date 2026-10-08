@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignmentProblem, isEditable, reassignTrip, type AssignableDriver } from "@/domain/assignment";
+import { assignmentProblem, classChangeProblem, isEditable, reassignTrip, type AssignableDriver } from "@/domain/assignment";
 import { tripStatuses } from "@/domain/trip-status";
 
 const ines: AssignableDriver = { id: "d1", name: "Ines Varga", onDuty: true, vehicleClass: "executive_suv" };
@@ -18,6 +18,34 @@ describe("assignmentProblem", () => {
   it("refuses the wrong vehicle class, with the right article", () => {
     expect(assignmentProblem({ vehicleClass: "luxury_sedan" }, ines)).toBe(
       "Ines Varga drives an Executive SUV, but this trip needs a Luxury sedan.",
+    );
+  });
+});
+
+describe("classChangeProblem", () => {
+  it("allows a new class when the driver holds no active trips", () => {
+    expect(classChangeProblem(ines, "luxury_sedan", [])).toBeNull();
+  });
+
+  it("allows keeping the class the active trips need", () => {
+    expect(classChangeProblem(ines, "executive_suv", ["executive_suv", "executive_suv"])).toBeNull();
+  });
+
+  it("refuses to change the class under one active trip", () => {
+    expect(classChangeProblem(ines, "luxury_sedan", ["executive_suv"])).toBe(
+      "Ines Varga has 1 trip in an Executive SUV that is assigned or under way. Reassign or finish it before changing the class.",
+    );
+  });
+
+  it("counts every active trip in the old class", () => {
+    expect(classChangeProblem({ name: "Bastian Roe" }, "executive_suv", ["luxury_sedan", "luxury_sedan"])).toBe(
+      "Bastian Roe has 2 trips in a Luxury sedan that are assigned or under way. Reassign or finish them before changing the class.",
+    );
+  });
+
+  it("ignores active trips already in the new class", () => {
+    expect(classChangeProblem(ines, "luxury_sedan", ["luxury_sedan", "executive_suv"])).toBe(
+      "Ines Varga has 1 trip in an Executive SUV that is assigned or under way. Reassign or finish it before changing the class.",
     );
   });
 });

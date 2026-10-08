@@ -1,11 +1,13 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { drivers, vehicles } from "@/db/schema";
+import { drivers, trips, vehicles } from "@/db/schema";
+import { classChangeProblem } from "@/domain/assignment";
 import { vehicleStatuses } from "@/domain/fleet";
 import { driverInput, updateDriverInput, updateVehicleInput, vehicleInput } from "@/domain/people";
 import { DomainError, missingRecord } from "@/domain/result";
+import { activeStatuses } from "@/domain/trip-status";
 import { defineAction } from "@/server/action";
 
 export const createDriver = defineAction(driverInput, async (input, { tx }) => {
@@ -15,6 +17,14 @@ export const createDriver = defineAction(driverInput, async (input, { tx }) => {
 });
 
 export const updateDriver = defineAction(updateDriverInput, async ({ driverId, ...input }, { tx }) => {
+  const [driver] = await tx.select({ name: drivers.name }).from(drivers).where(eq(drivers.id, driverId)).for("update");
+  if (!driver) throw new DomainError(missingRecord.driver);
+  const activeTrips = await tx
+    .select({ vehicleClass: trips.vehicleClass })
+    .from(trips)
+    .where(and(eq(trips.driverId, driverId), inArray(trips.status, activeStatuses)));
+  const problem = classChangeProblem(driver, input.vehicleClass, activeTrips.map((trip) => trip.vehicleClass));
+  if (problem) throw new DomainError(problem);
   const [updated] = await tx.update(drivers).set(input).where(eq(drivers.id, driverId)).returning({ id: drivers.id, name: drivers.name });
   if (!updated) throw new DomainError(missingRecord.driver);
   return updated;

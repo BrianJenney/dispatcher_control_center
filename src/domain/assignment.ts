@@ -18,6 +18,20 @@ export function assignmentProblem(trip: { vehicleClass: VehicleClass }, driver: 
   return null;
 }
 
+export function classChangeProblem(
+  driver: { name: string },
+  nextClass: VehicleClass,
+  activeTripClasses: readonly VehicleClass[],
+): string | null {
+  const blocking = activeTripClasses.filter((vehicleClass) => vehicleClass !== nextClass);
+  const [held] = blocking;
+  if (!held) return null;
+  const trips = blocking.length === 1 ? "1 trip" : `${String(blocking.length)} trips`;
+  const state = blocking.length === 1 ? "is assigned or under way" : "are assigned or under way";
+  const them = blocking.length === 1 ? "it" : "them";
+  return `${driver.name} has ${trips} in ${withArticle(vehicleClassLabels[held])} that ${state}. Reassign or finish ${them} before changing the class.`;
+}
+
 export const editableStatuses: readonly TripStatus[] = ["offer", "assigned"];
 
 export function isEditable(status: TripStatus): boolean {

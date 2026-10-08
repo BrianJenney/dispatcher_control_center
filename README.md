@@ -213,6 +213,7 @@ The rules that matter are enforced by the database as well as the app, so they h
 - **Status flow:** a trigger allows only `offer -> assigned -> en route -> completed`, plus `cancelled` from any step before completed. Completed and cancelled are final.
 - **Driver and status agree:** an offer has no driver, and every later status has one. A cancel needs a reason.
 - **No double booking:** an exclusion constraint rejects two active trips for one driver whose time ranges overlap.
+- **Right class:** triggers keep an assigned or en route trip in its driver's vehicle class. A trip cannot go to a driver of another class, and a driver's class cannot change while they hold such a trip.
 - **History:** every status change writes a `trip_events` row in the same transaction, and that table cannot be edited or deleted from.
 - **Documents:** a licence belongs to a driver and a registration to a vehicle, only PDFs and images, 10 MB at most.
 - **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. This has not been load tested; `pnpm db:reset --load` builds a 100,000 trip database for anyone who wants to measure it.

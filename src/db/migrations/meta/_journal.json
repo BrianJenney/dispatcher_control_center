@@ -36,6 +36,13 @@
       "when": 1791397741632,
       "tag": "0004_auth_rate_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791499132073,
+      "tag": "0005_driver_class_rules",
+      "breakpoints": true
     }
   ]
 }

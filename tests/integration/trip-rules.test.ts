@@ -193,6 +193,75 @@ describe("the database refuses overlapping active trips for one driver", () => {
   });
 });
 
+describe("the database keeps a driver and their active trips in one vehicle class", () => {
+  async function driverWith(status: TripStatus) {
+    const driver = await insertDriver("luxury_sedan");
+    const tripId = await insertOffer(actorId);
+    let current: TripStatus = "offer";
+    for (const to of pathTo[status]) {
+      await forceStatus(tripId, actorId, { from: current, to, driverId: to === "cancelled" ? null : driver, reason: to === "cancelled" ? "Test" : null });
+      current = to;
+    }
+    return { driver, tripId };
+  }
+
+  function changeClass(driver: string) {
+    return db.execute(sql`update drivers set vehicle_class = 'executive_suv' where id = ${driver}`);
+  }
+
+  it("rejects assigning a trip to a driver of another class", async () => {
+    const tripId = await insertOffer(actorId);
+    const suvDriver = await insertDriver("executive_suv");
+    await expectRejectedBy(
+      forceStatus(tripId, actorId, { from: "offer", to: "assigned", driverId: suvDriver }),
+      "trips_driver_class_matches",
+    );
+    expect(await statusOf(tripId)).toBe("offer");
+  });
+
+  it("rejects moving an assigned trip to a driver of another class", async () => {
+    const { tripId } = await driverWith("assigned");
+    const suvDriver = await insertDriver("executive_suv");
+    await expectRejectedBy(
+      db.execute(sql`update trips set driver_id = ${suvDriver} where id = ${tripId}`),
+      "trips_driver_class_matches",
+    );
+  });
+
+  it("rejects changing the class of an assigned trip away from its driver's", async () => {
+    const { tripId } = await driverWith("assigned");
+    await expectRejectedBy(
+      db.execute(sql`update trips set vehicle_class = 'executive_suv' where id = ${tripId}`),
+      "trips_driver_class_matches",
+    );
+  });
+
+  it.each(["assigned", "en_route"] as const)("rejects changing a driver's class while a trip is %s", async (status) => {
+    const { driver } = await driverWith(status);
+    await expectRejectedBy(changeClass(driver), "drivers_class_matches_active_trips");
+  });
+
+  it.each(["offer", "completed", "cancelled"] as const)("allows changing a driver's class once their trip is %s", async (status) => {
+    const { driver } = await driverWith(status);
+    await changeClass(driver);
+    const rows = await db.execute<{ vehicle_class: string }>(sql`select vehicle_class from drivers where id = ${driver}`);
+    expect(rows.rows[0]?.vehicle_class).toBe("executive_suv");
+  });
+
+  it("explains both refusals in plain language", async () => {
+    const { driver } = await driverWith("assigned");
+    const classChange: unknown = await changeClass(driver).catch((failure: unknown) => failure);
+    expect(friendlyDatabaseError(classChange)).toBe(
+      "This driver still has trips in the current class that are assigned or under way. Reassign or finish them before changing the class.",
+    );
+    const tripId = await insertOffer(actorId);
+    const assignment: unknown = await forceStatus(tripId, actorId, { from: "offer", to: "assigned", driverId: await insertDriver("executive_van") }).catch(
+      (failure: unknown) => failure,
+    );
+    expect(friendlyDatabaseError(assignment)).toBe("That driver drives a different vehicle class than this trip needs. Choose a driver in the right class.");
+  });
+});
+
 describe("documents", () => {
   async function insertDocument(values: { kind: string; driverId: string | null; contentType: string; sizeBytes: number }) {
     await db.execute(sql`
