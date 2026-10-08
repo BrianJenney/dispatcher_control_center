@@ -32,6 +32,24 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm e2e
 
 Integration tests use a separate `dispatch_test` database and e2e tests use `dispatch_e2e`. Both are recreated on every run.
 
+## Environments and storage
+
+Three separate environments, each with its own database and its own files, so a mistake in one cannot touch another.
+
+| Environment | Where it runs | Database | Files |
+|---|---|---|---|
+| Production | `main` on Vercel | Neon branch `main` | R2 bucket `dispatch-lite-production` |
+| Preview | every other branch on Vercel, behind Vercel login | Neon branch `preview`, a copy of production data | R2 bucket `dispatch-lite-preview` |
+| Local | your machine | local Postgres | in-process S3 on your machine |
+
+Each environment also has its own sign-in secret, so a session from one is useless in another. Previews sign in on their own address, which the app reads from Vercel. A branch per preview needs the Neon integration for Vercel (https://vercel.com/integrations/neon); until it is installed all previews share the one `preview` branch, still isolated from production.
+
+Documents are private. Both buckets have public access switched off and no custom domains, so a file cannot be reached by its address alone. The browser asks the app for a link, the app checks the person is signed in, and the link it returns is signed and expires after 5 minutes: uploads and views both use these short-lived links, and a signed-out request to a document is refused with a 401. Upload limits (PDF or image, 10 MB) are enforced by the app and again by the database.
+
+## Backups and restoring
+
+The database can be rewound to any second in the last 7 days, and a restore takes seconds. The drill, the steps and the limits (a deleted file cannot be recovered) are in `docs/backup-restore.md`.
+
 ## Deploying
 
 Vercel builds with `pnpm db:deploy && pnpm build`. `db:deploy` applies migrations, then seeds the fake demo data only if the database has no drivers yet, so it is safe on every deploy and never touches data that already exists. Set the variables from `.env.example` on the Vercel project, plus `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` if you want error and trace reporting.
