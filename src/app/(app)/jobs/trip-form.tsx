@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
-import { FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
+import { ActionForm, FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { mostSeatsInAnyClass, vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { jobsPageSize, jobsSearch } from "@/domain/jobs";
@@ -67,7 +67,7 @@ function TripFields({
   const router = useRouter();
   const errors = form.fieldErrors;
   return (
-    <form onSubmit={form.onSubmit} method="post" noValidate className="max-w-2xl space-y-2">
+    <ActionForm form={form} className="max-w-2xl space-y-2">
       {children}
       <fieldset className="grid grid-cols-1 gap-x-4 rounded-2xl border bg-card p-4 sm:p-6">
         <legend className="px-1 text-sm font-semibold">Customer and route</legend>
@@ -117,6 +117,6 @@ function TripFields({
           </Button>
         </div>
       </div>
-    </form>
+    </ActionForm>
   );
 }

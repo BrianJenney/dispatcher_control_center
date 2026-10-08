@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
+import { ActionForm, FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
 import { vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { updateVehicleInput, vehicleInput } from "@/domain/people";
 import { createVehicle, updateVehicle } from "@/server/actions/people";
@@ -55,7 +55,7 @@ function VehicleFields({
   children?: ReactNode;
 }) {
   return (
-    <form onSubmit={form.onSubmit} method="post" noValidate className="space-y-1 rounded-2xl border bg-card p-4 sm:p-6">
+    <ActionForm form={form} className="space-y-1 rounded-2xl border bg-card p-4 sm:p-6">
       {children}
       <FormField label="Make and model" name="model" defaultValue={values.model} autoComplete="off" errors={form.fieldErrors.model} />
       <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
@@ -68,6 +68,6 @@ function VehicleFields({
         <FormError message={form.formError} />
         <SubmitButton pending={form.pending}>{submitLabel}</SubmitButton>
       </div>
-    </form>
+    </ActionForm>
   );
 }

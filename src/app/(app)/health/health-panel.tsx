@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { FormError, FormField, SubmitButton, useActionForm } from "@/components/form";
+import { ActionForm, FormError, FormField, SubmitButton, useActionForm } from "@/components/form";
 import { useFormat } from "@/components/format";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
@@ -71,11 +71,11 @@ export function HealthPanel({ initialData }: { initialData: HealthSnapshot }) {
 function RecordCheckForm({ onRecorded }: { onRecorded: () => void }) {
   const form = useActionForm({ schema: recordHealthCheckInput, action: recordHealthCheck, onSuccess: onRecorded, clearOnSuccess: true });
   return (
-    <form onSubmit={form.onSubmit} noValidate className="space-y-2">
+    <ActionForm form={form} className="space-y-2">
       <FormField label="Check name" name="label" placeholder="Morning check" errors={form.fieldErrors.label} />
       <FormError message={form.formError} />
       <SubmitButton pending={form.pending}>Record check</SubmitButton>
-    </form>
+    </ActionForm>
   );
 }
 
@@ -102,7 +102,7 @@ function MonitoringCard({ enabled }: { enabled: boolean }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.onSubmit} noValidate className="space-y-2">
+        <ActionForm form={form} className="space-y-2">
           <FormError message={form.formError} />
           {sent ? (
             <p role="status" className="text-sm text-muted-foreground">
@@ -112,7 +112,7 @@ function MonitoringCard({ enabled }: { enabled: boolean }) {
           <SubmitButton pending={form.pending} disabled={!enabled}>
             Send a test error and trace
           </SubmitButton>
-        </form>
+        </ActionForm>
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormError, FormField, SubmitButton, useActionForm } from "@/components/form";
+import { ActionForm, FormError, FormField, SubmitButton, useActionForm } from "@/components/form";
 import { isAppRoute } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { signInInput } from "@/domain/auth";
@@ -30,7 +30,7 @@ export function LoginForm({ next, demo }: LoginFormProps) {
 
   return (
     <div className="space-y-6">
-      <form name="sign-in" method="post" onSubmit={form.onSubmit} noValidate className="space-y-1">
+      <ActionForm form={form} name="sign-in" className="space-y-1">
         <FormField label="Email" name="email" type="email" autoComplete="username" errors={form.fieldErrors.email} />
         <FormField
           label="Password"
@@ -45,7 +45,7 @@ export function LoginForm({ next, demo }: LoginFormProps) {
             Sign in
           </SubmitButton>
         </div>
-      </form>
+      </ActionForm>
       <div className="rounded-xl border border-dashed bg-accent/40 p-4 text-sm">
         <p className="font-medium text-accent-foreground">Trying it out?</p>
         <p className="mt-1 text-muted-foreground">
