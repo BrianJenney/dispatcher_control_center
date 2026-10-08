@@ -141,14 +141,16 @@ export function SubmitButton({
   children,
   pendingLabel = "Saving…",
   className,
+  disabled = false,
 }: {
   pending: boolean;
   children: string;
   pendingLabel?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   return (
-    <Button type="submit" disabled={pending} aria-busy={pending} className={className}>
+    <Button type="submit" disabled={pending || disabled} aria-busy={pending} className={className}>
       {pending ? pendingLabel : children}
     </Button>
   );

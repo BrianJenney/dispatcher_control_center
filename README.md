@@ -253,6 +253,11 @@ Proves: the status flow is enforced on the server and in the database, and live 
 1. On a first visit a five step tour opens by itself. Next, Back, Skip tour and Escape all work.
 2. The question mark button beside the theme button opens it again. Some steps link to the page they describe.
 
+**Monitoring** (`/health`)
+1. The "Error and speed monitoring" card says whether Sentry is switched on. It reads On when `SENTRY_DSN` is set and "Not set up" when it is not.
+2. When it is on, "Send a test error and trace" sends one error and one timed trace. They appear in the Sentry project within a minute, which proves the alerts and the dashboard are connected.
+3. Traces are sampled at 100% (`src/observability.ts`). Lower that number once traffic grows.
+
 ### Trying to break it
 
 - **Double submit:** press "Book trip" twice fast. One trip is created.

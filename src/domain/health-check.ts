@@ -8,8 +8,11 @@ export const recordHealthCheckInput = z.object({
     .max(60, "Keep the name to 60 characters or fewer."),
 });
 
+export const monitoringTestInput = z.object({});
+
 export const healthSnapshot = z.object({
   database: z.literal("ok"),
+  errorReporting: z.boolean(),
   checkCount: z.number().int().nonnegative(),
   latestCheck: z
     .object({

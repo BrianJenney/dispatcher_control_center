@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import { env } from "@/env";
 import type { Flow } from "./types";
 
 export const health: Flow = {
@@ -11,6 +12,17 @@ export const health: Flow = {
         await page.goto("/health");
         await expect(page.getByRole("heading", { name: "System health" })).toBeVisible();
         await expect(page.getByText("Connected")).toBeVisible();
+      },
+    },
+    {
+      name: "monitoring says plainly whether it is switched on",
+      run: async ({ page }) => {
+        const on = Boolean(env.SENTRY_DSN);
+        await expect(page.getByText("Error and speed monitoring")).toBeVisible();
+        await expect(page.getByText(on ? "Errors and page timings are sent to Sentry." : "Add a Sentry DSN to the environment to switch this on.")).toBeVisible();
+        const test = page.getByRole("button", { name: "Send a test error and trace" });
+        if (on) await expect(test).toBeEnabled();
+        else await expect(test).toBeDisabled();
       },
     },
     {

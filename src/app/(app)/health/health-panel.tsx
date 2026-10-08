@@ -1,6 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormError, FormField, SubmitButton, useActionForm } from "@/components/form";
 import { useFormat } from "@/components/format";
@@ -10,8 +11,8 @@ import { EmptyState, ErrorState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { recordHealthCheckInput, type HealthSnapshot } from "@/domain/health-check";
-import { clearHealthChecks, recordHealthCheck } from "@/server/actions/health";
+import { monitoringTestInput, recordHealthCheckInput, type HealthSnapshot } from "@/domain/health-check";
+import { clearHealthChecks, recordHealthCheck, sendMonitoringTest } from "@/server/actions/health";
 
 export function HealthPanel({ initialData }: { initialData: HealthSnapshot }) {
   const queryClient = useQueryClient();
@@ -49,6 +50,7 @@ export function HealthPanel({ initialData }: { initialData: HealthSnapshot }) {
           )}
         </CardContent>
       </Card>
+      <MonitoringCard enabled={data.errorReporting} />
       <RecordCheckForm onRecorded={refresh} />
       <ConfirmDialog
         trigger={
@@ -74,5 +76,44 @@ function RecordCheckForm({ onRecorded }: { onRecorded: () => void }) {
       <FormError message={form.formError} />
       <SubmitButton pending={form.pending}>Record check</SubmitButton>
     </form>
+  );
+}
+
+function MonitoringCard({ enabled }: { enabled: boolean }) {
+  const [sent, setSent] = useState(false);
+  const form = useActionForm({
+    schema: monitoringTestInput,
+    action: sendMonitoringTest,
+    onSuccess: (result) => {
+      setSent(result.sent);
+    },
+  });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between gap-2">
+          Error and speed monitoring
+          <Badge variant={enabled ? "secondary" : "outline"}>{enabled ? "On" : "Not set up"}</Badge>
+        </CardTitle>
+        <CardDescription>
+          {enabled
+            ? "Errors and page timings are sent to Sentry."
+            : "Add a Sentry DSN to the environment to switch this on."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={form.onSubmit} noValidate className="space-y-2">
+          <FormError message={form.formError} />
+          {sent ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              Sent. It should appear in Sentry within a minute, with its trace.
+            </p>
+          ) : null}
+          <SubmitButton pending={form.pending} disabled={!enabled}>
+            Send a test error and trace
+          </SubmitButton>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

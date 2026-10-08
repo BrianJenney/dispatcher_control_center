@@ -10,7 +10,7 @@ describe("health check paved path", () => {
   });
 
   it("reads an empty snapshot", async () => {
-    expect(await getHealthSnapshot()).toEqual({ database: "ok", checkCount: 0, latestCheck: null });
+    expect(await getHealthSnapshot()).toEqual({ database: "ok", errorReporting: false, checkCount: 0, latestCheck: null });
   });
 
   it("writes a check and reads it back", async () => {

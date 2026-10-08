@@ -2,6 +2,7 @@ import { count, desc } from "drizzle-orm";
 import { db } from "@/db/client";
 import { healthChecks } from "@/db/schema";
 import type { HealthSnapshot } from "@/domain/health-check";
+import { env } from "@/env";
 
 export async function getHealthSnapshot(): Promise<HealthSnapshot> {
   const [latest] = await db
@@ -13,6 +14,7 @@ export async function getHealthSnapshot(): Promise<HealthSnapshot> {
 
   return {
     database: "ok",
+    errorReporting: Boolean(env.SENTRY_DSN),
     checkCount: totals?.checkCount ?? 0,
     latestCheck: latest ? { label: latest.label, recordedAt: latest.createdAt.toISOString() } : null,
   };
