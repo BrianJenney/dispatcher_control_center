@@ -273,13 +273,12 @@ The same property is why the app's local development uses a `local-dev` branch i
 
 ## What to build next
 
-1. Real locations: address search with a maps service, so pickups and drop offs are real places with coordinates, travel time and a map. This needs a new service and an API key, so it is a decision, not a quiet addition.
-2. A photo for each vehicle, using the same private upload as driver photos.
-3. A week view of the schedule alongside the day timeline.
-4. Push updates in place of polling every 5 seconds, if the number of dispatchers grows. Polling is simpler and cheap at this size.
-5. A branch per preview using the Neon integration for Vercel.
-6. A soft delete for documents, so a removed file can be recovered for 30 days.
-7. A printable revenue report on top of the revenue chart.
+1. **Real addresses with a maps service.** Pickup and drop off become searchable, verified places with coordinates instead of free text. That gives a map on each trip, real travel times, and fewer wrong addresses. It needs a maps provider and an API key, so it is a deliberate choice of service and cost.
+2. **Calling and messaging drivers from the app.** Drivers already have a tap to call link that opens the phone's dialer. The next step is calling through the app with masked numbers, so neither side sees the other's personal number, plus a log of calls per trip and a text to the driver with the trip details when they are assigned.
+3. **Smarter driver matching.** Today the top three are on duty, drive the right class, are free at that time, and have the fewest trips that day. With real locations from step 1 the ranking can also weigh how close the driver will be when the trip starts (where their previous drop off ends), a buffer for travel between trips, a client's preferred driver for VIP accounts, and shift end times, so nobody is booked past their shift.
+4. A photo for each vehicle, using the same private upload as driver photos.
+5. A week view of the schedule alongside the day timeline.
+6. A branch per preview using the Neon integration for Vercel, and a soft delete for documents so a removed file can be recovered for 30 days.
 
 ## Demo walkthrough
 
