@@ -1,7 +1,7 @@
-import { hashPassword } from "better-auth/crypto";
-import { eq } from "drizzle-orm";
+import { hashPassword, verifyPassword } from "better-auth/crypto";
+import { and, eq } from "drizzle-orm";
 import type { Database } from "@/db/client";
-import { account, drivers, user, vehicles } from "@/db/schema";
+import { account, drivers, session, user, vehicles } from "@/db/schema";
 import {
   cancelReasons,
   createRandom,
@@ -42,9 +42,23 @@ const durations = [45, 60, 75, 90] as const;
 const forwardPath: readonly TripStatus[] = ["assigned", "en_route", "completed"];
 const batchSize = 1_000;
 
+async function keepDemoPasswordCurrent(db: Database, userId: string, password: string) {
+  const isCredential = and(eq(account.userId, userId), eq(account.providerId, "credential"));
+  const credential = await db.query.account.findFirst({ where: isCredential });
+  if (credential?.password && (await verifyPassword({ hash: credential.password, password }))) return;
+  const hash = await hashPassword(password);
+  await db.transaction(async (tx) => {
+    await tx.update(account).set({ password: hash }).where(isCredential);
+    await tx.delete(session).where(eq(session.userId, userId));
+  });
+}
+
 async function seedDemoUser(db: Database, demo: SeedOptions["demoUser"]) {
   const existing = await db.query.user.findFirst({ where: eq(user.email, demo.email) });
-  if (existing) return existing.id;
+  if (existing) {
+    await keepDemoPasswordCurrent(db, existing.id, demo.password);
+    return existing.id;
+  }
   const id = crypto.randomUUID();
   await db.transaction(async (tx) => {
     await tx.insert(user).values({ id, name: "Demo Dispatcher", email: demo.email, emailVerified: true });
