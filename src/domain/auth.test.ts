@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appOrigins, inAppPath, safeRedirectPath, signInInput } from "@/domain/auth";
+import { appOrigins, inAppPath, safeRedirectPath, signInFailureMessage, signInInput, signInMessages } from "@/domain/auth";
 
 describe("signInInput", () => {
   it("asks for an email in plain language", () => {
@@ -20,6 +20,16 @@ describe("signInInput", () => {
 
   it("trims the email", () => {
     expect(signInInput.parse({ email: " a@example.com ", password: "x" }).email).toBe("a@example.com");
+  });
+});
+
+describe("signInFailureMessage", () => {
+  it("asks the visitor to wait when sign in is throttled", () => {
+    expect(signInFailureMessage(429)).toBe(signInMessages.tooManyAttempts);
+  });
+
+  it.each([400, 401, 403])("treats status %i as a wrong email or password", (status) => {
+    expect(signInFailureMessage(status)).toBe(signInMessages.wrongPassword);
   });
 });
 

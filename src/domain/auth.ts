@@ -5,6 +5,15 @@ export const signInInput = z.object({
   password: z.string().min(1, "Enter your password."),
 });
 
+export const signInMessages = {
+  wrongPassword: "That email and password do not match. Check them and try again.",
+  tooManyAttempts: "Too many sign-in attempts. Wait a minute and try again.",
+};
+
+export function signInFailureMessage(status: number): string {
+  return status === 429 ? signInMessages.tooManyAttempts : signInMessages.wrongPassword;
+}
+
 export const inAppPath = /^\/(?!\/)[^\s\\]*$/;
 
 export const safeRedirectPath = z.string().regex(inAppPath).catch("/");
