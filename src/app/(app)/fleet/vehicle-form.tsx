@@ -9,7 +9,7 @@ import { updateVehicleInput, vehicleInput } from "@/domain/people";
 import { createVehicle, updateVehicle } from "@/server/actions/people";
 
 
-type VehicleValues = { model: string; unitNumber: string; plate: string; vehicleClass: VehicleClass };
+type VehicleValues = { model: string; unitNumber: string; plate: string; color: string | null; vehicleClass: VehicleClass };
 
 export function AddVehicleForm() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export function AddVehicleForm() {
     },
   });
   return (
-    <VehicleFields form={form} values={{ model: "", unitNumber: "", plate: "", vehicleClass: "luxury_sedan" }} submitLabel="Add vehicle" />
+    <VehicleFields form={form} values={{ model: "", unitNumber: "", plate: "", color: null, vehicleClass: "luxury_sedan" }} submitLabel="Add vehicle" />
   );
 }
 
@@ -62,6 +62,7 @@ function VehicleFields({
         <FormField label="Fleet number" name="unitNumber" defaultValue={values.unitNumber} autoComplete="off" errors={form.fieldErrors.unitNumber} />
         <FormField label="Plate" name="plate" defaultValue={values.plate} autoComplete="off" errors={form.fieldErrors.plate} />
       </div>
+      <FormField label="Colour (optional)" name="color" defaultValue={values.color ?? ""} autoComplete="off" errors={form.fieldErrors.color} />
       <FormSelect label="Class" name="vehicleClass" options={vehicleClassOptions} defaultValue={values.vehicleClass} errors={form.fieldErrors.vehicleClass} />
       <div className="space-y-3 pt-1">
         <FormError message={form.formError} />

@@ -27,6 +27,20 @@ describe("vehicleInput", () => {
     expect(vehicleInput.parse(once)).toEqual(once);
   });
 
+  it("keeps a colour trimmed and stores a blank or missing one as nothing", () => {
+    const vehicle = { model: "BMW", unitNumber: "DL-1", plate: "AB 12", vehicleClass: "luxury_sedan" };
+    expect(vehicleInput.parse({ ...vehicle, color: "  Midnight blue " }).color).toBe("Midnight blue");
+    expect(vehicleInput.parse({ ...vehicle, color: "   " }).color).toBeNull();
+    expect(vehicleInput.parse({ ...vehicle, color: "" }).color).toBeNull();
+    expect(vehicleInput.parse(vehicle).color).toBeNull();
+  });
+
+  it("refuses a colour over 40 characters in plain language", () => {
+    const vehicle = { model: "BMW", unitNumber: "DL-1", plate: "AB 12", vehicleClass: "luxury_sedan" };
+    const result = vehicleInput.safeParse({ ...vehicle, color: "x".repeat(41) });
+    expect(result.error?.issues[0]?.message).toBe("Keep the colour to 40 characters.");
+  });
+
   it("asks for a fleet number", () => {
     const result = vehicleInput.safeParse({ model: "BMW", unitNumber: "", plate: "AB 12", vehicleClass: "luxury_sedan" });
     expect(result.error?.issues[0]?.message).toBe("Enter the fleet number, like DL-112.");

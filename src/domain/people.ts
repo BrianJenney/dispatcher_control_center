@@ -37,6 +37,12 @@ export const vehicleInput = z.object({
     .max(12, "Plates are 12 characters or fewer.")
     .transform((plate) => plate.toUpperCase()),
   vehicleClass: z.enum(vehicleClasses, "Choose the vehicle class."),
+  color: z
+    .string()
+    .trim()
+    .max(40, "Keep the colour to 40 characters.")
+    .nullish()
+    .transform((color) => color || null),
 });
 
 export const updateVehicleInput = vehicleInput.extend({ vehicleId: z.uuid() });

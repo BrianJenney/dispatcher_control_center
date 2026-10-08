@@ -151,6 +151,19 @@ export const fleet: Flow = {
         await expect.poll(() => context.number(`select count(*) as value from vehicles where unit_number = $1 and status = 'ready'`, [unit])).toBe(1);
       },
     },
+    {
+      name: "change a vehicle's colour and see it on the fleet list",
+      run: async (context) => {
+        const { page } = context;
+        const unit = (await context.text(`select unit_number as value from vehicles where color is null order by created_at desc limit 1`)) ?? "";
+        expect(unit).not.toBe("");
+        await page.getByRole("textbox", { name: "Colour (optional)" }).fill("Champagne");
+        await page.getByRole("button", { name: "Save changes" }).click();
+        await expect.poll(() => context.text(`select color as value from vehicles where unit_number = $1`, [unit])).toBe("Champagne");
+        await page.goto("/fleet");
+        await expect(page.getByRole("article", { name: unit, exact: true }).getByText("Champagne", { exact: true })).toBeVisible();
+      },
+    },
   ],
 };
 
