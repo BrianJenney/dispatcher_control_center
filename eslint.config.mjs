@@ -20,8 +20,13 @@ const queriesThroughLiveQuery = {
   message: "Read data with useLiveQuery or useOnDemandQuery and a definition from @/components/queries.",
 };
 
+const demoLoginInApp = {
+  group: ["@/env-demo"],
+  message: "The demo login is for seeding, tests and verify flows only. The app never reads it.",
+};
+
 function layer(...patterns) {
-  return ["error", { paths: [queriesThroughLiveQuery], patterns: [aliasOnly, strayCnPackage, ...patterns] }];
+  return ["error", { paths: [queriesThroughLiveQuery], patterns: [aliasOnly, strayCnPackage, demoLoginInApp, ...patterns] }];
 }
 
 const outsideSrc = ["error", { patterns: [strayCnPackage] }];
@@ -81,7 +86,7 @@ export default defineConfig([
   },
   {
     files: ["**/src/**"],
-    ignores: ["**/src/env.ts", "**/src/env-client.ts"],
+    ignores: ["**/src/env.ts", "**/src/env-client.ts", "**/src/env-demo.ts"],
     rules: {
       "no-restricted-properties": [
         "error",
@@ -134,7 +139,7 @@ export default defineConfig([
   {
     files: ["**/src/components/live-query.ts"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: [aliasOnly, strayCnPackage, noDatabase] }],
+      "no-restricted-imports": ["error", { patterns: [aliasOnly, strayCnPackage, demoLoginInApp, noDatabase] }],
     },
   },
 ]);

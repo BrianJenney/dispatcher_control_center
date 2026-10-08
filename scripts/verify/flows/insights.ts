@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { demoUser } from "@/env-demo";
 import { env } from "@/env";
 import { tile, viewportTag } from "./expected";
 import type { Flow, FlowContext } from "./types";
@@ -14,7 +15,7 @@ async function insertOfferDueSoon(context: FlowContext, customer: string) {
        returning id)
      insert into trip_events (trip_id, actor_id, to_status)
      select created.id, "user".id, 'offer' from created, "user" where "user".email = $2`,
-    [customer, env.DEMO_USER_EMAIL],
+    [customer, demoUser.email],
   );
 }
 

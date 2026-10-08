@@ -30,6 +30,7 @@ const banned = [
   { pattern: "process.env outside @/env", fixture: "server/reads-process-env.ts", rule: "no-restricted-properties" },
   { pattern: "a relative parent import", fixture: "server/relative-parent-import.ts", rule: "no-restricted-imports" },
   { pattern: "importing src/db outside src/server", fixture: "app/imports-db.tsx", rule: "no-restricted-imports" },
+  { pattern: "reading the demo login in app code", fixture: "app/imports-demo-login.tsx", rule: "no-restricted-imports" },
   { pattern: "fetching in useEffect", fixture: "components/fetch-in-effect.tsx", rule: "local/no-fetch-in-effect" },
   { pattern: "useQuery outside live-query.ts", fixture: "components/use-query-directly.tsx", rule: "no-restricted-imports" },
   { pattern: "I/O imports in src/domain", fixture: "domain/imports-next.ts", rule: "no-restricted-imports" },

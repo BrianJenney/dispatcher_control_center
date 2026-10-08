@@ -6,7 +6,6 @@ import { Brand } from "@/components/shell/brand";
 import { isAppRoute } from "@/components/navigation";
 import { LoadingState } from "@/components/states";
 import { safeRedirectPath } from "@/domain/auth";
-import { env } from "@/env";
 import { currentUser } from "@/server/session";
 
 export const metadata: Metadata = { title: "Sign in · Dispatch Lite" };
@@ -51,5 +50,5 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
 async function SignInPanel({ searchParams }: Pick<PageProps<"/login">, "searchParams">) {
   const next = safeRedirectPath.parse((await searchParams).next);
   if (await currentUser()) redirect(isAppRoute(next) && next !== "/login" ? next : "/");
-  return <LoginForm next={next} demo={{ email: env.DEMO_USER_EMAIL, password: env.DEMO_USER_PASSWORD }} />;
+  return <LoginForm next={next} />;
 }

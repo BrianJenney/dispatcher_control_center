@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { formatMoney } from "@/components/format";
+import { demoUser } from "@/env-demo";
 import { env } from "@/env";
 import { phoneWidth, type FlowContext } from "./types";
 
@@ -63,7 +64,7 @@ export async function insertTodaysOffer(
        returning id)
      insert into trip_events (trip_id, actor_id, to_status)
      select created.id, "user".id, 'offer' from created, "user" where "user".email = $5`,
-    [offer.customer, env.APP_TIMEZONE, offer.hour, offer.vehicleClass ?? "luxury_sedan", env.DEMO_USER_EMAIL],
+    [offer.customer, env.APP_TIMEZONE, offer.hour, offer.vehicleClass ?? "luxury_sedan", demoUser.email],
   );
 }
 

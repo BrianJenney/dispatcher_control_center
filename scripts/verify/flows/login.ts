@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { env } from "@/env";
+import { demoUser } from "@/env-demo";
 import type { Flow } from "./types";
 
 export const login: Flow = {
@@ -25,7 +25,7 @@ export const login: Flow = {
     {
       name: "a wrong password is refused",
       run: async ({ page }) => {
-        await page.getByLabel("Email").fill(env.DEMO_USER_EMAIL);
+        await page.getByLabel("Email").fill(demoUser.email);
         await page.getByLabel("Password").fill("not-the-password");
         await page.getByRole("button", { name: "Sign in", exact: true }).click();
         await expect(page.getByText("That email and password do not match. Check them and try again.")).toBeVisible();
@@ -34,7 +34,8 @@ export const login: Flow = {
     {
       name: "the demo account signs in and returns to the page asked for",
       run: async ({ page }) => {
-        await page.getByRole("button", { name: "Sign in with the demo account" }).click();
+        await page.getByLabel("Password").fill(demoUser.password);
+        await page.getByRole("button", { name: "Sign in", exact: true }).click();
         await expect(page).toHaveURL(/\/health$/);
         await expect(page.getByRole("heading", { name: "System health" })).toBeVisible();
       },

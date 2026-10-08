@@ -1,10 +1,10 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { tourStorageKey } from "@/domain/tour";
-import { env } from "@/env";
+import { demoUser } from "@/env-demo";
 
 export async function signInAsDemoUser(request: APIRequestContext, baseUrl: string) {
   const response = await request.post(`${baseUrl}/api/auth/sign-in/email`, {
-    data: { email: env.DEMO_USER_EMAIL, password: env.DEMO_USER_PASSWORD },
+    data: demoUser,
     headers: { origin: baseUrl },
   });
   if (!response.ok()) throw new Error(`Demo sign-in failed with status ${String(response.status())}`);

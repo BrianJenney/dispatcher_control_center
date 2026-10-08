@@ -11,14 +11,14 @@ pnpm i
 cp .env.example .env
 ```
 
-Set `BETTER_AUTH_SECRET` in `.env` to a random value (`openssl rand -base64 32`) and point `DATABASE_URL` at your Postgres if it is not `postgres:postgres@localhost:5432`. Then:
+Set `BETTER_AUTH_SECRET` in `.env` to a random value (`openssl rand -base64 32`), set `DEMO_USER_PASSWORD` to a password of your choosing, and point `DATABASE_URL` at your Postgres if it is not `postgres:postgres@localhost:5432`. Then:
 
 ```
 pnpm db:reset
 pnpm dev
 ```
 
-Open http://localhost:3000 and choose "Sign in with the demo account" (dispatcher@example.com, password from `DEMO_USER_PASSWORD`).
+Open http://localhost:3000 and sign in as dispatcher@example.com with the password you set in `DEMO_USER_PASSWORD`.
 
 `pnpm db:reset` recreates the local database, applies migrations and seeds a week of fake trips. It refuses to run against anything other than localhost. `pnpm dev` also starts a local S3 compatible store on port 4568 for uploads; files land in `.storage/`.
 
@@ -292,7 +292,7 @@ Before you start, run `pnpm db:reset` so every number below starts from a known 
 1. Signed out, open `/jobs`. You land on the sign in page.
 2. Press "Sign in" with both fields empty. Plain language messages appear under each field.
 3. Enter the demo email and a wrong password. You see "That email and password do not match."
-4. Press "Sign in with the demo account". You return to the page you asked for (`/jobs`).
+4. Enter the demo password from the submission message and press "Sign in". You return to the page you asked for (`/jobs`).
 5. Press the sign out icon (sidebar footer on desktop, top bar on phone). You are back on the sign in page, and `/` sends you there again.
 
 Proves: protected routes, redirects, no account guessing.

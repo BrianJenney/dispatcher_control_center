@@ -2,13 +2,13 @@ import { sql } from "drizzle-orm";
 import { expect } from "vitest";
 import { db } from "@/db/client";
 import { drivers } from "@/db/schema";
-import { env } from "@/env";
+import { demoUser } from "@/env-demo";
 import type { VehicleClass } from "@/domain/fleet";
 import type { TripStatus } from "@/domain/trip-status";
 import { violatedConstraint } from "@/server/database-errors";
 
 export async function demoUserId() {
-  const rows = await db.execute<{ id: string }>(sql`select id from "user" where email = ${env.DEMO_USER_EMAIL}`);
+  const rows = await db.execute<{ id: string }>(sql`select id from "user" where email = ${demoUser.email}`);
   const id = rows.rows[0]?.id;
   if (!id) throw new Error("The seed did not create the demo user.");
   return id;

@@ -2,11 +2,12 @@ import { Client } from "pg";
 import { createDatabase } from "@/db/client";
 import { runMigrations } from "@/db/migrate";
 import { seed } from "@/db/seed";
+import { demoUser } from "@/env-demo";
 import { env } from "@/env";
 
 export function seedOptions(loadTrips = 0) {
   return {
-    demoUser: { email: env.DEMO_USER_EMAIL, password: env.DEMO_USER_PASSWORD },
+    demoUser,
     now: new Date(),
     timeZone: env.APP_TIMEZONE,
     loadTrips,
