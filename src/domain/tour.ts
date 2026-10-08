@@ -17,7 +17,7 @@ export const tourSteps: readonly TourStep[] = [
     body: "A quick tour of what you will do every day. It takes under a minute, and you can skip it at any time.",
   },
   {
-    title: "Today at a glance",
+    title: "Your four live numbers",
     body: "The four tiles on the dashboard show active jobs, drivers on duty, fleet ready and today's revenue. They refresh by themselves every few seconds.",
     target: "kpis",
     link: { href: "/", label: "Open the dashboard" },

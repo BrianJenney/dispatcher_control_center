@@ -31,7 +31,7 @@ export const guidedTour: Flow = {
       name: "next and back move between steps",
       run: async ({ page }) => {
         await page.getByRole("button", { name: "Next" }).click();
-        await expect(page.getByRole("heading", { name: "Today at a glance" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Your four live numbers" })).toBeVisible();
         await expect(page.getByText("Step 2 of 6")).toBeVisible();
         await page.getByRole("button", { name: "Back" }).click();
         await expect(page.getByRole("heading", { name: "Welcome to Dispatch Lite" })).toBeVisible();
@@ -66,7 +66,7 @@ export const guidedTour: Flow = {
       run: async ({ page }) => {
         await page.getByRole("button", { name: "Take the tour" }).filter({ visible: true }).click();
         await page.getByRole("button", { name: "Next" }).click();
-        await expect(page.getByRole("heading", { name: "Today at a glance" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Your four live numbers" })).toBeVisible();
         await expect(async () => {
           const ring = await highlight(page).boundingBox();
           const tiles = await page.getByRole("region", { name: "Key numbers" }).boundingBox();
@@ -100,7 +100,7 @@ export const guidedTour: Flow = {
       run: async ({ page }) => {
         await page.getByRole("button", { name: "Take the tour" }).filter({ visible: true }).click();
         await page.getByRole("button", { name: "Next" }).click();
-        await expect(page.getByRole("heading", { name: "Today at a glance" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Your four live numbers" })).toBeVisible();
         await expect(highlight(page)).toBeHidden();
         await page.getByRole("button", { name: "Next" }).click();
         await page.getByRole("button", { name: "Next" }).click();
