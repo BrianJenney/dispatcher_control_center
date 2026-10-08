@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useId, useRef, useState, type ComponentProps, type SubmitEvent } from "react";
+import { createContext, use, useId, useRef, useState, type ComponentProps, type SubmitEvent } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,18 +71,41 @@ export function useActionForm<S extends z.ZodType, R>({
   return { onSubmit, pending: mutation.isPending, formError, fieldErrors };
 }
 
+const SavingContext = createContext(false);
+
+export function ActionForm({
+  form,
+  children,
+  ...formProps
+}: { form: ActionFormState } & Omit<ComponentProps<"form">, "onSubmit" | "noValidate">) {
+  return (
+    <SavingContext value={form.pending}>
+      <form method="post" {...formProps} onSubmit={form.onSubmit} noValidate aria-busy={form.pending}>
+        {children}
+      </form>
+    </SavingContext>
+  );
+}
+
 export function FormField({
   label,
   errors,
   ...inputProps
 }: { label: string; name: string; errors?: string[] } & ComponentProps<typeof Input>) {
   const id = useId();
+  const saving = use(SavingContext);
   const errorId = `${id}-error`;
   const error = errors?.[0];
   return (
     <div className="grid gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} aria-invalid={error ? true : undefined} aria-describedby={error ? errorId : undefined} {...inputProps} />
+      <Input
+        id={id}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        {...inputProps}
+        readOnly={saving || inputProps.readOnly}
+      />
       <p id={errorId} className="min-h-5 text-sm text-destructive">
         {error}
       </p>
@@ -104,12 +127,13 @@ export function FormSelect({
   errors?: string[];
 }) {
   const id = useId();
+  const saving = use(SavingContext);
   const errorId = `${id}-error`;
   const error = errors?.[0];
   return (
     <div className="grid gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <Select name={name} defaultValue={defaultValue}>
+      <Select name={name} defaultValue={defaultValue} disabled={saving}>
         <SelectTrigger
           id={id}
           className="w-full"

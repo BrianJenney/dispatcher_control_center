@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
-import { FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
+import { ActionForm, FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
 import { vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { driverInput, updateDriverInput } from "@/domain/people";
 import { createDriver, updateDriver } from "@/server/actions/people";
@@ -53,7 +53,7 @@ function DriverFields({
   children?: ReactNode;
 }) {
   return (
-    <form onSubmit={form.onSubmit} method="post" noValidate className="space-y-1 rounded-2xl border bg-card p-4 sm:p-6">
+    <ActionForm form={form} className="space-y-1 rounded-2xl border bg-card p-4 sm:p-6">
       {children}
       <FormField label="Full name" name="name" defaultValue={values.name} autoComplete="off" errors={form.fieldErrors.name} />
       <FormField label="Phone" name="phone" type="tel" defaultValue={values.phone} autoComplete="off" errors={form.fieldErrors.phone} />
@@ -62,6 +62,6 @@ function DriverFields({
         <FormError message={form.formError} />
         <SubmitButton pending={form.pending}>{submitLabel}</SubmitButton>
       </div>
-    </form>
+    </ActionForm>
   );
 }

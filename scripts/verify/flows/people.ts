@@ -79,15 +79,24 @@ export const drivers: Flow = {
       },
     },
     {
-      name: "saving an edit keeps the new value on screen without flicking back",
+      name: "while saving the fields are locked, and afterwards they keep the new value without flicking back",
       run: async (context) => {
         const { page } = context;
         const phone = page.getByRole("textbox", { name: "Phone" });
         await startRecordingValues(phone);
         await phone.fill("(415) 555-0199");
+        await page.route("**/*", async (route) => {
+          if (route.request().method() === "POST" && route.request().headers()["next-action"]) {
+            await new Promise((resolve) => setTimeout(resolve, 800));
+          }
+          await route.continue();
+        });
         await page.getByRole("button", { name: "Save changes" }).click();
+        await expect(phone).toHaveAttribute("readonly");
         await expect.poll(() => context.text(`select phone as value from drivers where name = $1`, [newDriverName])).toBe("(415) 555-0199");
         await expect(page.getByText(`${newDriverName} is updated.`)).toBeVisible();
+        await page.unrouteAll({ behavior: "ignoreErrors" });
+        await expect(phone).not.toHaveAttribute("readonly");
         await expect(phone).toHaveValue("(415) 555-0199");
         const seen = await recordedValues(phone);
         expect(seen.slice(seen.indexOf("(415) 555-0199"))).toEqual(["(415) 555-0199"]);
