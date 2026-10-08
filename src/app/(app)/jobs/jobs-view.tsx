@@ -90,7 +90,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
                 size="sm"
                 variant={selected ? "default" : "outline"}
                 aria-pressed={selected}
-                className="shrink-0 rounded-full"
+                className="h-11 shrink-0 rounded-full sm:h-8"
                 onClick={() => {
                   show({ ...filter, status: tab.value, show: pageSize });
                 }}

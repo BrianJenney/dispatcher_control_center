@@ -65,14 +65,14 @@ export function DocumentsPanel({
                   {format.fileSize(document.sizeBytes)} · added {format.shortDay(document.uploadedAt)}
                 </span>
               </span>
-              <Button asChild size="sm" variant="ghost">
+              <Button asChild size="sm" variant="ghost" className="h-11 sm:h-8">
                 <a href={`/api/documents/${document.id}`} target="_blank" rel="noreferrer" aria-label={`View ${document.fileName}`}>
                   View
                 </a>
               </Button>
               <ConfirmDialog
                 trigger={
-                  <Button size="sm" variant="ghost" className="text-muted-foreground" aria-label={`Delete ${document.fileName}`}>
+                  <Button size="sm" variant="ghost" className="h-11 text-muted-foreground sm:h-8" aria-label={`Delete ${document.fileName}`}>
                     Delete
                   </Button>
                 }

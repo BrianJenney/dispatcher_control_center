@@ -83,6 +83,7 @@ export function AssignDialog({ trip }: { trip: TripRow }) {
                 </span>
                 <Button
                   size="sm"
+                  className="h-11 sm:h-8"
                   autoFocus={index === 0}
                   aria-label={`Assign ${driver.name}`}
                   onClick={() => {
