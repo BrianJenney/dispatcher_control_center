@@ -1,6 +1,6 @@
 # Dispatch Lite: the brief
 
-Source: Sailed Away AI dev test. Submission due end of day Sunday, Oct 11, 2026.
+Source: Sailed Away AI developer build test for an in house developer role. Submission due end of day Sunday, Oct 11, 2026. Expected effort 12 to 16 hours. The role is a steady queue of CRM, dashboard, internal tool and automation builds across several companies, with work that could grow to $30,000 a month by mid 2027.
 
 ## What to build
 
@@ -69,7 +69,20 @@ All nine must work for the submission to be scored.
 3. README: setup, database schema, where everything is hosted and stored, backups, estimated monthly running cost, key decisions, known issues, what to build next
 4. Video walkthrough, 3 to 5 minutes, showing every required feature
 5. Time log of hours by day, and which AI tools were used and for what
-6. Price quote and salary expectations (Brian writes this)
+6. Price quote and salary expectations, answering all six questions below
+
+## The quote: answer all six
+
+They value a clear, honest breakdown over the lowest number.
+
+| | Question | What to include |
+|---|---|---|
+| A | Full build price | Fixed price for the complete production version of the reference app: all pages, real data, auth, dispatcher and admin roles, deployed |
+| B | Hours and timeline | Estimated hours and calendar weeks, broken down by page or feature |
+| C | Hourly rate | Rate for work outside the quoted scope |
+| D | Included and excluded | What the price covers and what it does not, such as design, data migration and support after launch |
+| E | Running costs | Recommended hosting, database and storage setup, with estimated monthly cost at 20 and at 200 users |
+| F | In house salary | Expected annual salary or monthly pay for the full time role, and the earliest start date |
 
 ## Ground rules
 
