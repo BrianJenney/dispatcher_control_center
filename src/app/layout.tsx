@@ -1,12 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
 import "./globals.css";
+import { geist } from "@/app/fonts";
 import { Providers } from "@/app/providers";
 import { themeBootScript } from "@/components/theme-script";
 import { cn } from "@/components/ui/utils";
 import { env } from "@/env";
-
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Dispatch Lite",

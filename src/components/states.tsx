@@ -1,13 +1,15 @@
 "use client";
 
-import { AlertTriangle, Inbox } from "lucide-react";
+import { AlertTriangle, Inbox, MapPinOff } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type StateProps = { title: string; description?: string; action?: ReactNode };
+type StateProps = { title: string; description?: string; action?: ReactNode; pageTitle?: boolean };
 
-function StateFrame({ icon, title, description, action, role }: StateProps & { icon: ReactNode; role?: "alert" }) {
+function StateFrame({ icon, title, description, action, role, pageTitle = false }: StateProps & { icon: ReactNode; role?: "alert" }) {
+  const Title = pageTitle ? "h1" : "p";
   return (
     <div
       role={role}
@@ -15,7 +17,7 @@ function StateFrame({ icon, title, description, action, role }: StateProps & { i
     >
       <div className="rounded-full bg-muted p-3 text-muted-foreground">{icon}</div>
       <div className="space-y-1">
-        <p className="font-medium">{title}</p>
+        <Title className={pageTitle ? "text-lg font-semibold" : "font-medium"}>{title}</Title>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       </div>
       {action}
@@ -27,27 +29,56 @@ export function EmptyState(props: StateProps) {
   return <StateFrame icon={<Inbox className="size-5" aria-hidden />} {...props} />;
 }
 
+function StateActions({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap justify-center gap-2">{children}</div>;
+}
+
 export function ErrorState({
   title = "Something went wrong",
   description = "This part of the page could not load. Your data is safe.",
   onRetry,
-}: {
-  title?: string;
-  description?: string;
-  onRetry?: () => void;
-}) {
+  action,
+  pageTitle,
+}: Partial<StateProps> & { onRetry?: () => void }) {
   return (
     <StateFrame
       role="alert"
       icon={<AlertTriangle className="size-5" aria-hidden />}
       title={title}
       description={description}
+      pageTitle={pageTitle}
       action={
-        onRetry ? (
-          <Button variant="outline" onClick={onRetry}>
-            Try again
-          </Button>
+        onRetry || action ? (
+          <StateActions>
+            {onRetry ? (
+              <Button variant="outline" className="h-11 sm:h-10" onClick={onRetry}>
+                Try again
+              </Button>
+            ) : null}
+            {action}
+          </StateActions>
         ) : null
+      }
+    />
+  );
+}
+
+export function NotFoundState() {
+  return (
+    <StateFrame
+      pageTitle
+      icon={<MapPinOff className="size-5" aria-hidden />}
+      title="We could not find that page"
+      description="The link may be out of date, or the record may have been removed."
+      action={
+        <StateActions>
+          <Button asChild className="h-11 sm:h-10">
+            <Link href="/">Dashboard</Link>
+          </Button>
+          <Button asChild variant="outline" className="h-11 sm:h-10">
+            <Link href="/jobs">Jobs</Link>
+          </Button>
+        </StateActions>
       }
     />
   );

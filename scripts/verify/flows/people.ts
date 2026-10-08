@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { expect, request as apiRequest, type Page } from "@playwright/test";
 import { expectTilesMatchDatabase, openFromNavigation, recordedValues, startRecordingValues, tile, viewportTag } from "./expected";
 import type { Flow } from "./types";
@@ -100,6 +101,17 @@ export const drivers: Flow = {
         await expect(phone).toHaveValue("(415) 555-0199");
         const seen = await recordedValues(phone);
         expect(seen.slice(seen.indexOf("(415) 555-0199"))).toEqual(["(415) 555-0199"]);
+      },
+    },
+    {
+      name: "a broken or out of date driver link shows the not found page inside the app",
+      run: async ({ page }) => {
+        for (const id of ["not-a-real-id", randomUUID()]) {
+          await page.goto(`/drivers/${id}`);
+          await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "We could not find that page" })).toBeVisible();
+          await expect(page.getByRole("navigation", { name: "Main" }).filter({ visible: true })).toBeVisible();
+          await expect(page.getByRole("main").getByRole("link", { name: "Jobs", exact: true })).toBeVisible();
+        }
       },
     },
   ],
