@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inAppPath, safeRedirectPath, signInInput } from "@/domain/auth";
+import { appOrigins, inAppPath, safeRedirectPath, signInInput } from "@/domain/auth";
 
 describe("signInInput", () => {
   it("asks for an email in plain language", () => {
@@ -43,5 +43,32 @@ describe("inAppPath", () => {
 
   it.each(["//evil.example", "/\\evil.example", "https://evil.example", "/jobs new"])("refuses %s", (path) => {
     expect(inAppPath.test(path)).toBe(false);
+  });
+});
+
+describe("appOrigins", () => {
+  it("uses the configured address and trusts nothing else when it is the only one", () => {
+    expect(appOrigins({ configured: "https://app.example.com" })).toEqual({
+      baseUrl: "https://app.example.com",
+      trusted: ["https://app.example.com"],
+    });
+  });
+
+  it("falls back to the branch address, then the deployment address, when nothing is configured", () => {
+    expect(appOrigins({ branch: "app-git-fix.vercel.app", deployment: "app-abc123.vercel.app" })).toEqual({
+      baseUrl: "https://app-git-fix.vercel.app",
+      trusted: ["https://app-git-fix.vercel.app", "https://app-abc123.vercel.app"],
+    });
+    expect(appOrigins({ deployment: "app-abc123.vercel.app" }).baseUrl).toBe("https://app-abc123.vercel.app");
+  });
+
+  it("trusts every address the deployment can be reached on, without repeats", () => {
+    const result = appOrigins({ configured: "https://app-git-fix.vercel.app", branch: "app-git-fix.vercel.app", deployment: "app-abc123.vercel.app" });
+    expect(result.baseUrl).toBe("https://app-git-fix.vercel.app");
+    expect(result.trusted).toEqual(["https://app-git-fix.vercel.app", "https://app-abc123.vercel.app"]);
+  });
+
+  it("reports no address when none is known", () => {
+    expect(appOrigins({})).toEqual({ baseUrl: null, trusted: [] });
   });
 });
