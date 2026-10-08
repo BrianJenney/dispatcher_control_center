@@ -9,6 +9,10 @@ async function isDark(page: Page) {
   return page.evaluate(() => document.documentElement.classList.contains("dark"));
 }
 
+async function storedTheme(page: Page) {
+  return page.evaluate(() => localStorage.getItem("dispatch-theme"));
+}
+
 export const theme: Flow = {
   route: "/",
   startsSignedIn: true,
@@ -18,27 +22,33 @@ export const theme: Flow = {
       run: async ({ page }) => {
         await page.emulateMedia({ colorScheme: "light" });
         await page.goto("/");
-        await expect(toggle(page)).toHaveAccessibleName(/Theme: Match my device/);
+        await expect(toggle(page)).toHaveAccessibleName("Theme: Light. Switch to Dark");
         expect(await isDark(page)).toBe(false);
+        expect(await storedTheme(page)).toBeNull();
         await page.emulateMedia({ colorScheme: "dark" });
         await expect.poll(() => isDark(page)).toBe(true);
-        await page.emulateMedia({ colorScheme: "light" });
-        await expect.poll(() => isDark(page)).toBe(false);
+        await expect(toggle(page)).toHaveAccessibleName("Theme: Dark. Switch to Light");
       },
     },
     {
-      name: "choosing light, dark and device cycles in order",
+      name: "the first click flips the active theme and stores an explicit choice",
       run: async ({ page }) => {
         await toggle(page).click();
-        await expect(toggle(page)).toHaveAccessibleName(/Theme: Light/);
+        await expect(toggle(page)).toHaveAccessibleName("Theme: Light. Switch to Dark");
+        expect(await isDark(page)).toBe(false);
+        expect(await storedTheme(page)).toBe("light");
+        await page.emulateMedia({ colorScheme: "dark" });
+        expect(await isDark(page)).toBe(false);
         await toggle(page).click();
-        await expect(toggle(page)).toHaveAccessibleName(/Theme: Dark/);
+        await expect(toggle(page)).toHaveAccessibleName("Theme: Dark. Switch to Light");
         expect(await isDark(page)).toBe(true);
+        expect(await storedTheme(page)).toBe("dark");
       },
     },
     {
       name: "the dark choice survives a reload and applies before first paint",
       run: async ({ page }) => {
+        await page.emulateMedia({ colorScheme: "light" });
         await page.reload();
         expect(await isDark(page)).toBe(true);
         await expect(toggle(page)).toHaveAccessibleName(/Theme: Dark/);
@@ -58,12 +68,15 @@ export const theme: Flow = {
       },
     },
     {
-      name: "going back to the device setting follows the device again",
+      name: "a leftover system value is ignored and the device decides",
       run: async ({ page }) => {
-        await toggle(page).click();
-        await expect(toggle(page)).toHaveAccessibleName(/Theme: Match my device/);
+        await page.evaluate(() => {
+          localStorage.setItem("dispatch-theme", "system");
+        });
         await page.emulateMedia({ colorScheme: "light" });
-        await expect.poll(() => isDark(page)).toBe(false);
+        await page.reload();
+        expect(await isDark(page)).toBe(false);
+        await expect(toggle(page)).toHaveAccessibleName("Theme: Light. Switch to Dark");
         await page.evaluate(() => {
           localStorage.removeItem("dispatch-theme");
         });

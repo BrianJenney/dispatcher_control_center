@@ -250,8 +250,8 @@ Proves: the status flow is enforced on the server and in the database, and live 
 3. Cells that start with `=`, `+`, `-` or `@` are prefixed with an apostrophe so a spreadsheet cannot run them as formulas.
 
 **Theme switcher** (button beside sign out)
-1. It cycles Light, Dark and Match my device. The choice survives a reload and applies before the page paints, so there is no flash.
-2. On Match my device, changing the operating system theme changes the app too.
+1. It flips between Light and Dark. The choice survives a reload and applies before the page paints, so there is no flash.
+2. Until you choose, the app starts in whichever theme your device prefers. Once you choose, your choice always wins over the device.
 
 **Guided tour**
 1. On a first visit a five step tour opens by itself. Next, Back, Skip tour and Escape all work.

@@ -1,31 +1,35 @@
 "use client";
 
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/utils";
-import { isDark, nextTheme, parseTheme, themeLabels, themeStorageKey, type ThemeChoice } from "@/domain/theme";
+import { nextTheme, resolveTheme, themeLabels, themeStorageKey, type ThemeChoice } from "@/domain/theme";
 
 const deviceQuery = "(prefers-color-scheme: dark)";
 const listeners = new Set<() => void>();
-let unsavedChoice: ThemeChoice = "system";
+let unsavedChoice: ThemeChoice | null = null;
 
-function readChoice(): ThemeChoice {
+function readStored(): string | null {
   try {
-    return parseTheme(localStorage.getItem(themeStorageKey));
+    return localStorage.getItem(themeStorageKey);
   } catch {
     return unsavedChoice;
   }
 }
 
-function applyChoice(choice: ThemeChoice) {
-  document.documentElement.classList.toggle("dark", isDark(choice, matchMedia(deviceQuery).matches));
+function readTheme(): ThemeChoice {
+  return resolveTheme(readStored(), matchMedia(deviceQuery).matches);
+}
+
+function applyTheme(theme: ThemeChoice) {
+  document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
 function subscribe(listener: () => void) {
   const device = matchMedia(deviceQuery);
   const onDeviceChange = () => {
-    applyChoice(readChoice());
+    applyTheme(readTheme());
     listener();
   };
   listeners.add(listener);
@@ -38,48 +42,40 @@ function subscribe(listener: () => void) {
   };
 }
 
-function save(choice: ThemeChoice) {
+function save(theme: ThemeChoice) {
   try {
-    localStorage.setItem(themeStorageKey, choice);
+    localStorage.setItem(themeStorageKey, theme);
   } catch {
     return;
   }
 }
 
-function choose(choice: ThemeChoice) {
-  unsavedChoice = choice;
-  save(choice);
-  applyChoice(choice);
+function choose(theme: ThemeChoice) {
+  unsavedChoice = theme;
+  save(theme);
+  applyTheme(theme);
   listeners.forEach((listener) => {
     listener();
   });
 }
 
-function readResolved(): "light" | "dark" {
-  return isDark(readChoice(), matchMedia(deviceQuery).matches) ? "dark" : "light";
+export function useTheme(): ThemeChoice {
+  return useSyncExternalStore(subscribe, readTheme, () => "light");
 }
 
-export function useThemeChoice(): ThemeChoice {
-  return useSyncExternalStore(subscribe, readChoice, () => "system");
-}
-
-export function useResolvedTheme(): "light" | "dark" {
-  return useSyncExternalStore(subscribe, readResolved, () => "light");
-}
-
-const icons = { light: Sun, dark: Moon, system: Monitor };
+const icons = { light: Sun, dark: Moon };
 
 export function ThemeToggle({ tone = "dark" }: { tone?: "dark" | "light" }) {
-  const choice = useThemeChoice();
-  const Icon = icons[choice];
-  const upcoming = nextTheme(choice);
+  const theme = useTheme();
+  const Icon = icons[theme];
+  const upcoming = nextTheme(theme);
   return (
     <Button
       type="button"
       variant="ghost"
       size="icon"
-      aria-label={`Theme: ${themeLabels[choice]}. Switch to ${themeLabels[upcoming]}`}
-      title={`Theme: ${themeLabels[choice]}`}
+      aria-label={`Theme: ${themeLabels[theme]}. Switch to ${themeLabels[upcoming]}`}
+      title={`Theme: ${themeLabels[theme]}`}
       className={cn(tone === "light" && "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground")}
       onClick={() => {
         choose(upcoming);
