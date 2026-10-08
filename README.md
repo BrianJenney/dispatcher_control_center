@@ -64,9 +64,87 @@ Estimated from public vendor pricing read on 2026-10-08 (prices change, so check
 
 The biggest drivers are the Vercel Pro fee, Neon compute that polling keeps awake during shifts, and Sentry spans from tracing every 5 second poll at 100 percent (deliberate for now). Once real traffic arrives, lowering the trace sampling rate brings the 200 user figure down to about $55. The 15 minute interval on the database health check already saves about $10 a month compared with checking every 3 minutes. The sources, assumptions and arithmetic are in [docs/cost-estimate.md](docs/cost-estimate.md). Database restore steps are in `docs/backup-restore.md`.
 
+
+### In plain terms
+
+Think of running the app like running a small office. Five services keep it going, and most of the bill is two of them.
+
+| Service | What it is, in office terms | 20 users | 200 users |
+|---|---|---|---|
+| Vercel | The building the app lives in, and the staff who serve every page | $20 | $40 |
+| Neon | The filing cabinet that holds every trip, driver and booking, with a rewind button | about $10 | about $15 |
+| Cloudflare R2 | A locked safe for licences and registrations | $0 | $0 |
+| Sentry | A smoke alarm that tells us when something breaks and how slow pages are | $0 | about $97 |
+| Better Stack | A doorbell check every few minutes that the site is open | $0 | $0 |
+| **Monthly total** | | **about $30** | **about $152** |
+
+How to read it:
+- **A quiet demo costs about $27 a month.** Almost all of that is the building and the filing cabinet.
+- **The jump at 200 users is almost all the smoke alarm.** It records every refresh of every screen. Telling it to record one refresh in ten, which we would do once real traffic arrives, brings the 200 user bill to about $55.
+- **Files are almost free.** The safe stays free until it holds about 10 GB, which is tens of thousands of documents.
+- **A 100,000 trip history is tiny.** It takes about 130 MB, which costs a few cents a month.
+- **Not included:** the one time build fee, a web address of your own (about $12 a year), and any extra seats for people who deploy changes.
+
+These are estimates from the vendors' public price lists on 2026-10-08. Prices change, so check before quoting.
+
 ## Adding shadcn components
 
 Use `pnpm ui:add <component>`, not the shadcn CLI directly. The shadcn CLI sometimes adds an unrelated npm package called `cn` and imports from it; the script removes it and points the imports at `@/components/ui/utils`. Lint blocks the stray import either way.
+
+## What was asked, and where it is
+
+Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission message).
+
+**Nine required features**
+
+| No. | Feature | Where to see it |
+|---|---|---|
+| 01 | Login | Any page while signed out sends you to sign in; sign out icon in the menu |
+| 02 | Dashboard | `/`, four live tiles that match the database |
+| 03 | Jobs | `/jobs`, create, edit, cancel with a reason, search and status filters |
+| 04 | Assign driver | "Assign driver" on any offer: top 3 matches, two clicks, works by keyboard |
+| 05 | Status updates | "Start trip" and "Complete trip"; the dashboard updates within 5 seconds |
+| 06 | Drivers | `/drivers`, add and edit with photo, phone, class and an on duty switch |
+| 07 | Fleet | `/fleet`, Ready or In service; changes the Fleet ready tile |
+| 08 | Schedule | `/schedule`, today's trips in time order, filter by driver and status |
+| 09 | Documents | Driver licences and vehicle registrations, PDF or image up to 10 MB, signed-in only |
+
+**Stretch goals**
+
+| Stretch goal | Status | Where to see it |
+|---|---|---|
+| Live updates across two tabs | Done | Open the dashboard in two tabs and move a trip in one |
+| Seven day volume chart and revenue report | Done | `/insights`: trips per day, revenue per day, cancellation reasons, driver load. The revenue report is the revenue chart and weekly total, not a printable report |
+| Theme switcher | Done | Sun or moon button beside sign out (light and dark) |
+| Guided first time tour | Done | Opens on a first visit and highlights the part of the app each step describes; question mark button reopens it |
+| CSV export of trips | Done | "Export CSV" on Jobs, follows the search and status on screen |
+| Activity log | Done | `/activity`, who changed which trip and when |
+| Automated tests on the matching logic | Done | `src/domain/matching.test.ts`, plus mutation testing on the domain code |
+| Keyboard shortcuts | Done | Press `?` for the list; `g` then a letter jumps between pages |
+
+**Infrastructure and storage**
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Managed hosting, automatic deploys | Done | Vercel deploys every push; production from `main` |
+| Separate environments | Done | Production, preview and local each have their own database and files |
+| Private documents on expiring links | Built; not yet tried by hand on the live site | Private buckets, signed links that expire after 5 minutes |
+| Migrations and indexes for 100,000 trips | Indexes and paging in place; not load tested | See "Scale" under Database schema |
+| Backups you can restore | Done | `docs/backup-restore.md`, with a recorded drill |
+| Clear monthly cost estimate | Done | "Running cost" below, and `docs/cost-estimate.md` |
+
+**Deliverables**
+
+| Deliverable | Status |
+|---|---|
+| Live URL and demo login | Done |
+| GitHub repo with real history | Done |
+| README | Done |
+| Video walkthrough | To record. The demo walkthrough below is the script |
+| Time log and AI disclosure | `docs/time-log.md`; hours still to be filled in |
+| Price quote and salary expectations | Written separately |
+
+Known gaps: the Sentry alert for slow requests has to be created in the Sentry screen, preview deployments share one database branch until the Neon integration for Vercel is installed, and the cost figures are estimates from public pricing.
 
 ## Database schema
 
