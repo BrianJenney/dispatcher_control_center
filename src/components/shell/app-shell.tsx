@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Brand } from "@/components/shell/brand";
 import { BottomNav, SidebarNav } from "@/components/shell/nav";
+import { KeyboardShortcuts } from "@/components/shortcuts";
 import { GuidedTour } from "@/components/tour";
 import { UserMenu } from "@/components/shell/user-menu";
 import type { SignedInUser } from "@/server/session";
@@ -19,7 +20,7 @@ export function AppShell({ user, children }: { user: SignedInUser | null; childr
           <Brand tone="light" className="px-6" />
           <SidebarNav />
         </div>
-        <div className="mx-3 border-t border-sidebar-border px-3 pt-4">
+        <div className="mx-3 border-t border-sidebar-border pt-4">
           {user ? <UserMenu user={user} tone="light" /> : <div className="h-9" />}
         </div>
       </aside>
@@ -33,7 +34,12 @@ export function AppShell({ user, children }: { user: SignedInUser | null; childr
         </main>
       </div>
       <BottomNav />
-      {user ? <GuidedTour /> : null}
+      {user ? (
+        <>
+          <GuidedTour />
+          <KeyboardShortcuts />
+        </>
+      ) : null}
     </div>
   );
 }

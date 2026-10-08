@@ -5,6 +5,7 @@ import { exportTrips } from "./export";
 import { health } from "./health";
 import { insights } from "./insights";
 import { jobsCancel, jobsCreate, jobsEdit, jobsSearch } from "./jobs";
+import { keyboard } from "./keyboard";
 import { login } from "./login";
 import { documents, drivers, fleet } from "./people";
 import { schedule } from "./schedule";
@@ -37,6 +38,7 @@ export const flows: Record<string, Flow> = {
   activity,
   theme,
   tour: guidedTour,
+  keyboard,
   "jobs-export": exportTrips,
   drivers,
   fleet,

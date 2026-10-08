@@ -15,6 +15,7 @@ function cardAttributes(trip: TripRow) {
   return {
     id: tripCardId(trip.id),
     tabIndex: -1,
+    "data-trip-card": "",
     "data-pickup-at": trip.pickupAt,
     "aria-label": `Trip ${String(trip.reference)} for ${trip.customerName}`,
   };

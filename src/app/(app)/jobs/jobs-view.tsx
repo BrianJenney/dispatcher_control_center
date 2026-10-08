@@ -12,7 +12,7 @@ import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
-import { jobsPageSize, jobsSearch, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
+import { jobsPageSize, jobsSearch, jobsSearchId, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { statusLabels, tripStatuses } from "@/domain/trip-status";
 
 const statusTabs = [{ value: null, label: "All" }, ...tripStatuses.map((value) => ({ value, label: statusLabels[value] }))];
@@ -56,6 +56,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
             ref={searchBox}
+            id={jobsSearchId}
             type="search"
             aria-label="Search by customer"
             placeholder="Search by customer"
