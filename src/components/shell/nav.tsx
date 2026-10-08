@@ -4,18 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import { isActive, navItems } from "@/components/shell/nav-items";
+import { tourTarget } from "@/components/tour-target";
 import { cn } from "@/components/ui/utils";
 
 function SidebarLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav aria-label="Main" className="flex flex-col gap-1 px-3">
-      {navItems.map(({ href, label, icon: Icon }) => {
+      {navItems.map(({ href, label, icon: Icon, tour }) => {
         const active = pathname !== null && isActive(pathname, href);
         return (
           <Link
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
+            {...tourTarget(tour)}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none",
               active && "bg-sidebar-accent text-sidebar-accent-foreground",
@@ -37,13 +39,14 @@ function BottomLinks({ pathname }: { pathname: string | null }) {
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
       <ul className="mx-auto flex max-w-md justify-around">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon, tour }) => {
           const active = pathname !== null && isActive(pathname, href);
           return (
             <li key={href} className="flex-1">
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
+                {...tourTarget(tour)}
                 className={cn(
                   "flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   active && "text-primary",

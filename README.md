@@ -254,7 +254,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 2. On Match my device, changing the operating system theme changes the app too.
 
 **Guided tour**
-1. On a first visit a five step tour opens by itself. Next, Back, Skip tour and Escape all work.
+1. On a first visit a six step tour opens by itself. Each step rings the part of the app it describes. Next, Back, Skip tour and Escape all work.
 2. The question mark button beside the theme button opens it again. Some steps link to the page they describe.
 
 **Monitoring** (`/health`)

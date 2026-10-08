@@ -153,4 +153,7 @@
   h1, h2, h3 {
     @apply tracking-tight;
     }
+  [data-tour] {
+    scroll-margin-top: 4.5rem;
+    }
 }

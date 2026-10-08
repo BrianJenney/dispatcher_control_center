@@ -15,6 +15,16 @@ describe("tourSteps", () => {
     expect(new Set(tourSteps.map((step) => step.title)).size).toBe(tourSteps.length);
   });
 
+  it("highlights a different part of the app on every step that points at one", () => {
+    const targets = tourSteps.flatMap((step) => (step.target ? [step.target] : []));
+    expect(targets.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(targets).size).toBe(targets.length);
+  });
+
+  it("opens with a welcome that highlights nothing", () => {
+    expect(tourSteps[0]?.target).toBeUndefined();
+  });
+
   it("only links to pages inside the app", () => {
     for (const step of tourSteps) {
       if (step.link) expect(step.link.href.startsWith("/")).toBe(true);

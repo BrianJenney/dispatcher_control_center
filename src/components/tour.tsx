@@ -3,6 +3,7 @@
 import { CircleHelp } from "lucide-react";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
+import { TourHighlight } from "@/components/tour-highlight";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -87,6 +88,7 @@ export function GuidedTour() {
   return (
     <Dialog
       open={open}
+      modal={false}
       onOpenChange={(next) => {
         if (!next) closeTour();
       }}
@@ -102,53 +104,62 @@ function TourSteps() {
   if (!step) return null;
   const last = index === tourSteps.length - 1;
   return (
-    <DialogContent className="sm:max-w-md" showCloseButton={false}>
-      <DialogHeader>
-        <p className="text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-          Step {index + 1} of {tourSteps.length}
-        </p>
-        <DialogTitle>{step.title}</DialogTitle>
-        <DialogDescription>{step.body}</DialogDescription>
-      </DialogHeader>
-      <div aria-hidden className="flex gap-1.5">
-        {tourSteps.map((entry, position) => (
-          <span key={entry.title} className={position <= index ? "h-1 flex-1 rounded-full bg-primary" : "h-1 flex-1 rounded-full bg-muted"} />
-        ))}
-      </div>
-      {step.link ? (
-        <Button asChild variant="outline" className="h-11 sm:h-10">
-          <Link href={step.link.href} onClick={closeTour}>
-            {step.link.label}
-          </Link>
-        </Button>
-      ) : null}
-      <DialogFooter className="gap-2 sm:justify-between">
-        <Button variant="ghost" className="h-11 sm:h-10" onClick={closeTour}>
-          {last ? "Close" : "Skip tour"}
-        </Button>
-        <div className="flex gap-2">
-          {index > 0 ? (
+    <>
+      {step.target ? <TourHighlight target={step.target} /> : null}
+      <DialogContent
+        className="top-auto bottom-[calc(4.5rem+env(safe-area-inset-bottom))] translate-y-0 sm:max-w-md lg:right-6 lg:bottom-6 lg:left-auto lg:translate-x-0"
+        showCloseButton={false}
+        onInteractOutside={(event) => {
+          event.preventDefault();
+        }}
+      >
+        <DialogHeader>
+          <p className="text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+            Step {index + 1} of {tourSteps.length}
+          </p>
+          <DialogTitle>{step.title}</DialogTitle>
+          <DialogDescription>{step.body}</DialogDescription>
+        </DialogHeader>
+        <div aria-hidden className="flex gap-1.5">
+          {tourSteps.map((entry, position) => (
+            <span key={entry.title} className={position <= index ? "h-1 flex-1 rounded-full bg-primary" : "h-1 flex-1 rounded-full bg-muted"} />
+          ))}
+        </div>
+        {step.link ? (
+          <Button asChild variant="outline" className="h-11 sm:h-10">
+            <Link href={step.link.href} onClick={closeTour}>
+              {step.link.label}
+            </Link>
+          </Button>
+        ) : null}
+        <DialogFooter className="flex-row justify-between gap-2">
+          <Button variant="ghost" className="h-11 sm:h-10" onClick={closeTour}>
+            {last ? "Close" : "Skip tour"}
+          </Button>
+          <div className="flex gap-2">
+            {index > 0 ? (
+              <Button
+                variant="outline"
+                className="h-11 flex-1 sm:h-10 sm:flex-none"
+                onClick={() => {
+                  setIndex(index - 1);
+                }}
+              >
+                Back
+              </Button>
+            ) : null}
             <Button
-              variant="outline"
               className="h-11 flex-1 sm:h-10 sm:flex-none"
               onClick={() => {
-                setIndex(index - 1);
+                if (last) closeTour();
+                else setIndex(index + 1);
               }}
             >
-              Back
+              {last ? "Start dispatching" : "Next"}
             </Button>
-          ) : null}
-          <Button
-            className="h-11 flex-1 sm:h-10 sm:flex-none"
-            onClick={() => {
-              if (last) closeTour();
-              else setIndex(index + 1);
-            }}
-          >
-            {last ? "Start dispatching" : "Next"}
-          </Button>
-        </div>
-      </DialogFooter>
-    </DialogContent>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </>
   );
 }

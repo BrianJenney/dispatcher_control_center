@@ -8,9 +8,11 @@ import { KpiTile } from "@/components/kpi-tile";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
+import { tourTarget } from "@/components/tour-target";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
 import { summarizeDashboard, type DashboardSnapshot } from "@/domain/dashboard";
+import type { TourTarget } from "@/domain/tour";
 import { byPickupTime, type TripRow } from "@/domain/trip-row";
 
 const listLimit = 5;
@@ -34,7 +36,7 @@ export function DashboardView({ initialData }: { initialData: DashboardSnapshot 
       {isError ? (
         <LiveUpdatesPaused what="the numbers" onRetry={() => void refetch()} />
       ) : null}
-      <section aria-label="Key numbers" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <section aria-label="Key numbers" {...tourTarget("kpis")} className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KpiTile
           label="Active jobs"
           value={String(kpis.activeJobs)}
@@ -63,6 +65,7 @@ export function DashboardView({ initialData }: { initialData: DashboardSnapshot 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <TripList
           title="Needs a driver"
+          tour="needs-driver"
           trips={needsDriver}
           empty={{ title: "Every trip today has a driver", description: "New offers will appear here." }}
         />
@@ -85,16 +88,18 @@ export function DashboardView({ initialData }: { initialData: DashboardSnapshot 
 
 function TripList({
   title,
+  tour,
   trips,
   empty,
 }: {
   title: string;
+  tour?: TourTarget;
   trips: TripRow[];
   empty: { title: string; description: string };
 }) {
   const headingId = useId();
   return (
-    <section aria-labelledby={headingId} className="space-y-3">
+    <section aria-labelledby={headingId} {...tourTarget(tour)} className="space-y-3">
       <div className="flex items-baseline justify-between">
         <h2 id={headingId} className="text-lg font-semibold">
           {title}
