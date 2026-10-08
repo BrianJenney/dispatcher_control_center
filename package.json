@@ -20,6 +20,7 @@
     "mutate": "next typegen && stryker run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env scripts/db-migrate.ts",
+    "db:deploy": "pnpm db:migrate && pnpm db:seed",
     "db:seed": "tsx --env-file-if-exists=.env scripts/db-seed.ts",
     "db:reset": "tsx --env-file-if-exists=.env scripts/db-reset.ts",
     "verify": "tsx --env-file-if-exists=.env scripts/verify/cli.ts",
