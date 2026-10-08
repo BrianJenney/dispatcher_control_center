@@ -21,7 +21,7 @@ git log --no-merges --date=format:'%Y-%m-%d' --pretty='%ad %s'
 
 | Tool | Used for |
 |---|---|
-| Claude Code (Claude Sonnet 5.5 and earlier Claude models) | Wrote almost all application code, tests, SQL migrations, CI configuration, verification scripts and documentation, working from `docs/brief.md`, `CLAUDE.md` and `docs/tasks.md`. Ran the test suites and verification flows and fixed what failed. |
+| Claude Code, Anthropic's coding agent, running several Claude models over the build. Each commit it wrote names the exact model in its Co-Authored-By line, which is the accurate record | Wrote almost all application code, tests, SQL migrations, CI configuration, verification scripts and documentation, working from `docs/brief.md`, `CLAUDE.md` and `docs/tasks.md`. Ran the test suites and verification flows and fixed what failed. |
 | Claude Code subagents | A reviewer agent (`.claude/agents/gardener.md`) checked changes for patterns that would spread. Short-lived worker agents handled separate pieces of work, such as the menu fix, the theme change and a pricing study, in separate working copies that were merged by hand. |
 | Claude Code with provider APIs | Created and configured the Vercel project, the Neon project and branches, the Cloudflare R2 buckets, the Sentry project, alerts and dashboard, and the Better Stack monitors, using access tokens Brian supplied. |
 | shadcn/ui CLI | Generated the UI primitives under `src/components/ui`. |
