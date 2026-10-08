@@ -17,6 +17,12 @@ export function formatMoney(cents: number): string {
   }).format(cents / 100);
 }
 
+const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact" });
+
+export function formatCompactMoney(cents: number): string {
+  return compactMoney.format(cents / 100);
+}
+
 export function formatFileSize(bytes: number): string {
   return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${String(Math.max(1, Math.round(bytes / 1024)))} KB`;
 }
@@ -31,6 +37,7 @@ export function useFormat() {
   const weekday = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" });
   return {
     money: formatMoney,
+    compactMoney: formatCompactMoney,
     fileSize: formatFileSize,
     time: (iso: string) => time.format(new Date(iso)),
     day: (iso: string) => day.format(new Date(iso)),

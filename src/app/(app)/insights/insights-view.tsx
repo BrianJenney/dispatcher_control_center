@@ -98,6 +98,7 @@ export function InsightsView({ initialData }: { initialData: InsightsSnapshot })
           <StackedColumns
             title="Revenue per day"
             format={(value) => format.money(value)}
+            formatTotal={(value) => format.compactMoney(value)}
             columns={days.map((day) => ({
               label: day.label,
               caption: day.caption,

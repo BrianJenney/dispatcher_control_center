@@ -5,7 +5,17 @@ export type Column = { label: string; caption: string; segments: readonly Column
 
 const barHeight = 160;
 
-export function StackedColumns({ title, columns, format }: { title: string; columns: readonly Column[]; format: (value: number) => string }) {
+export function StackedColumns({
+  title,
+  columns,
+  format,
+  formatTotal = format,
+}: {
+  title: string;
+  columns: readonly Column[];
+  format: (value: number) => string;
+  formatTotal?: (value: number) => string;
+}) {
   const headingId = useId();
   const totals = columns.map((column) => column.segments.reduce((sum, segment) => sum + segment.value, 0));
   const peak = Math.max(1, ...totals);
@@ -30,7 +40,7 @@ export function StackedColumns({ title, columns, format }: { title: string; colu
           const total = totals[index] ?? 0;
           return (
             <div key={column.label} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
-              <span className="text-xs font-medium tabular-nums">{total === 0 ? "" : format(total)}</span>
+              <span className="text-xs font-medium tabular-nums">{total === 0 ? "" : formatTotal(total)}</span>
               <div
                 title={`${column.caption}: ${column.segments.map((segment) => `${segment.label} ${format(segment.value)}`).join(", ")}`}
                 className="flex w-full max-w-6 flex-col-reverse gap-0.5"
