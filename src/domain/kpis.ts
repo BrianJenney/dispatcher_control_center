@@ -1,6 +1,6 @@
 import type { VehicleStatus } from "@/domain/fleet";
 import { isWithin, type TimeRange } from "@/domain/time";
-import { isActive, type TripStatus } from "@/domain/trip-status";
+import type { TripStatus } from "@/domain/trip-status";
 
 export type TripFigures = { status: TripStatus; fareCents: number; pickupAt: Date; driverId: string | null };
 
@@ -17,8 +17,17 @@ export function tripsTodayByDriver(trips: readonly TripFigures[], today: TimeRan
   return counts;
 }
 
+export function isUpNext(trip: Pick<TripFigures, "status" | "pickupAt">, today: TimeRange): boolean {
+  return trip.status === "assigned" && isWithin(trip.pickupAt, today);
+}
+
+export function isOnTheRoad(trip: Pick<TripFigures, "status">): boolean {
+  return trip.status === "en_route";
+}
+
 export type DashboardKpis = {
   activeJobs: number;
+  enRouteNow: number;
   driversOnDuty: number;
   driversTotal: number;
   fleetReady: number;
@@ -34,8 +43,11 @@ export function dashboardKpis(input: {
   today: TimeRange;
 }): DashboardKpis {
   const completedToday = input.trips.filter((trip) => trip.status === "completed" && isWithin(trip.pickupAt, input.today));
+  const upNext = input.trips.filter((trip) => isUpNext(trip, input.today)).length;
+  const enRouteNow = input.trips.filter(isOnTheRoad).length;
   return {
-    activeJobs: input.trips.filter((trip) => isActive(trip.status)).length,
+    activeJobs: upNext + enRouteNow,
+    enRouteNow,
     driversOnDuty: input.drivers.filter((driver) => driver.onDuty).length,
     driversTotal: input.drivers.length,
     fleetReady: input.vehicles.filter((vehicle) => vehicle.status === "ready").length,

@@ -44,10 +44,6 @@ export function isFinal(status: TripStatus): boolean {
   return transitions[status].length === 0;
 }
 
-export function isActive(status: TripStatus): boolean {
-  return activeStatuses.includes(status);
-}
-
 export type TripState = {
   status: TripStatus;
   driverId: string | null;

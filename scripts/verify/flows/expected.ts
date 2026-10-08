@@ -8,7 +8,10 @@ const today = `pickup_at >= (date_trunc('day', now() at time zone $1) at time zo
 
 export const fromDatabase = {
   activeJobs: (context: FlowContext) =>
-    context.number(`select count(*) as value from trips where status in ('assigned', 'en_route')`),
+    context.number(`select count(*) as value from trips where status = 'en_route' or (status = 'assigned' and ${today})`, [
+      env.APP_TIMEZONE,
+    ]),
+  enRouteNow: (context: FlowContext) => context.number(`select count(*) as value from trips where status = 'en_route'`),
   driversOnDuty: (context: FlowContext) => context.number(`select count(*) as value from drivers where on_duty`),
   driversTotal: (context: FlowContext) => context.number(`select count(*) as value from drivers`),
   fleetReady: (context: FlowContext) => context.number(`select count(*) as value from vehicles where status = 'ready'`),
@@ -30,6 +33,9 @@ export function tile(page: Page, label: string) {
 export async function expectTilesMatchDatabase(context: FlowContext) {
   const { page } = context;
   await expect(tile(page, "Active jobs")).toHaveText(String(await fromDatabase.activeJobs(context)));
+  await expect(page.getByRole("group", { name: "Active jobs" })).toContainText(
+    `${String(await fromDatabase.enRouteNow(context))} en route now`,
+  );
   await expect(tile(page, "Drivers on duty")).toHaveText(String(await fromDatabase.driversOnDuty(context)));
   await expect(tile(page, "Fleet ready")).toHaveText(
     `${String(await fromDatabase.fleetReady(context))}/${String(await fromDatabase.fleetTotal(context))}`,

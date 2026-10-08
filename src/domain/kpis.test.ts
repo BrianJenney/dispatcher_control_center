@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dashboardKpis, revenueCents, tripsTodayByDriver, type TripFigures } from "@/domain/kpis";
+import { dashboardKpis, isOnTheRoad, isUpNext, revenueCents, tripsTodayByDriver, type TripFigures } from "@/domain/kpis";
 
 const today = { start: new Date("2026-10-07T04:00:00Z"), end: new Date("2026-10-08T04:00:00Z") };
 const during = new Date("2026-10-07T15:00:00Z");
@@ -45,11 +45,27 @@ describe("tripsTodayByDriver", () => {
   });
 });
 
+describe("active jobs", () => {
+  it("counts assigned trips only when they are picked up today", () => {
+    expect(isUpNext(trip({ status: "assigned" }), today)).toBe(true);
+    expect(isUpNext(trip({ status: "assigned", pickupAt: yesterday }), today)).toBe(false);
+    expect(isUpNext(trip({ status: "assigned", pickupAt: today.end }), today)).toBe(false);
+    expect(isUpNext(trip({ status: "offer" }), today)).toBe(false);
+  });
+
+  it("counts every trip on the road, whatever its pickup date", () => {
+    expect(isOnTheRoad(trip({ status: "en_route" }))).toBe(true);
+    expect(isOnTheRoad(trip({ status: "en_route", pickupAt: yesterday }))).toBe(true);
+    expect(isOnTheRoad(trip({ status: "assigned" }))).toBe(false);
+  });
+});
+
 describe("dashboardKpis", () => {
   it("computes the four tiles", () => {
     const kpis = dashboardKpis({
       trips: [
         trip({ status: "assigned" }),
+        trip({ status: "assigned", pickupAt: yesterday }),
         trip({ status: "en_route", pickupAt: yesterday }),
         trip({ status: "offer", driverId: null }),
         trip({ fareCents: 15_000 }),
@@ -62,6 +78,7 @@ describe("dashboardKpis", () => {
     });
     expect(kpis).toEqual({
       activeJobs: 2,
+      enRouteNow: 1,
       driversOnDuty: 2,
       driversTotal: 3,
       fleetReady: 3,

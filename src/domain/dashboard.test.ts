@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { dashboardSnapshot, summarizeDashboard, type DashboardSnapshot } from "@/domain/dashboard";
+import { dashboardLists, dashboardSnapshot, isPickedUpToday, summarizeDashboard, type DashboardSnapshot } from "@/domain/dashboard";
 import type { TripRow } from "@/domain/trip-row";
 
 const today = { start: "2026-10-07T04:00:00.000Z", end: "2026-10-08T04:00:00.000Z" };
+const yesterday = "2026-10-06T15:00:00.000Z";
 
 function trip(overrides: Partial<TripRow>): TripRow {
   return {
@@ -39,6 +40,7 @@ describe("summarizeDashboard", () => {
   it("turns the polled snapshot into the four tiles", () => {
     expect(summarizeDashboard(snapshot)).toEqual({
       activeJobs: 1,
+      enRouteNow: 1,
       driversOnDuty: 1,
       driversTotal: 2,
       fleetReady: 2,
@@ -46,6 +48,20 @@ describe("summarizeDashboard", () => {
       revenueTodayCents: 12_500,
       completedToday: 1,
     });
+  });
+
+  it("counts today's assigned trips and every trip on the road as active", () => {
+    const kpis = summarizeDashboard({
+      ...snapshot,
+      trips: [
+        trip({ status: "assigned" }),
+        trip({ status: "assigned", pickupAt: yesterday }),
+        trip({ status: "en_route", pickupAt: yesterday }),
+        trip({ status: "en_route" }),
+      ],
+    });
+    expect(kpis.activeJobs).toBe(3);
+    expect(kpis.enRouteNow).toBe(2);
   });
 
   it("is what the server sends, as the client reads it", () => {
@@ -56,5 +72,49 @@ describe("summarizeDashboard", () => {
     expect(dashboardSnapshot.safeParse({ ...snapshot, today: {} }).success).toBe(false);
     expect(dashboardSnapshot.safeParse({ ...snapshot, drivers: [{}] }).success).toBe(false);
     expect(dashboardSnapshot.safeParse({ ...snapshot, vehicles: [{}] }).success).toBe(false);
+  });
+});
+
+describe("dashboardLists", () => {
+  const mixedDays: DashboardSnapshot = {
+    ...snapshot,
+    trips: [
+      trip({ id: "00000000-0000-4000-8000-000000000011", status: "offer", driver: null, pickupAt: "2026-10-07T18:00:00.000Z" }),
+      trip({ id: "00000000-0000-4000-8000-000000000012", status: "offer", driver: null, pickupAt: "2026-10-07T09:00:00.000Z" }),
+      trip({ id: "00000000-0000-4000-8000-000000000013", status: "offer", driver: null, pickupAt: yesterday }),
+      trip({ id: "00000000-0000-4000-8000-000000000021", status: "en_route" }),
+      trip({ id: "00000000-0000-4000-8000-000000000022", status: "en_route", pickupAt: yesterday }),
+      trip({ id: "00000000-0000-4000-8000-000000000031", status: "assigned" }),
+      trip({ id: "00000000-0000-4000-8000-000000000032", status: "assigned", pickupAt: yesterday }),
+      trip({ id: "00000000-0000-4000-8000-000000000041" }),
+    ],
+  };
+  const lists = dashboardLists(mixedDays);
+  const ids =(trips: TripRow[]) => trips.map((trip) => trip.id.slice(-2));
+
+  it("lists only today's offers, in pickup order, as needing a driver", () => {
+    expect(ids(lists.needsDriver)).toEqual(["12", "11"]);
+  });
+
+  it("lists every trip on the road, whatever its pickup date", () => {
+    expect(ids(lists.onTheRoad)).toEqual(["22", "21"]);
+  });
+
+  it("lists only today's assigned trips as up next", () => {
+    expect(ids(lists.upNext)).toEqual(["31"]);
+  });
+
+  it("agrees with the active jobs tile", () => {
+    const kpis = summarizeDashboard(mixedDays);
+    expect(kpis.activeJobs).toBe(lists.onTheRoad.length + lists.upNext.length);
+    expect(kpis.enRouteNow).toBe(lists.onTheRoad.length);
+  });
+});
+
+describe("isPickedUpToday", () => {
+  it("marks trips from another day so their cards can show the date", () => {
+    expect(isPickedUpToday(trip({}), today)).toBe(true);
+    expect(isPickedUpToday(trip({ pickupAt: yesterday }), today)).toBe(false);
+    expect(isPickedUpToday(trip({ pickupAt: today.end }), today)).toBe(false);
   });
 });

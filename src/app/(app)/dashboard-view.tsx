@@ -1,6 +1,7 @@
 "use client";
 
 import { Car, CircleDollarSign, Route as RouteIcon, UserCheck } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 import { useId } from "react";
 import { useFormat } from "@/components/format";
@@ -11,24 +12,25 @@ import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { tourTarget } from "@/components/tour-target";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
-import { summarizeDashboard, type DashboardSnapshot } from "@/domain/dashboard";
+import { dashboardLists, isPickedUpToday, summarizeDashboard, type DashboardSnapshot } from "@/domain/dashboard";
+import { jobsPageSize, jobsSearch } from "@/domain/jobs";
 import type { TourTarget } from "@/domain/tour";
-import { byPickupTime, type TripRow } from "@/domain/trip-row";
+import type { TripRow } from "@/domain/trip-row";
 
 const listLimit = 5;
 
-function isToday(trip: TripRow, today: DashboardSnapshot["today"]) {
-  return trip.pickupAt >= today.start && trip.pickupAt < today.end;
-}
+const inSchedule = { href: "/schedule", place: "in the schedule" } as const;
+
+const enRouteJobs = {
+  href: `/jobs?${jobsSearch({ q: "", status: "en_route", show: jobsPageSize })}`,
+  place: "in jobs",
+} as const;
 
 export function DashboardView({ initialData }: { initialData: DashboardSnapshot }) {
   const format = useFormat();
   const { data, isError, refetch } = useLiveQuery(liveQueries.dashboard, initialData);
   const kpis = summarizeDashboard(data);
-  const sorted = [...data.trips].sort(byPickupTime);
-  const needsDriver = sorted.filter((trip) => trip.status === "offer" && isToday(trip, data.today));
-  const onTheRoad = sorted.filter((trip) => trip.status === "en_route");
-  const upNext = sorted.filter((trip) => trip.status === "assigned");
+  const { needsDriver, onTheRoad, upNext } = dashboardLists(data);
 
   return (
     <div className="space-y-8">
@@ -40,7 +42,7 @@ export function DashboardView({ initialData }: { initialData: DashboardSnapshot 
         <KpiTile
           label="Active jobs"
           value={String(kpis.activeJobs)}
-          detail={`${String(onTheRoad.length)} en route now`}
+          detail={`${String(kpis.enRouteNow)} en route now`}
           icon={RouteIcon}
         />
         <KpiTile
@@ -67,17 +69,23 @@ export function DashboardView({ initialData }: { initialData: DashboardSnapshot 
           title="Needs a driver"
           tour="needs-driver"
           trips={needsDriver}
+          today={data.today}
+          seeAll={inSchedule}
           empty={{ title: "Every trip today has a driver", description: "New offers will appear here." }}
         />
         <div className="space-y-8">
           <TripList
             title="On the road"
             trips={onTheRoad}
+            today={data.today}
+            seeAll={enRouteJobs}
             empty={{ title: "Nothing on the road", description: "Trips appear here once the driver sets off." }}
           />
           <TripList
             title="Up next"
             trips={upNext}
+            today={data.today}
+            seeAll={inSchedule}
             empty={{ title: "No assigned trips waiting", description: "Assigned trips appear here until they start." }}
           />
         </div>
@@ -90,11 +98,15 @@ function TripList({
   title,
   tour,
   trips,
+  today,
+  seeAll,
   empty,
 }: {
   title: string;
   tour?: TourTarget;
   trips: TripRow[];
+  today: DashboardSnapshot["today"];
+  seeAll: { href: Route; place: string };
   empty: { title: string; description: string };
 }) {
   const headingId = useId();
@@ -104,7 +116,9 @@ function TripList({
         <h2 id={headingId} className="text-lg font-semibold">
           {title}
         </h2>
-        <span className="text-sm text-muted-foreground tabular-nums">{trips.length}</span>
+        <span data-testid="list-count" className="text-sm text-muted-foreground tabular-nums">
+          {trips.length}
+        </span>
       </div>
       {trips.length === 0 ? (
         <EmptyState title={empty.title} description={empty.description} />
@@ -112,14 +126,14 @@ function TripList({
         <ul className="space-y-3">
           {trips.slice(0, listLimit).map((trip) => (
             <li key={trip.id}>
-              <TripCard trip={trip} actions={<TripActions trip={trip} />} />
+              <TripCard trip={trip} showDate={!isPickedUpToday(trip, today)} actions={<TripActions trip={trip} />} />
             </li>
           ))}
         </ul>
       )}
       {trips.length > listLimit ? (
-        <Link href="/schedule" className="inline-block text-sm font-medium text-primary underline-offset-4 hover:underline">
-          See all {trips.length} in the schedule
+        <Link href={seeAll.href} className="inline-block text-sm font-medium text-primary underline-offset-4 hover:underline">
+          See all {trips.length} {seeAll.place}
         </Link>
       ) : null}
     </section>

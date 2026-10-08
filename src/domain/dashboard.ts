@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { vehicleStatuses } from "@/domain/fleet";
-import { dashboardKpis, type DashboardKpis } from "@/domain/kpis";
-import { tripRow } from "@/domain/trip-row";
+import { dashboardKpis, isOnTheRoad, isUpNext, type DashboardKpis, type TripFigures } from "@/domain/kpis";
+import { isWithin, type TimeRange } from "@/domain/time";
+import { byPickupTime, tripRow, type TripRow } from "@/domain/trip-row";
 
 export const dashboardSnapshot = z.object({
   today: z.object({ start: z.iso.datetime({ offset: true }), end: z.iso.datetime({ offset: true }) }),
@@ -12,16 +13,35 @@ export const dashboardSnapshot = z.object({
 
 export type DashboardSnapshot = z.infer<typeof dashboardSnapshot>;
 
+function todayRange(today: DashboardSnapshot["today"]): TimeRange {
+  return { start: new Date(today.start), end: new Date(today.end) };
+}
+
+function figures(trip: TripRow): TripFigures {
+  return { status: trip.status, fareCents: trip.fareCents, pickupAt: new Date(trip.pickupAt), driverId: trip.driver?.id ?? null };
+}
+
 export function summarizeDashboard(snapshot: DashboardSnapshot): DashboardKpis {
   return dashboardKpis({
-    trips: snapshot.trips.map((trip) => ({
-      status: trip.status,
-      fareCents: trip.fareCents,
-      pickupAt: new Date(trip.pickupAt),
-      driverId: trip.driver?.id ?? null,
-    })),
+    trips: snapshot.trips.map(figures),
     drivers: snapshot.drivers,
     vehicles: snapshot.vehicles,
-    today: { start: new Date(snapshot.today.start), end: new Date(snapshot.today.end) },
+    today: todayRange(snapshot.today),
   });
+}
+
+export function isPickedUpToday(trip: TripRow, today: DashboardSnapshot["today"]): boolean {
+  return isWithin(new Date(trip.pickupAt), todayRange(today));
+}
+
+export type DashboardLists = { needsDriver: TripRow[]; onTheRoad: TripRow[]; upNext: TripRow[] };
+
+export function dashboardLists(snapshot: DashboardSnapshot): DashboardLists {
+  const today = todayRange(snapshot.today);
+  const sorted = [...snapshot.trips].sort(byPickupTime);
+  return {
+    needsDriver: sorted.filter((trip) => trip.status === "offer" && isWithin(new Date(trip.pickupAt), today)),
+    onTheRoad: sorted.filter(isOnTheRoad),
+    upNext: sorted.filter((trip) => isUpNext(figures(trip), today)),
+  };
 }

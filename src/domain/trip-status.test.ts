@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { DomainError } from "@/domain/result";
 import {
+  activeStatuses,
   canTransition,
-  isActive,
   isFinal,
   moveTripInput,
   transitionTrip,
@@ -52,7 +52,7 @@ describe("transition table", () => {
   });
 
   it("treats assigned and en route as active", () => {
-    expect(tripStatuses.filter(isActive)).toEqual(["assigned", "en_route"]);
+    expect(activeStatuses).toEqual(["assigned", "en_route"]);
   });
 });
 
