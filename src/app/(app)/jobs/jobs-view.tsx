@@ -74,7 +74,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
           />
         </div>
         <div className="flex justify-end">
-          <Button asChild variant="outline" size="sm" className="h-11 sm:h-8">
+          <Button asChild variant="outline" size="sm">
             <a href={exportHref(filter)} download>
               <Download aria-hidden />
               Export CSV
@@ -89,8 +89,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
                 key={tab.label}
                 size="sm"
                 variant={selected ? "default" : "outline"}
-                aria-pressed={selected}
-                className="h-11 shrink-0 rounded-full sm:h-8"
+                aria-pressed={selected} className="shrink-0 rounded-full"
                 onClick={() => {
                   show({ ...filter, status: tab.value, show: pageSize });
                 }}

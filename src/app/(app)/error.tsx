@@ -11,7 +11,7 @@ export default function SignedInError({ retry }: { error: Error & { digest?: str
       description="This page could not load. Your data is safe."
       onRetry={retry}
       action={
-        <Button asChild variant="ghost" className="h-11 sm:h-10">
+        <Button asChild variant="ghost">
           <Link href="/">Back to dashboard</Link>
         </Button>
       }

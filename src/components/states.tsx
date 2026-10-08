@@ -51,7 +51,7 @@ export function ErrorState({
         onRetry || action ? (
           <StateActions>
             {onRetry ? (
-              <Button variant="outline" className="h-11 sm:h-10" onClick={onRetry}>
+              <Button variant="outline" onClick={onRetry}>
                 Try again
               </Button>
             ) : null}
@@ -72,10 +72,10 @@ export function NotFoundState() {
       description="The link may be out of date, or the record may have been removed."
       action={
         <StateActions>
-          <Button asChild className="h-11 sm:h-10">
+          <Button asChild>
             <Link href="/">Dashboard</Link>
           </Button>
-          <Button asChild variant="outline" className="h-11 sm:h-10">
+          <Button asChild variant="outline">
             <Link href="/jobs">Jobs</Link>
           </Button>
         </StateActions>

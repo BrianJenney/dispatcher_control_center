@@ -50,8 +50,7 @@ export function ActivityView({ filter, initialData }: { filter: ActivityFilter; 
       ) : null}
       {data.hasMore && nextShow !== null ? (
         <Button
-          variant="outline"
-          className="h-11 w-full sm:h-10 sm:w-auto"
+          variant="outline" className="w-full sm:w-auto"
           aria-disabled={loading}
           onClick={() => {
             startLoading(() => {

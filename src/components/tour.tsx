@@ -129,21 +129,20 @@ function TourSteps() {
           ))}
         </div>
         {link ? (
-          <Button asChild variant="outline" className="h-11 sm:h-10">
+          <Button asChild variant="outline">
             <Link href={link.href} onClick={closeTour}>
               {link.label}
             </Link>
           </Button>
         ) : null}
         <DialogFooter className="flex-row justify-between gap-2">
-          <Button variant="ghost" className="h-11 sm:h-10" onClick={closeTour}>
+          <Button variant="ghost" onClick={closeTour}>
             {last ? "Close" : "Skip tour"}
           </Button>
           <div className="flex gap-2">
             {index > 0 ? (
               <Button
-                variant="outline"
-                className="h-11 flex-1 sm:h-10 sm:flex-none"
+                variant="outline" className="flex-1 sm:flex-none"
                 onClick={() => {
                   setIndex(index - 1);
                 }}
@@ -151,8 +150,7 @@ function TourSteps() {
                 Back
               </Button>
             ) : null}
-            <Button
-              className="h-11 flex-1 sm:h-10 sm:flex-none"
+            <Button className="flex-1 sm:flex-none"
               onClick={() => {
                 if (last) closeTour();
                 else setIndex(index + 1);

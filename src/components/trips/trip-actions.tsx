@@ -28,7 +28,6 @@ function CompleteTrip({ trip, move, label }: { trip: TripRow; move: TripMove; la
       trigger={
         <Button
           size="sm"
-          className="h-11 sm:h-8"
           aria-disabled={move.isPending}
           onClick={(event) => {
             if (move.isPending) event.preventDefault();
@@ -65,7 +64,6 @@ export function TripActions({ trip }: { trip: TripRow }) {
       ) : step ? (
         <Button
           size="sm"
-          className="h-11 sm:h-8"
           aria-disabled={move.isPending}
           onClick={() => {
             if (move.isPending) return;
@@ -79,7 +77,7 @@ export function TripActions({ trip }: { trip: TripRow }) {
       <div className="grid auto-cols-fr grid-flow-col gap-2 empty:hidden sm:contents">
       {trip.status === "assigned" ? <AssignDialog trip={trip} /> : null}
       {isEditable(trip.status) ? (
-        <Button asChild size="sm" variant="outline" className="h-11 sm:h-8">
+        <Button asChild size="sm" variant="outline">
           <Link href={`/jobs/${trip.id}/edit`} aria-label={`Edit trip ${String(trip.reference)}`}>
             Edit
           </Link>
@@ -88,7 +86,7 @@ export function TripActions({ trip }: { trip: TripRow }) {
       {isFinal(trip.status) ? null : (
         <ConfirmDialog
           trigger={
-            <Button size="sm" variant="outline" className="h-11 text-muted-foreground sm:h-8">
+            <Button size="sm" variant="outline" className="text-muted-foreground">
               Cancel trip
             </Button>
           }
