@@ -7,8 +7,9 @@ function waitingCard(page: Page, customer: string) {
 }
 
 async function expectSuggestionsFollowTheRules(context: FlowContext) {
-  const names = await context.page
-    .getByRole("list", { name: "Suggested drivers" })
+  const suggestions = context.page.getByRole("list", { name: "Suggested drivers" });
+  await expect(suggestions).toBeVisible();
+  const names = await suggestions
     .getByRole("listitem")
     .locator("span.font-medium")
     .allTextContents();
