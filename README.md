@@ -261,6 +261,26 @@ Neon makes a "branch": an instant copy that only stores what changes. It is read
 
 The same property is why the app's local development uses a `local-dev` branch instead of a risky shared database.
 
+## Known issues
+
+- Document uploads and views have been tested locally and end to end in automated tests, but not by hand against the live Cloudflare R2 buckets.
+- Sentry's slow request alert has to be created in the Sentry screen. The new error and regression alerts are in place.
+- Every preview deployment shares one Neon database branch, `preview`. A fresh branch per pull request needs the Neon integration for Vercel.
+- The 100,000 trip claim comes from indexes, paging and bounded queries. It has not been load tested.
+- Deleting a document deletes its file for good, because R2 cannot undelete. The database row can be rewound but the file cannot.
+- Pickup and drop off are free text addresses.
+- Cost figures are estimates from public price lists and depend on a few assumptions, listed in `docs/cost-estimate.md`.
+
+## What to build next
+
+1. Real locations: address search with a maps service, so pickups and drop offs are real places with coordinates, travel time and a map. This needs a new service and an API key, so it is a decision, not a quiet addition.
+2. A photo for each vehicle, using the same private upload as driver photos.
+3. A week view of the schedule alongside the day timeline.
+4. Push updates in place of polling every 5 seconds, if the number of dispatchers grows. Polling is simpler and cheap at this size.
+5. A branch per preview using the Neon integration for Vercel.
+6. A soft delete for documents, so a removed file can be recovered for 30 days.
+7. A printable revenue report on top of the revenue chart.
+
 ## Demo walkthrough
 
 Test cases to show, in order. Each one lists the clicks, what you should see, and the rule being proved. Use the demo account (`dispatcher@example.com`). Run the whole walkthrough once at phone width (375px, browser dev tools) and once on desktop.
