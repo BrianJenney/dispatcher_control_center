@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { formatMoney } from "@/components/format";
 import { env } from "@/env";
 import { phoneWidth, type FlowContext } from "./types";
@@ -75,4 +75,23 @@ export async function expectNoSidewaysScroll(page: Page) {
       .map((element) => `${element.tagName.toLowerCase()} ${element.getAttribute("aria-label") ?? element.textContent.slice(0, 40)}`);
   });
   expect(overflow, "The page scrolls sideways on a phone. These elements stick out").toEqual([]);
+}
+
+export async function startRecordingValues(field: Locator) {
+  await field.evaluate((element) => {
+    if (!(element instanceof HTMLInputElement)) throw new Error("Expected a text input.");
+    const seen = [element.value];
+    element.dataset.seenValues = JSON.stringify(seen);
+    setInterval(() => {
+      if (seen.at(-1) === element.value) return;
+      seen.push(element.value);
+      element.dataset.seenValues = JSON.stringify(seen);
+    }, 5);
+  });
+}
+
+export async function recordedValues(field: Locator): Promise<string[]> {
+  const seen = await field.getAttribute("data-seen-values");
+  const values: unknown = JSON.parse(seen ?? "[]");
+  return Array.isArray(values) ? values.map(String) : [];
 }

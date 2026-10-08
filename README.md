@@ -128,7 +128,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 |---|---|---|
 | Managed hosting, automatic deploys | Done | Vercel deploys every push; production from `main` |
 | Separate environments | Done | Production, preview and local each have their own database and files |
-| Private documents on expiring links | Built; not yet tried by hand on the live site | Private buckets, signed links that expire after 5 minutes |
+| Private documents on expiring links | Done, checked by hand on the live site | Private buckets, signed links that expire after 5 minutes |
 | Migrations and indexes for 100,000 trips | Indexes and paging in place; not load tested | See "Scale" under Database schema |
 | Backups you can restore | Done | `docs/backup-restore.md`, with a recorded drill |
 | Clear monthly cost estimate | Done | "Running cost" below, and `docs/cost-estimate.md` |
@@ -260,6 +260,26 @@ Neon makes a "branch": an instant copy that only stores what changes. It is read
 3. **It scales to zero.** A branch that nobody is using costs nothing, which keeps the monthly bill small for a project this size.
 
 The same property is why the app's local development uses a `local-dev` branch instead of a risky shared database.
+
+## Known issues
+
+- Uploads and views were checked by hand on the live site against the private production bucket (a driver photo, viewed through a signed link that expires after 5 minutes). Licence and registration uploads use the same code path and are covered by the automated tests.
+- Sentry's slow request alert has to be created in the Sentry screen. The new error and regression alerts are in place.
+- Every preview deployment shares one Neon database branch, `preview`. A fresh branch per pull request needs the Neon integration for Vercel.
+- The 100,000 trip claim comes from indexes, paging and bounded queries. It has not been load tested.
+- Deleting a document deletes its file for good, because R2 cannot undelete. The database row can be rewound but the file cannot.
+- Pickup and drop off are free text addresses.
+- Cost figures are estimates from public price lists and depend on a few assumptions, listed in `docs/cost-estimate.md`.
+
+## What to build next
+
+1. Real locations: address search with a maps service, so pickups and drop offs are real places with coordinates, travel time and a map. This needs a new service and an API key, so it is a decision, not a quiet addition.
+2. A photo for each vehicle, using the same private upload as driver photos.
+3. A week view of the schedule alongside the day timeline.
+4. Push updates in place of polling every 5 seconds, if the number of dispatchers grows. Polling is simpler and cheap at this size.
+5. A branch per preview using the Neon integration for Vercel.
+6. A soft delete for documents, so a removed file can be recovered for 30 days.
+7. A printable revenue report on top of the revenue chart.
 
 ## Demo walkthrough
 

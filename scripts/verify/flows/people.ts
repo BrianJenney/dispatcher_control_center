@@ -1,5 +1,5 @@
 import { expect, request as apiRequest, type Page } from "@playwright/test";
-import { expectTilesMatchDatabase, openFromNavigation, tile, viewportTag } from "./expected";
+import { expectTilesMatchDatabase, openFromNavigation, recordedValues, startRecordingValues, tile, viewportTag } from "./expected";
 import type { Flow } from "./types";
 
 const onePixelPng = Buffer.from(
@@ -76,6 +76,21 @@ export const drivers: Flow = {
         await filePicker(page, "Upload photo").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: onePixelPng });
         await expect(page.getByRole("img", { name: `Photo of ${newDriverName}` })).toBeVisible();
         await expect.poll(() => context.number(`select count(*) as value from drivers where name = $1 and photo_key is not null`, [newDriverName])).toBe(1);
+      },
+    },
+    {
+      name: "saving an edit keeps the new value on screen without flicking back",
+      run: async (context) => {
+        const { page } = context;
+        const phone = page.getByRole("textbox", { name: "Phone" });
+        await startRecordingValues(phone);
+        await phone.fill("(415) 555-0199");
+        await page.getByRole("button", { name: "Save changes" }).click();
+        await expect.poll(() => context.text(`select phone as value from drivers where name = $1`, [newDriverName])).toBe("(415) 555-0199");
+        await expect(page.getByText(`${newDriverName} is updated.`)).toBeVisible();
+        await expect(phone).toHaveValue("(415) 555-0199");
+        const seen = await recordedValues(phone);
+        expect(seen.slice(seen.indexOf("(415) 555-0199"))).toEqual(["(415) 555-0199"]);
       },
     },
   ],
