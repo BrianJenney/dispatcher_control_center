@@ -128,7 +128,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 |---|---|---|
 | Managed hosting, automatic deploys | Done | Vercel deploys every push; production from `main` |
 | Separate environments | Done | Production, preview and local each have their own database and files |
-| Private documents on expiring links | Built; not yet tried by hand on the live site | Private buckets, signed links that expire after 5 minutes |
+| Private documents on expiring links | Done, checked by hand on the live site | Private buckets, signed links that expire after 5 minutes |
 | Migrations and indexes for 100,000 trips | Indexes and paging in place; not load tested | See "Scale" under Database schema |
 | Backups you can restore | Done | `docs/backup-restore.md`, with a recorded drill |
 | Clear monthly cost estimate | Done | "Running cost" below, and `docs/cost-estimate.md` |
@@ -263,7 +263,7 @@ The same property is why the app's local development uses a `local-dev` branch i
 
 ## Known issues
 
-- Document uploads and views have been tested locally and end to end in automated tests, but not by hand against the live Cloudflare R2 buckets.
+- Uploads and views were checked by hand on the live site against the private production bucket (a driver photo, viewed through a signed link that expires after 5 minutes). Licence and registration uploads use the same code path and are covered by the automated tests.
 - Sentry's slow request alert has to be created in the Sentry screen. The new error and regression alerts are in place.
 - Every preview deployment shares one Neon database branch, `preview`. A fresh branch per pull request needs the Neon integration for Vercel.
 - The 100,000 trip claim comes from indexes, paging and bounded queries. It has not been load tested.
