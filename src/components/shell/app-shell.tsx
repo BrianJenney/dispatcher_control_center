@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Brand } from "@/components/shell/brand";
+import { EnvironmentBanner } from "@/components/shell/environment-banner";
 import { BottomNav, SidebarNav } from "@/components/shell/nav";
 import { KeyboardShortcuts } from "@/components/shortcuts";
 import { GuidedTour } from "@/components/tour";
@@ -25,6 +26,7 @@ export function AppShell({ user, children }: { user: SignedInUser | null; childr
         </div>
       </aside>
       <div className="flex min-w-0 flex-col">
+        <EnvironmentBanner />
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/90 px-4 backdrop-blur lg:hidden">
           <Brand />
           {user ? <UserMenu user={user} /> : null}

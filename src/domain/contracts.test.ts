@@ -45,7 +45,7 @@ describe("what the client accepts from polling routes", () => {
     const driver = { id, name: "Ava", phone: "1", vehicleClass: "luxury_sedan", onDuty: true, photoVersion: null, tripsToday: 0, licenses: 0 };
     expect(driversSnapshot.parse({ drivers: [driver] }).drivers).toHaveLength(1);
     expect(driversSnapshot.safeParse({ drivers: [{ ...driver, id: "x" }] }).success).toBe(false);
-    const vehicle = { id, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "ready", registrations: 0 };
+    const vehicle = { id, model: "BMW", unitNumber: "DL-1", plate: "A", color: "Black", vehicleClass: "luxury_sedan", status: "ready", registrations: 0 };
     expect(fleetSnapshot.parse({ vehicles: [vehicle] }).vehicles).toHaveLength(1);
     expect(fleetSnapshot.safeParse({ vehicles: [{ ...vehicle, id: "x" }] }).success).toBe(false);
   });

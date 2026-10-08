@@ -97,6 +97,17 @@ export const fleet: Flow = {
       },
     },
     {
+      name: "each vehicle shows the colour stored in the database",
+      run: async (context) => {
+        const { page } = context;
+        const unit = await context.text(`select unit_number as value from vehicles where color is not null order by unit_number limit 1`);
+        const color = await context.text(`select color as value from vehicles where unit_number = $1`, [unit]);
+        expect(unit).not.toBeNull();
+        expect(color).not.toBeNull();
+        await expect(page.getByRole("article", { name: unit ?? "", exact: true }).getByText(color ?? "", { exact: true })).toBeVisible();
+      },
+    },
+    {
       name: "sending a vehicle to service updates a dashboard in another tab within one polling interval",
       run: async (context) => {
         const { page } = context;

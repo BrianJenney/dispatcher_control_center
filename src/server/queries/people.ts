@@ -50,6 +50,7 @@ export async function getFleet(): Promise<{ vehicles: VehicleRow[] }> {
       model: vehicle.model,
       unitNumber: vehicle.unitNumber,
       plate: vehicle.plate,
+      color: vehicle.color,
       vehicleClass: vehicle.vehicleClass,
       status: vehicle.status,
       registrations: registrations.get(vehicle.id) ?? 0,

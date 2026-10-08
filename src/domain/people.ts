@@ -46,6 +46,7 @@ export const vehicleRow = z.object({
   model: z.string(),
   unitNumber: z.string(),
   plate: z.string(),
+  color: z.string().nullable(),
   vehicleClass: z.enum(vehicleClasses),
   status: z.enum(vehicleStatuses),
   registrations: z.number().int(),

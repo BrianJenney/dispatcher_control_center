@@ -48,19 +48,19 @@ export const seedDrivers: readonly { name: string; vehicleClass: VehicleClass; o
   { name: "Nils Brannigan", vehicleClass: "executive_van", onDuty: false },
 ];
 
-export const seedVehicles: readonly { model: string; vehicleClass: VehicleClass; status: VehicleStatus }[] = [
-  { model: "Mercedes-Benz S 580", vehicleClass: "luxury_sedan", status: "ready" },
-  { model: "Mercedes-Benz S 580", vehicleClass: "luxury_sedan", status: "ready" },
-  { model: "BMW 740i", vehicleClass: "luxury_sedan", status: "ready" },
-  { model: "Genesis G90", vehicleClass: "luxury_sedan", status: "in_service" },
-  { model: "Cadillac Escalade ESV", vehicleClass: "executive_suv", status: "ready" },
-  { model: "Lincoln Navigator L", vehicleClass: "executive_suv", status: "ready" },
-  { model: "Cadillac Escalade ESV", vehicleClass: "executive_suv", status: "in_service" },
-  { model: "GMC Yukon Denali XL", vehicleClass: "group_suv", status: "ready" },
-  { model: "Chevrolet Suburban Premier", vehicleClass: "group_suv", status: "ready" },
-  { model: "Mercedes-Benz Sprinter Executive", vehicleClass: "executive_van", status: "ready" },
-  { model: "Mercedes-Benz Sprinter Executive", vehicleClass: "executive_van", status: "ready" },
-  { model: "Ford Transit Limousine", vehicleClass: "executive_van", status: "in_service" },
+export const seedVehicles: readonly { model: string; color: string; vehicleClass: VehicleClass; status: VehicleStatus }[] = [
+  { color: "Obsidian black", model: "Mercedes-Benz S 580", vehicleClass: "luxury_sedan", status: "ready" },
+  { color: "Obsidian black", model: "Mercedes-Benz S 580", vehicleClass: "luxury_sedan", status: "ready" },
+  { color: "Mineral white", model: "BMW 740i", vehicleClass: "luxury_sedan", status: "ready" },
+  { color: "Midnight blue", model: "Genesis G90", vehicleClass: "luxury_sedan", status: "in_service" },
+  { color: "Black", model: "Cadillac Escalade ESV", vehicleClass: "executive_suv", status: "ready" },
+  { color: "Silver", model: "Lincoln Navigator L", vehicleClass: "executive_suv", status: "ready" },
+  { color: "Black", model: "Cadillac Escalade ESV", vehicleClass: "executive_suv", status: "in_service" },
+  { color: "Onyx black", model: "GMC Yukon Denali XL", vehicleClass: "group_suv", status: "ready" },
+  { color: "Graphite", model: "Chevrolet Suburban Premier", vehicleClass: "group_suv", status: "ready" },
+  { color: "Arctic white", model: "Mercedes-Benz Sprinter Executive", vehicleClass: "executive_van", status: "ready" },
+  { color: "Arctic white", model: "Mercedes-Benz Sprinter Executive", vehicleClass: "executive_van", status: "ready" },
+  { color: "Black", model: "Ford Transit Limousine", vehicleClass: "executive_van", status: "in_service" },
 ];
 
 const firstNames = [

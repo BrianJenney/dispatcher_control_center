@@ -46,10 +46,14 @@ export function FleetView({ initialData }: { initialData: { vehicles: VehicleRow
                     </p>
                   </div>
                 </div>
-                <dl className="grid grid-cols-2 gap-2 text-xs">
+                <dl className="grid grid-cols-3 gap-2 text-xs">
                   <div>
                     <dt className="text-muted-foreground">Plate</dt>
                     <dd className="font-medium tracking-wide">{vehicle.plate}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Colour</dt>
+                    <dd className="font-medium">{vehicle.color ?? "Not set"}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Registration</dt>
