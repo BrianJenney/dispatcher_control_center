@@ -255,11 +255,11 @@ Reads go through a query function, called by the page for first paint and by a r
 
 Neon makes a "branch": an instant copy that only stores what changes. It is ready in seconds however large the database is, and it costs almost nothing until someone edits it. That gives this project three things:
 
-1. **Every proposed change is tried on a real copy first.** Each preview deploy gets its own branch, so a reviewer can click around a working version of the app without touching the live data.
+1. **Every proposed change is tried on a real copy first.** Preview deploys run on their own branch of the database, separate from production, so a reviewer can click around a working version of the app without touching the live data. Today all previews share one `preview` branch; the Neon integration for Vercel would give each preview its own.
 2. **Mistakes are cheap to undo.** If a change goes wrong, delete the branch. Production never knew about it. Neon can also rewind a database to a moment in the past, which is how the backup restore drill works.
 3. **It scales to zero.** A branch that nobody is using costs nothing, which keeps the monthly bill small for a project this size.
 
-The same property is why the app's local development uses a `local-dev` branch instead of a risky shared database.
+The same property gives local development a safe option: work against a local Postgres, or against a `local-dev` branch of the Neon database, never against production.
 
 ## Known issues
 

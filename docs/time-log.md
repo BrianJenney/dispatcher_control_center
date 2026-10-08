@@ -37,4 +37,4 @@ No full app generator (Lovable, Bolt, v0) was used. No code or images were copie
 
 ## Human review
 
-Brian reviewed behaviour in the browser and by reading summaries. He should read the code he will explain on the review call. See "Where to look in the code" in the README.
+Brian reviewed behaviour in the browser at phone and desktop sizes, reported problems, and decided every change of scope. The structure, rules and checks that keep the agent on track (`CLAUDE.md`, the lint rules, the database rules, the gates and the verify flows) are his way of running a build; "Where to look in the code" in the README is the map for reading it.
