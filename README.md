@@ -54,6 +54,16 @@ The database can be rewound to any second in the last 7 days, and a restore take
 
 Vercel builds with `pnpm db:deploy && pnpm build`. `db:deploy` applies migrations, then seeds the fake demo data only if the database has no drivers yet, so it is safe on every deploy and never touches data that already exists. Set the variables from `.env.example` on the Vercel project, plus `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` if you want error and trace reporting.
 
+## Running cost
+
+Estimated from public vendor pricing read on 2026-10-08 (prices change, so check before quoting). Totals per month, with the range in brackets:
+
+- 20 users (about 5 dispatchers online at once): **about $40** ($40 to $102)
+- 200 users (about 40 online at once): **about $162** ($102 to $306)
+- Idle demo with almost no traffic: **about $40** ($0 to $41)
+
+The biggest drivers are the Vercel Pro fee, a Neon database that the health check keeps awake, and Sentry spans from tracing every 5 second poll. Three small changes bring the three totals down to about $25, $50 and $21. The sources, assumptions and arithmetic are in [docs/cost-estimate.md](docs/cost-estimate.md).
+
 ## Adding shadcn components
 
 Use `pnpm ui:add <component>`, not the shadcn CLI directly. The shadcn CLI sometimes adds an unrelated npm package called `cn` and imports from it; the script removes it and points the imports at `@/components/ui/utils`. Lint blocks the stray import either way.
