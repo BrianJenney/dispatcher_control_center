@@ -1,13 +1,39 @@
 import { describe, expect, it } from "vitest";
-import { jobsFilter, jobsSearch } from "@/domain/jobs";
+import { jobsFilter, jobsMaxShown, jobsPageSize, jobsSearch, nextJobsShow } from "@/domain/jobs";
 
 describe("jobsFilter", () => {
   it("falls back to sensible defaults for anything odd in the URL", () => {
-    expect(jobsFilter.parse({ status: "flying", show: "9999" })).toEqual({ q: "", status: null, show: 25 });
+    expect(jobsFilter.parse({ status: "flying", show: "lots" })).toEqual({ q: "", status: null, show: 25 });
+    expect(jobsFilter.parse({})).toEqual({ q: "", status: null, show: 25 });
+  });
+
+  it("clamps the page length into range instead of resetting it", () => {
+    expect(jobsFilter.parse({ show: "225" }).show).toBe(jobsMaxShown);
+    expect(jobsFilter.parse({ show: "9999" }).show).toBe(jobsMaxShown);
+    expect(jobsFilter.parse({ show: "3" }).show).toBe(jobsPageSize);
+    expect(jobsFilter.parse({ show: "-50" }).show).toBe(jobsPageSize);
+  });
+
+  it("keeps an in-range count and rounds fractions", () => {
+    expect(jobsFilter.parse({ show: "26" }).show).toBe(26);
+    expect(jobsFilter.parse({ show: "200" }).show).toBe(200);
+    expect(jobsFilter.parse({ show: "60.6" }).show).toBe(61);
   });
 
   it("keeps valid values", () => {
     expect(jobsFilter.parse({ q: " Ashdown ", status: "offer", show: "50" })).toEqual({ q: "Ashdown", status: "offer", show: 50 });
+  });
+});
+
+describe("nextJobsShow", () => {
+  it("adds a page at a time", () => {
+    expect(nextJobsShow(25)).toBe(50);
+    expect(nextJobsShow(175)).toBe(200);
+  });
+
+  it("stops at the maximum", () => {
+    expect(nextJobsShow(190)).toBe(jobsMaxShown);
+    expect(nextJobsShow(jobsMaxShown)).toBeNull();
   });
 });
 

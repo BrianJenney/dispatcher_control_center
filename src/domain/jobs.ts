@@ -5,12 +5,17 @@ import { tripStatuses } from "@/domain/trip-status";
 
 export const jobsPageSize = 25;
 
+export const jobsMaxShown = 200;
+
 export const jobsSearchId = "jobs-search";
 
 export const jobsFilter = z.object({
   q: z.string().trim().max(80).catch(""),
   status: z.enum(tripStatuses).nullable().catch(null),
-  show: z.coerce.number().int().min(jobsPageSize).max(200).catch(jobsPageSize),
+  show: z.coerce
+    .number()
+    .catch(jobsPageSize)
+    .transform((show) => Math.min(Math.max(Math.round(show), jobsPageSize), jobsMaxShown)),
 });
 
 export type JobsFilter = z.output<typeof jobsFilter>;
@@ -21,6 +26,10 @@ export function jobsSearch(filter: JobsFilter): string {
   if (filter.status) params.set("status", filter.status);
   if (filter.show !== jobsPageSize) params.set("show", String(filter.show));
   return params.toString();
+}
+
+export function nextJobsShow(show: number): number | null {
+  return show < jobsMaxShown ? Math.min(show + jobsPageSize, jobsMaxShown) : null;
 }
 
 export const jobsSnapshot = z.object({ trips: z.array(tripRow), hasMore: z.boolean() });

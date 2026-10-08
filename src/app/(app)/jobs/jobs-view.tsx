@@ -12,7 +12,7 @@ import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
-import { jobsPageSize, jobsSearch, jobsSearchId, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
+import { jobsMaxShown, jobsPageSize, jobsSearch, jobsSearchId, nextJobsShow, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { statusLabels, tripStatuses } from "@/domain/trip-status";
 
 const statusTabs = [{ value: null, label: "All" }, ...tripStatuses.map((value) => ({ value, label: statusLabels[value] }))];
@@ -37,6 +37,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
   const searchBox = useRef<HTMLInputElement>(null);
   const search = jobsSearch(filter);
   const { data, isError, refetch } = useLiveQuery(liveQueries.jobs(search), initialData);
+  const nextShow = nextJobsShow(filter.show);
 
   useEffect(() => {
     const box = searchBox.current;
@@ -135,16 +136,22 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
         )}
       </div>
       {data.hasMore ? (
-        <Button
-          variant="outline"
-          className="w-full sm:w-auto"
-          aria-disabled={navigating}
-          onClick={() => {
-            show({ ...filter, show: filter.show + jobsPageSize });
-          }}
-        >
-          Show more
-        </Button>
+        nextShow === null ? (
+          <p className="text-sm text-muted-foreground">
+            Showing the newest {jobsMaxShown}. Search by customer or pick a status to find older trips.
+          </p>
+        ) : (
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            aria-disabled={navigating}
+            onClick={() => {
+              show({ ...filter, show: nextShow });
+            }}
+          >
+            Show more
+          </Button>
+        )
       ) : null}
     </div>
   );
