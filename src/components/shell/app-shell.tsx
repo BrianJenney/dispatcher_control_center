@@ -14,12 +14,12 @@ export function AppShell({ user, children }: { user: SignedInUser | null; childr
       >
         Skip to content
       </a>
-      <aside className="sticky top-0 hidden h-dvh flex-col justify-between bg-sidebar py-6 text-sidebar-foreground lg:flex">
-        <div className="space-y-8">
+      <aside className="sticky top-0 hidden h-dvh min-h-0 flex-col bg-sidebar py-6 text-sidebar-foreground lg:flex">
+        <div className="min-h-0 flex-1 space-y-8 overflow-y-auto">
           <Brand tone="light" className="px-6" />
           <SidebarNav />
         </div>
-        <div className="mx-3 border-t border-sidebar-border px-3 pt-4">
+        <div className="mx-3 shrink-0 border-t border-sidebar-border px-3 pt-4">
           {user ? <UserMenu user={user} tone="light" /> : <div className="h-9" />}
         </div>
       </aside>

@@ -40,12 +40,12 @@ function BottomLinks({ pathname }: { pathname: string | null }) {
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname !== null && isActive(pathname, href);
           return (
-            <li key={href} className="flex-1">
+            <li key={href} className="min-w-0 flex-1">
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   active && "text-primary",
                 )}
               >
