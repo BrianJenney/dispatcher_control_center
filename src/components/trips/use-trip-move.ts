@@ -2,6 +2,7 @@
 
 import type { z } from "zod";
 import { tripsQueryKey } from "@/components/queries";
+import { keepFocusNearTrip } from "@/components/trips/trip-focus";
 import { useOptimisticAction } from "@/components/use-optimistic-action";
 import type { ActionResult } from "@/domain/result";
 import { patchTrips, type TripPatch, type TripRow } from "@/domain/trip-row";
@@ -11,7 +12,7 @@ import { moveTrip, reassignDriver } from "@/server/actions/trips";
 
 type TripLists = { trips: TripRow[] };
 
-function useTripMutation<V extends { reference: number }>(options: {
+function useTripMutation<V extends { tripId: string; reference: number }>(options: {
   send: (request: V) => Promise<ActionResult<unknown>>;
   patch: (request: V) => TripPatch;
   done: (request: V) => string;
@@ -21,6 +22,9 @@ function useTripMutation<V extends { reference: number }>(options: {
     action: options.send,
     update: (data, request) => ({ ...data, trips: patchTrips(data.trips, options.patch(request)) }),
     done: options.done,
+    settled: (request) => {
+      keepFocusNearTrip(request.tripId);
+    },
   });
 }
 

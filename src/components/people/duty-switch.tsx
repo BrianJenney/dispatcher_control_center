@@ -29,9 +29,10 @@ export function DutySwitch({ driver, onChanged }: { driver: { id: string; name: 
       <Switch
         id={id}
         checked={driver.onDuty}
-        disabled={toggle.isPending}
+        aria-disabled={toggle.isPending}
         aria-label={`${driver.name} on duty`}
         onCheckedChange={(onDuty) => {
+          if (toggle.isPending) return;
           toggle.mutate({ driverId: driver.id, name: driver.name, onDuty }, { onSettled: onChanged });
         }}
       />

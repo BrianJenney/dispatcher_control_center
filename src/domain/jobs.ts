@@ -5,6 +5,8 @@ import { tripStatuses } from "@/domain/trip-status";
 
 export const jobsPageSize = 25;
 
+export const jobsSearchId = "jobs-search";
+
 export const jobsFilter = z.object({
   q: z.string().trim().max(80).catch(""),
   status: z.enum(tripStatuses).nullable().catch(null),

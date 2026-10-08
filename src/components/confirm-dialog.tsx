@@ -24,6 +24,7 @@ type ConfirmDialogProps = {
   keepLabel?: string;
   onConfirm: (form: FormData) => Promise<ActionResult<unknown>>;
   onConfirmed?: () => void;
+  returnFocus?: () => HTMLElement | null;
   children?: ReactNode;
 };
 
@@ -35,6 +36,7 @@ export function ConfirmDialog({
   keepLabel = "Keep it",
   onConfirm,
   onConfirmed,
+  returnFocus,
   children,
 }: ConfirmDialogProps) {
   const formId = useId();
@@ -75,7 +77,14 @@ export function ConfirmDialog({
       }}
     >
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent
+        onCloseAutoFocus={(event) => {
+          const target = returnFocus?.();
+          if (!target) return;
+          event.preventDefault();
+          target.focus();
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
@@ -90,7 +99,7 @@ export function ConfirmDialog({
         </form>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>{keepLabel}</AlertDialogCancel>
-          <Button type="submit" form={formId} variant="destructive" disabled={pending} aria-busy={pending}>
+          <Button type="submit" form={formId} variant="destructive" aria-disabled={pending} aria-busy={pending}>
             {pending ? "Working…" : confirmLabel}
           </Button>
         </AlertDialogFooter>

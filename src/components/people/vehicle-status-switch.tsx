@@ -32,9 +32,10 @@ export function VehicleStatusSwitch({
       <Switch
         id={id}
         checked={vehicle.status === "ready"}
-        disabled={change.isPending}
+        aria-disabled={change.isPending}
         aria-label={`${vehicle.unitNumber} ready`}
         onCheckedChange={(ready) => {
+          if (change.isPending) return;
           change.mutate(
             { vehicleId: vehicle.id, unitNumber: vehicle.unitNumber, status: ready ? "ready" : "in_service" },
             { onSettled: onChanged },

@@ -3,7 +3,7 @@
 import { Download, Search } from "lucide-react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useRef, useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
@@ -12,7 +12,7 @@ import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
-import { jobsPageSize, jobsSearch, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
+import { jobsPageSize, jobsSearch, jobsSearchId, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { statusLabels, tripStatuses } from "@/domain/trip-status";
 
 const statusTabs = [{ value: null, label: "All" }, ...tripStatuses.map((value) => ({ value, label: statusLabels[value] }))];
@@ -34,8 +34,14 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
   const router = useRouter();
   const [navigating, startNavigation] = useTransition();
   const typing = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const searchBox = useRef<HTMLInputElement>(null);
   const search = jobsSearch(filter);
   const { data, isError, refetch } = useLiveQuery(liveQueries.jobs(search), initialData);
+
+  useEffect(() => {
+    const box = searchBox.current;
+    if (box && document.activeElement !== box) box.value = filter.q;
+  }, [filter.q]);
 
   function show(next: JobsFilter) {
     startNavigation(() => {
@@ -49,6 +55,8 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
         <div className="relative max-w-md">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
+            ref={searchBox}
+            id={jobsSearchId}
             type="search"
             aria-label="Search by customer"
             placeholder="Search by customer"
@@ -71,7 +79,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
             </a>
           </Button>
         </div>
-        <div role="group" aria-label="Filter by status" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+        <div role="group" aria-label="Filter by status" className="-mx-4 -my-1 flex gap-2 overflow-x-auto px-4 py-1 sm:-mx-1 sm:px-1">
           {statusTabs.map((tab) => {
             const selected = filter.status === tab.value;
             return (
@@ -104,6 +112,8 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
                 <Button
                   variant="outline"
                   onClick={() => {
+                    if (searchBox.current) searchBox.current.value = "";
+                    searchBox.current?.focus();
                     show({ q: "", status: null, show: jobsPageSize });
                   }}
                 >
@@ -128,7 +138,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
         <Button
           variant="outline"
           className="w-full sm:w-auto"
-          disabled={navigating}
+          aria-disabled={navigating}
           onClick={() => {
             show({ ...filter, show: filter.show + jobsPageSize });
           }}

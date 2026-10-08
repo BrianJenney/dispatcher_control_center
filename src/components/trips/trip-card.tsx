@@ -4,8 +4,22 @@ import { ArrowRight, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFormat } from "@/components/format";
 import { StatusBadge } from "@/components/trips/status-badge";
+import { tripCardId } from "@/components/trips/trip-focus";
+import { cn } from "@/components/ui/utils";
 import { vehicleClassLabels } from "@/domain/fleet";
 import type { TripRow } from "@/domain/trip-row";
+
+const cardFocus = "scroll-mt-20 outline-none focus-visible:ring-3 focus-visible:ring-ring";
+
+function cardAttributes(trip: TripRow) {
+  return {
+    id: tripCardId(trip.id),
+    tabIndex: -1,
+    "data-trip-card": "",
+    "data-pickup-at": trip.pickupAt,
+    "aria-label": `Trip ${String(trip.reference)} for ${trip.customerName}`,
+  };
+}
 
 export function TripCard({
   trip,
@@ -21,11 +35,7 @@ export function TripCard({
   const format = useFormat();
   if (compact) {
     return (
-      <article
-        aria-label={`Trip ${String(trip.reference)} for ${trip.customerName}`}
-        data-pickup-at={trip.pickupAt}
-        className="rounded-xl border bg-card px-4 py-3 shadow-xs"
-      >
+      <article {...cardAttributes(trip)} className={cn("rounded-xl border bg-card px-4 py-3 shadow-xs", cardFocus)}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-sm">
@@ -47,9 +57,8 @@ export function TripCard({
   }
   return (
     <article
-      aria-label={`Trip ${String(trip.reference)} for ${trip.customerName}`}
-      data-pickup-at={trip.pickupAt}
-      className="rounded-xl border bg-card p-4 shadow-xs transition-shadow hover:shadow-sm"
+      {...cardAttributes(trip)}
+      className={cn("rounded-xl border bg-card p-4 shadow-xs transition-shadow hover:shadow-sm", cardFocus)}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
