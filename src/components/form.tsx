@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { createContext, use, useId, useRef, useState, type ComponentProps, type SubmitEvent } from "react";
+import { createContext, use, useEffect, useId, useRef, useState, type ComponentProps, type SubmitEvent } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,17 @@ type ActionForm<S extends z.ZodType, R> = {
   clearOnSuccess?: boolean;
 };
 
+function firstInvalidControl(form: HTMLFormElement, errors: FieldErrors): HTMLElement | null {
+  const field = Array.from(form.elements).find(
+    (element) =>
+      (element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) &&
+      Boolean(errors[element.name]?.length),
+  );
+  if (!(field instanceof HTMLElement)) return null;
+  const isRadixSelectValue = field instanceof HTMLSelectElement && field.getAttribute("aria-hidden") === "true";
+  return isRadixSelectValue ? field.parentElement?.querySelector<HTMLElement>('[data-slot="select-trigger"]') ?? null : field;
+}
+
 export function useActionForm<S extends z.ZodType, R>({
   schema,
   action,
@@ -35,6 +46,19 @@ export function useActionForm<S extends z.ZodType, R>({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const mutation = useMutation({ mutationFn: action });
   const inFlight = useRef(false);
+  const formToFocus = useRef<HTMLFormElement | null>(null);
+
+  useEffect(() => {
+    const form = formToFocus.current;
+    if (!form || mutation.isPending) return;
+    formToFocus.current = null;
+    firstInvalidControl(form, fieldErrors)?.focus();
+  }, [fieldErrors, mutation.isPending]);
+
+  function showFieldErrors(form: HTMLFormElement, errors: FieldErrors) {
+    formToFocus.current = form;
+    setFieldErrors(errors);
+  }
 
   function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +67,7 @@ export function useActionForm<S extends z.ZodType, R>({
     const parsed = schema.safeParse(Object.fromEntries(new FormData(form)));
     if (!parsed.success) {
       setFormError(null);
-      setFieldErrors(z.flattenError(parsed.error).fieldErrors);
+      showFieldErrors(form, z.flattenError(parsed.error).fieldErrors);
       return;
     }
     inFlight.current = true;
@@ -57,7 +81,7 @@ export function useActionForm<S extends z.ZodType, R>({
       onSuccess: (result) => {
         if (!result.ok) {
           setFormError(result.message);
-          setFieldErrors(result.fieldErrors);
+          showFieldErrors(form, result.fieldErrors);
           return;
         }
         setFormError(null);
