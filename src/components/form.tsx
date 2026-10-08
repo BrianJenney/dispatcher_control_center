@@ -22,9 +22,15 @@ type ActionForm<S extends z.ZodType, R> = {
   schema: S;
   action: (input: z.output<S>) => Promise<ActionResult<R>>;
   onSuccess?: (data: R) => void;
+  clearOnSuccess?: boolean;
 };
 
-export function useActionForm<S extends z.ZodType, R>({ schema, action, onSuccess }: ActionForm<S, R>): ActionFormState {
+export function useActionForm<S extends z.ZodType, R>({
+  schema,
+  action,
+  onSuccess,
+  clearOnSuccess = false,
+}: ActionForm<S, R>): ActionFormState {
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const mutation = useMutation({ mutationFn: action });
@@ -56,7 +62,7 @@ export function useActionForm<S extends z.ZodType, R>({ schema, action, onSucces
         }
         setFormError(null);
         setFieldErrors({});
-        form.reset();
+        if (clearOnSuccess) form.reset();
         onSuccess?.(result.data);
       },
     });

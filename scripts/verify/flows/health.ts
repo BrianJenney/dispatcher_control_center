@@ -39,6 +39,7 @@ export const health: Flow = {
         await page.getByRole("button", { name: "Record check" }).click();
         await expect(page.getByTestId("latest-check")).toHaveText("Verification run");
         await expect(page.getByLabel("Check name")).not.toHaveAttribute("aria-invalid");
+        await expect(page.getByLabel("Check name")).toHaveValue("");
       },
     },
     {

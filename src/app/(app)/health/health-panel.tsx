@@ -69,7 +69,7 @@ export function HealthPanel({ initialData }: { initialData: HealthSnapshot }) {
 }
 
 function RecordCheckForm({ onRecorded }: { onRecorded: () => void }) {
-  const form = useActionForm({ schema: recordHealthCheckInput, action: recordHealthCheck, onSuccess: onRecorded });
+  const form = useActionForm({ schema: recordHealthCheckInput, action: recordHealthCheck, onSuccess: onRecorded, clearOnSuccess: true });
   return (
     <form onSubmit={form.onSubmit} noValidate className="space-y-2">
       <FormField label="Check name" name="label" placeholder="Morning check" errors={form.fieldErrors.label} />
