@@ -2,6 +2,7 @@
 
 import { CircleHelp } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { TourHighlight } from "@/components/tour-highlight";
 import { Button } from "@/components/ui/button";
@@ -100,8 +101,10 @@ export function GuidedTour() {
 
 function TourSteps() {
   const [index, setIndex] = useState(0);
+  const pathname = usePathname();
   const step = tourSteps[index];
   if (!step) return null;
+  const link = step.link && step.link.href !== pathname ? step.link : null;
   const last = index === tourSteps.length - 1;
   return (
     <>
@@ -125,10 +128,10 @@ function TourSteps() {
             <span key={entry.title} className={position <= index ? "h-1 flex-1 rounded-full bg-primary" : "h-1 flex-1 rounded-full bg-muted"} />
           ))}
         </div>
-        {step.link ? (
+        {link ? (
           <Button asChild variant="outline" className="h-11 sm:h-10">
-            <Link href={step.link.href} onClick={closeTour}>
-              {step.link.label}
+            <Link href={link.href} onClick={closeTour}>
+              {link.label}
             </Link>
           </Button>
         ) : null}
