@@ -13,7 +13,8 @@ import { tourTarget } from "@/components/tour-target";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
 import { dashboardLists, isPickedUpToday, summarizeDashboard, type DashboardSnapshot } from "@/domain/dashboard";
-import { jobsPageSize, jobsSearch } from "@/domain/jobs";
+import { jobsSearch } from "@/domain/jobs";
+import { pageSize } from "@/domain/paging";
 import type { TourTarget } from "@/domain/tour";
 import type { TripRow } from "@/domain/trip-row";
 
@@ -22,7 +23,7 @@ const listLimit = 5;
 const inSchedule = { href: "/schedule", place: "in the schedule" } as const;
 
 const enRouteJobs = {
-  href: `/jobs?${jobsSearch({ q: "", status: "en_route", show: jobsPageSize })}`,
+  href: `/jobs?${jobsSearch({ q: "", status: "en_route", show: pageSize })}`,
   place: "in jobs",
 } as const;
 

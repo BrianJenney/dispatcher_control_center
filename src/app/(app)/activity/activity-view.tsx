@@ -8,13 +8,15 @@ import { liveQueries } from "@/components/queries";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { StatusBadge } from "@/components/trips/status-badge";
 import { Button } from "@/components/ui/button";
-import { activityPageSize, describeActivity, type ActivityFilter, type ActivitySnapshot } from "@/domain/activity";
+import { describeActivity, type ActivityFilter, type ActivitySnapshot } from "@/domain/activity";
+import { maxShown, nextShownCount } from "@/domain/paging";
 
 export function ActivityView({ filter, initialData }: { filter: ActivityFilter; initialData: ActivitySnapshot }) {
   const router = useRouter();
   const [loading, startLoading] = useTransition();
   const format = useFormat();
   const { data, isError, refetch } = useLiveQuery(liveQueries.activity(filter.show), initialData);
+  const nextShow = nextShownCount(filter.show);
 
   return (
     <div className="space-y-5">
@@ -43,14 +45,17 @@ export function ActivityView({ filter, initialData }: { filter: ActivityFilter; 
           ))}
         </ol>
       )}
-      {data.hasMore ? (
+      {data.hasMore && nextShow === null ? (
+        <p className="text-sm text-muted-foreground">Showing the newest {maxShown} changes.</p>
+      ) : null}
+      {data.hasMore && nextShow !== null ? (
         <Button
           variant="outline"
           className="h-11 w-full sm:h-10 sm:w-auto"
           aria-disabled={loading}
           onClick={() => {
             startLoading(() => {
-              router.replace(`/activity?show=${String(filter.show + activityPageSize)}`, { scroll: false });
+              router.replace(`/activity?show=${String(nextShow)}`, { scroll: false });
             });
           }}
         >

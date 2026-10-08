@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { activityFilter, activityPageSize, describeActivity } from "@/domain/activity";
+import { activityFilter, describeActivity } from "@/domain/activity";
+import { maxShown, pageSize } from "@/domain/paging";
 
 describe("describeActivity", () => {
   it.each([
@@ -21,13 +22,13 @@ describe("describeActivity", () => {
 
 describe("activityFilter", () => {
   it("defaults to the first page", () => {
-    expect(activityFilter.parse({}).show).toBe(activityPageSize);
+    expect(activityFilter.parse({}).show).toBe(pageSize);
   });
 
   it("keeps sensible sizes and falls back on nonsense", () => {
     expect(activityFilter.parse({ show: "50" }).show).toBe(50);
-    expect(activityFilter.parse({ show: "5" }).show).toBe(activityPageSize);
-    expect(activityFilter.parse({ show: "9999" }).show).toBe(activityPageSize);
-    expect(activityFilter.parse({ show: "abc" }).show).toBe(activityPageSize);
+    expect(activityFilter.parse({ show: "5" }).show).toBe(pageSize);
+    expect(activityFilter.parse({ show: "9999" }).show).toBe(maxShown);
+    expect(activityFilter.parse({ show: "abc" }).show).toBe(pageSize);
   });
 });

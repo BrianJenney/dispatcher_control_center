@@ -12,7 +12,8 @@ import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
-import { jobsMaxShown, jobsPageSize, jobsSearch, jobsSearchId, nextJobsShow, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
+import { jobsSearch, jobsSearchId, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
+import { maxShown, nextShownCount, pageSize } from "@/domain/paging";
 import { statusLabels, tripStatuses } from "@/domain/trip-status";
 
 const statusTabs = [{ value: null, label: "All" }, ...tripStatuses.map((value) => ({ value, label: statusLabels[value] }))];
@@ -37,7 +38,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
   const searchBox = useRef<HTMLInputElement>(null);
   const search = jobsSearch(filter);
   const { data, isError, refetch } = useLiveQuery(liveQueries.jobs(search), initialData);
-  const nextShow = nextJobsShow(filter.show);
+  const nextShow = nextShownCount(filter.show);
 
   useEffect(() => {
     const box = searchBox.current;
@@ -67,7 +68,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
               const q = event.currentTarget.value;
               clearTimeout(typing.current);
               typing.current = setTimeout(() => {
-                show({ ...filter, q, show: jobsPageSize });
+                show({ ...filter, q, show: pageSize });
               }, 300);
             }}
           />
@@ -91,7 +92,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
                 aria-pressed={selected}
                 className="shrink-0 rounded-full"
                 onClick={() => {
-                  show({ ...filter, status: tab.value, show: jobsPageSize });
+                  show({ ...filter, status: tab.value, show: pageSize });
                 }}
               >
                 {tab.label}
@@ -115,7 +116,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
                   onClick={() => {
                     if (searchBox.current) searchBox.current.value = "";
                     searchBox.current?.focus();
-                    show({ q: "", status: null, show: jobsPageSize });
+                    show({ q: "", status: null, show: pageSize });
                   }}
                 >
                   Show all jobs
@@ -138,7 +139,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
       {data.hasMore ? (
         nextShow === null ? (
           <p className="text-sm text-muted-foreground">
-            Showing the newest {jobsMaxShown}. Search by customer or pick a status to find older trips.
+            Showing the newest {maxShown}. Search by customer or pick a status to find older trips.
           </p>
         ) : (
           <Button

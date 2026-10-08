@@ -1,8 +1,8 @@
 import { expect } from "@playwright/test";
+import { pageSize } from "@/domain/paging";
 import { insertTodaysOffer, viewportTag } from "./expected";
 import type { Flow } from "./types";
 
-const pageSize = 25;
 const guest = { name: "" };
 
 export const activity: Flow = {

@@ -1,10 +1,9 @@
 import { z } from "zod";
+import { shownCount } from "@/domain/paging";
 import { tripStatuses, type TripStatus } from "@/domain/trip-status";
 
-export const activityPageSize = 25;
-
 export const activityFilter = z.object({
-  show: z.coerce.number().int().min(activityPageSize).max(200).catch(activityPageSize),
+  show: shownCount,
 });
 
 export type ActivityFilter = z.output<typeof activityFilter>;

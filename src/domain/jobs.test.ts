@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { jobsFilter, jobsMaxShown, jobsPageSize, jobsSearch, nextJobsShow } from "@/domain/jobs";
+import { jobsFilter, jobsSearch } from "@/domain/jobs";
+import { maxShown, pageSize } from "@/domain/paging";
 
 describe("jobsFilter", () => {
   it("falls back to sensible defaults for anything odd in the URL", () => {
@@ -8,10 +9,10 @@ describe("jobsFilter", () => {
   });
 
   it("clamps the page length into range instead of resetting it", () => {
-    expect(jobsFilter.parse({ show: "225" }).show).toBe(jobsMaxShown);
-    expect(jobsFilter.parse({ show: "9999" }).show).toBe(jobsMaxShown);
-    expect(jobsFilter.parse({ show: "3" }).show).toBe(jobsPageSize);
-    expect(jobsFilter.parse({ show: "-50" }).show).toBe(jobsPageSize);
+    expect(jobsFilter.parse({ show: "225" }).show).toBe(maxShown);
+    expect(jobsFilter.parse({ show: "9999" }).show).toBe(maxShown);
+    expect(jobsFilter.parse({ show: "3" }).show).toBe(pageSize);
+    expect(jobsFilter.parse({ show: "-50" }).show).toBe(pageSize);
   });
 
   it("keeps an in-range count and rounds fractions", () => {
@@ -25,17 +26,6 @@ describe("jobsFilter", () => {
   });
 });
 
-describe("nextJobsShow", () => {
-  it("adds a page at a time", () => {
-    expect(nextJobsShow(25)).toBe(50);
-    expect(nextJobsShow(175)).toBe(200);
-  });
-
-  it("stops at the maximum", () => {
-    expect(nextJobsShow(190)).toBe(jobsMaxShown);
-    expect(nextJobsShow(jobsMaxShown)).toBeNull();
-  });
-});
 
 describe("jobsSearch", () => {
   it("writes only what differs from the defaults", () => {

@@ -6,7 +6,8 @@ import type { ReactNode } from "react";
 import { ActionForm, FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { mostSeatsInAnyClass, vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
-import { jobsPageSize, jobsSearch } from "@/domain/jobs";
+import { jobsSearch } from "@/domain/jobs";
+import { pageSize } from "@/domain/paging";
 import { durationOptions, tripInput, updateTripInput } from "@/domain/trip-form";
 import { createTrip, updateTrip } from "@/server/actions/trips";
 
@@ -33,7 +34,7 @@ function useSaved(message: (trip: Saved) => string) {
   const router = useRouter();
   return (trip: Saved) => {
     toast.success(message(trip));
-    router.push(`/jobs?${jobsSearch({ q: trip.customerName, status: null, show: jobsPageSize })}`);
+    router.push(`/jobs?${jobsSearch({ q: trip.customerName, status: null, show: pageSize })}`);
   };
 }
 
