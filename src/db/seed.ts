@@ -1,7 +1,7 @@
 import { hashPassword, verifyPassword } from "better-auth/crypto";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
 import type { Database } from "@/db/client";
-import { account, drivers, session, user, vehicles } from "@/db/schema";
+import { account, drivers, session, trips, user, vehicles } from "@/db/schema";
 import {
   cancelReasons,
   createRandom,
@@ -16,9 +16,10 @@ import {
   type Random,
 } from "@/db/seed-data";
 import { applyTransitions, insertOffers, type NewTrip } from "@/db/trip-writes";
+import { closeOutPath, daySeed, unassignedAtPickup } from "@/domain/demo-day";
 import { maxPassengers, type VehicleClass } from "@/domain/fleet";
 import { dayRange, hourMs, shiftDays, tripWindow, type TimeRange } from "@/domain/time";
-import { transitionTrip, tripStatuses, type TripState, type TripStatus } from "@/domain/trip-status";
+import { activeStatuses, transitionTrip, tripStatuses, type TripState, type TripStatus } from "@/domain/trip-status";
 
 export type SeedOptions = {
   demoUser: { email: string; password: string };
@@ -131,18 +132,21 @@ function planRecentTrips(random: Random, seeded: SeedDriver[], now: Date, timeZo
       }
     }
   }
-  const todays: PlannedTrip[] = [];
+  return [...plans, ...planDay(random, seeded, today, now)];
+}
+
+function planDay(random: Random, seeded: SeedDriver[], day: TimeRange, now: Date): PlannedTrip[] {
+  const plans: PlannedTrip[] = [];
   for (const driver of seeded) {
     for (const hour of slotHours) {
       if (random.next() >= 0.45) continue;
-      const plan = planTrip(random, driver, today, hour, "offer");
-      const pickupAt = plan.values.pickupAt;
-      plan.target = todayStatus(random, tripWindow(pickupAt, plan.values.durationMinutes), now);
-      todays.push(plan);
+      const plan = planTrip(random, driver, day, hour, "offer");
+      plan.target = todayStatus(random, tripWindow(plan.values.pickupAt, plan.values.durationMinutes), now);
+      plans.push(plan);
     }
   }
-  ensureEveryStatus(todays);
-  return [...plans, ...todays];
+  ensureEveryStatus(plans);
+  return plans;
 }
 
 function planLoadTrips(random: Random, seeded: SeedDriver[], count: number, now: Date, timeZone: string) {
@@ -187,10 +191,55 @@ async function writeTrips(db: Database, plans: PlannedTrip[], actorId: string, r
   }
 }
 
+const stillOpen: readonly TripStatus[] = ["offer", ...activeStatuses];
+
+async function closeOutBefore(db: Database, start: Date, actorId: string) {
+  const stale = await db
+    .select({ id: trips.id, status: trips.status, driverId: trips.driverId, cancelReason: trips.cancelReason })
+    .from(trips)
+    .where(and(lt(trips.pickupAt, start), inArray(trips.status, [...stillOpen])));
+  await db.transaction(async (tx) => {
+    const states = new Map<string, TripState>(stale.map(({ id, ...state }) => [id, state]));
+    for (let step = 0; ; step++) {
+      const moves = stale.flatMap((trip) => {
+        const to = closeOutPath(trip.status)[step];
+        const state = states.get(trip.id);
+        if (!to || !state) return [];
+        const moved = transitionTrip(state, { to, actorId, reason: unassignedAtPickup });
+        states.set(trip.id, moved.trip);
+        return [{ tripId: trip.id, ...moved }];
+      });
+      if (moves.length === 0) break;
+      await applyTransitions(tx, moves);
+    }
+  });
+  return stale.length;
+}
+
+export async function rollDemoDayForward(db: Database, options: { actorId: string; now: Date; timeZone: string }) {
+  const today = dayRange(options.now, options.timeZone);
+  const closed = await closeOutBefore(db, today.start, options.actorId);
+  if ((await db.$count(trips, and(gte(trips.pickupAt, today.start), lt(trips.pickupAt, today.end)))) > 0) {
+    return { closed, added: 0 };
+  }
+  const onDuty = await db
+    .select({ id: drivers.id, vehicleClass: drivers.vehicleClass })
+    .from(drivers)
+    .where(eq(drivers.onDuty, true))
+    .orderBy(asc(drivers.name));
+  const random = createRandom(daySeed(today.start));
+  const plans = planDay(random, onDuty, today, options.now);
+  await writeTrips(db, plans, options.actorId, random);
+  return { closed, added: plans.length };
+}
+
 export async function seed(db: Database, options: SeedOptions) {
   const random = createRandom(20261011);
   const demoUserId = await seedDemoUser(db, options.demoUser);
-  if ((await db.$count(drivers)) > 0) return { demoUserId, trips: 0 };
+  if ((await db.$count(drivers)) > 0) {
+    const rolled = await rollDemoDayForward(db, { actorId: demoUserId, now: options.now, timeZone: options.timeZone });
+    return { demoUserId, trips: rolled.added };
+  }
 
   const insertedDrivers = await db
     .insert(drivers)
