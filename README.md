@@ -118,7 +118,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | Theme switcher | Done | Sun or moon button beside sign out (light and dark) |
 | Guided first time tour | Done | Opens on a first visit and highlights the part of the app each step describes; question mark button reopens it |
 | CSV export of trips | Done | "Export CSV" on Jobs, follows the search and status on screen |
-| Activity log | Done | `/activity`, who changed which trip and when |
+| Activity log | Done | `/activity`, who changed which trip and when, with old and new values for edits and both drivers for reassignments |
 | Automated tests on the matching logic | Done | `src/domain/matching.test.ts`, plus mutation testing on the domain code |
 | Keyboard shortcuts | Done | Press `?` for the list; `g` then a letter jumps between pages |
 
@@ -153,11 +153,15 @@ erDiagram
     user ||--o{ session : "signs in with"
     user ||--o{ account : "has"
     user ||--o{ trip_events : "performs"
+    user ||--o{ trip_edits : "makes"
     user ||--o{ documents : "uploads"
     drivers ||--o{ trips : "drives"
     drivers ||--o{ documents : "has licence"
     vehicles ||--o{ documents : "has registration"
-    trips ||--o{ trip_events : "records history in"
+    drivers |o--o{ trip_events : "hands over (from_driver_id)"
+    drivers |o--o{ trip_events : "takes on (to_driver_id)"
+    trips ||--o{ trip_events : "records moves in"
+    trips ||--o{ trip_edits : "records edits in"
 
     trips {
         uuid id PK
@@ -194,7 +198,24 @@ erDiagram
         text actor_id FK
         enum from_status
         enum to_status
+        uuid from_driver_id FK "driver before the move"
+        uuid to_driver_id FK "driver after the move"
         text reason
+        timestamptz created_at "append only"
+    }
+    trip_edits {
+        uuid id PK
+        uuid trip_id FK
+        text actor_id FK
+        enum field "which trip detail changed"
+        text from_text "customer and addresses"
+        text to_text
+        int from_integer "duration, passengers, fare in cents"
+        int to_integer
+        timestamptz from_time "pickup time"
+        timestamptz to_time
+        enum from_class "vehicle class"
+        enum to_class
         timestamptz created_at "append only"
     }
     documents {
@@ -214,7 +235,9 @@ The rules that matter are enforced by the database as well as the app, so they h
 - **Driver and status agree:** an offer has no driver, and every later status has one. A cancel needs a reason.
 - **No double booking:** an exclusion constraint rejects two active trips for one driver whose time ranges overlap.
 - **Right class:** triggers keep an assigned or en route trip in its driver's vehicle class. A trip cannot go to a driver of another class, and a driver's class cannot change while they hold such a trip.
-- **History:** every status change writes a `trip_events` row in the same transaction, and that table cannot be edited or deleted from.
+- **History of moves:** every status change, assignment and reassignment writes a `trip_events` row in the same transaction, naming who did it, the status before and after, and the driver before and after. A deferred trigger refuses the commit if the matching row is missing or names the wrong driver.
+- **History of edits:** editing a trip writes one `trip_edits` row per changed field, with its old and new value in a column of the right type (cents stay integers, times stay `timestamptz`). A check keeps each row to the one pair of columns its field uses, and a deferred trigger refuses any change to a trip's details that has no matching row.
+- **Append only:** `trip_events` and `trip_edits` cannot be updated or deleted from.
 - **Documents:** a licence belongs to a driver and a registration to a vehicle, only PDFs and images, 10 MB at most.
 - **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. This has not been load tested; `pnpm db:reset --load` builds a 100,000 trip database for anyone who wants to measure it.
 
@@ -246,6 +269,7 @@ Reads go through a query function, called by the page for first paint and by a r
 | How a read is guarded | `src/server/query.ts`, then any file in `src/server/queries` |
 | How a write is guarded | `src/server/action.ts`, then `src/server/actions/trips.ts` |
 | The single place status is written | `src/db/trip-writes.ts` |
+| How the activity log reads history | `src/domain/trip-edits.ts`, `src/domain/activity.ts`, `src/server/queries/activity.ts` |
 | Live polling and optimistic updates | `src/components/live-query.ts`, `src/components/use-optimistic-action.ts` |
 | How private files work | `src/server/storage.ts`, `src/app/api/documents/[id]/route.ts` |
 | Rules the linter enforces | `eslint.config.mjs` and `eslint-rules/` |
@@ -372,8 +396,11 @@ Proves: the status flow is enforced on the server and in the database, and live 
 3. The charts show trips per day (completed, still open, cancelled), revenue per day (completed trips only), why trips were cancelled, and trips per driver today, so an uneven load is visible at a glance.
 
 **Activity log** (`/activity`, from the "Activity log" button on Insights)
-1. Every booking, assignment, driver change, status move and cancellation is listed newest first, with who did it and the cancel reason.
-2. Book a trip in another tab and the entry appears here within 5 seconds. "Show more" loads older entries.
+1. Every booking, assignment, reassignment, edit, status move and cancellation is listed newest first in plain words, with who did it and when.
+2. Edit a trip's fare from $150 to $199 on Jobs. The newest entry reads "Demo Dispatcher changed the fare on trip #1282 from $150 to $199", marked Edited. Any changed detail reads the same way: customer, addresses, pickup time, duration, passengers, vehicle class.
+3. Assign that trip, then press "Reassign" and pick someone else. The log reads "assigned trip #1282 to Adele Fairbanks", then "reassigned trip #1282 from Adele Fairbanks to Esme Calloway".
+4. Book a trip in another tab and the entry appears here within 5 seconds. "Show more" loads older entries.
+5. The rule being proved: the history is written in the same transaction as the change, and the database refuses a change without it and refuses any edit or delete of the history (`tests/integration/trip-history.test.ts`).
 
 **CSV export** (Jobs, "Export CSV")
 1. Press "Export CSV" with no filters for every trip, newest first.
