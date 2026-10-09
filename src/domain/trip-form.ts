@@ -10,6 +10,11 @@ const dollars = /^\d{1,5}(\.\d{1,2})?$/;
 
 export const durationOptions = [30, 45, 60, 90, 120, 180, 240, 360, 480] as const;
 
+export function durationLabel(minutes: number): string {
+  if (minutes < 60) return `${String(minutes)} minutes`;
+  return `${String(minutes / 60)} ${minutes === 60 ? "hour" : "hours"}`;
+}
+
 const tripFields = z.object({
     customerName: z.string().trim().min(1, "Enter the customer's name.").max(120, "Keep the name to 120 characters."),
     pickupAddress: z.string().trim().min(1, "Enter where to pick the customer up.").max(200, "Keep the address to 200 characters."),
