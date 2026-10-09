@@ -1,8 +1,10 @@
 import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
 import { db } from "@/db/client";
 import { trips } from "@/db/schema";
 import { tripMessages } from "@/domain/trip-status";
+import { defineAction } from "@/server/action";
 import { moveTrip } from "@/server/actions/trips";
 import { demoUserId, freeSlot, insertDriver, insertOffer } from "./database";
 import { signInAsDemoUser } from "./session";
@@ -56,5 +58,18 @@ describe("two dispatchers at once", () => {
     expect(results.filter((result) => result.ok)).toHaveLength(1);
     const saved = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
     expect(["en_route", "cancelled"]).toContain(saved?.status);
+  });
+});
+
+describe("a deadlock between two writes", () => {
+  it("runs the losing write again instead of failing it", async () => {
+    let attempts = 0;
+    const save = defineAction(z.object({}), () => {
+      attempts += 1;
+      if (attempts === 1) return Promise.reject(Object.assign(new Error("deadlock detected"), { code: "40P01" }));
+      return Promise.resolve("saved");
+    });
+    expect(await save({})).toEqual({ ok: true, data: "saved" });
+    expect(attempts).toBe(2);
   });
 });

@@ -14,12 +14,21 @@ const messages: Record<string, string> = {
   documents_content_type_allowed: uploadMessages.notADocument,
 };
 
-export function violatedConstraint(error: unknown): string | null {
+function errorField(error: unknown, field: "constraint" | "code"): string | null {
   for (let current = error; typeof current === "object" && current !== null; ) {
-    if ("constraint" in current && typeof current.constraint === "string") return current.constraint;
+    const value: unknown = Reflect.get(current, field);
+    if (typeof value === "string") return value;
     current = "cause" in current ? current.cause : null;
   }
   return null;
+}
+
+export function violatedConstraint(error: unknown): string | null {
+  return errorField(error, "constraint");
+}
+
+export function isDeadlock(error: unknown): boolean {
+  return errorField(error, "code") === "40P01";
 }
 
 export function friendlyDatabaseError(error: unknown): string | null {
