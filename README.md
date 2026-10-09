@@ -287,6 +287,18 @@ Neon makes a "branch": an instant copy that only stores what changes. It is read
 
 The same property gives local development a safe option: work against a local Postgres, or against a `local-dev` branch of the Neon database, never against production.
 
+**Rules live in the database as well as the code.** The status flow, the no double booking rule and the driver class rule are pure functions in `src/domain` and again Postgres triggers and constraints. The app gives friendly messages; the database guarantees the rule even if the app has a bug.
+
+**One way to do each thing.** Every read is a `defineQuery` that checks the session before it touches the database, every write is a server action that validates with zod and writes in one transaction, and trip status changes only through `transitionTrip()`. Lint rules enforce these paths, so the code stays small enough to change live.
+
+**Polling, not WebSockets.** Screens refresh every 5 seconds with TanStack Query, and the dispatcher's own actions update the screen at once. A handful of dispatchers does not need a socket server, and polling works on Vercel with nothing extra to run or pay for.
+
+**Private files on short links.** Licences and registrations sit in private R2 buckets. The app hands out signed links that expire after 5 minutes, only to signed-in users.
+
+**Money and time.** Fares are integer cents everywhere and only formatted for display. Times are stored as `timestamptz`, and "today" means today in the business's time zone (`APP_TIMEZONE`), not the server's.
+
+**Left out on purpose.** No maps, no vehicle photos and no dispatcher and admin roles in this submission. Each is listed under "What to build next" or in the quote.
+
 ## Known issues
 
 - Uploads and views were checked by hand on the live site against the private production bucket (a driver photo, viewed through a signed link that expires after 5 minutes). Licence and registration uploads use the same code path and are covered by the automated tests.
