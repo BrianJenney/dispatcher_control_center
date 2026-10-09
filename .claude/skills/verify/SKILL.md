@@ -16,11 +16,12 @@ pnpm verify <flow>               Run one flow from the feature map
 pnpm verify --all                Run every flow
 pnpm verify <flow> --phone       Phone width only (375px)
 pnpm verify <flow> --skip-build  Reuse the last production build while iterating
+pnpm verify <flow> --load        Measure against 100,000 extra historical trips
 ```
 
 Each run:
 
-1. Starts a fresh database (`dispatch_verify`) and seeds it
+1. Starts a fresh database (`dispatch_verify`) and seeds it, and reseeds the demo day before each width so phone and desktop start from the same data (with `--load` the 100,000 trip database is seeded once and kept)
 2. Builds the app and boots it with `next start` on port 3200
 3. Logs in as the demo user
 4. Drives the flow with Playwright

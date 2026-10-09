@@ -6,6 +6,8 @@ import { seed } from "@/db/seed";
 import { demoUser } from "@/env-demo";
 import { env } from "@/env";
 
+export const loadTripCount = 100_000;
+
 export function seedOptions(loadTrips = 0) {
   return {
     demoUser,
