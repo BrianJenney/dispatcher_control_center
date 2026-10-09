@@ -23,7 +23,8 @@ export const jobsCreate: Flow = {
       run: async ({ page }) => {
         await page.goto("/");
         await openFromNavigation(page, "Jobs");
-        await page.getByRole("link", { name: "New trip" }).click();
+        await expect(page.getByRole("heading", { name: "Jobs", level: 1 })).toBeVisible();
+        await page.getByRole("link", { name: "New trip" }).filter({ visible: true }).click();
         await expect(page.getByRole("heading", { name: "Book a trip" })).toBeVisible();
       },
     },
@@ -126,6 +127,14 @@ export const jobsSearch: Flow = {
         const cards = jobsList(page).getByRole("article");
         await expect(cards).toHaveCount(1);
         await expect(cards).toHaveAttribute("aria-label", new RegExp(`^Trip ${String(reference)} for `));
+      },
+    },
+    {
+      name: "open a trip and its history from its card",
+      run: async ({ page }) => {
+        await jobsList(page).getByRole("link", { name: /^Open trip \d+ for / }).click();
+        await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
+        await expect(page.getByRole("list", { name: "Trip history" })).toContainText("booked");
       },
     },
   ],

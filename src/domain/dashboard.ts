@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { vehicleStatuses } from "@/domain/fleet";
-import { dashboardKpis, isOnTheRoad, isUpNext, type DashboardKpis, type TripFigures } from "@/domain/kpis";
+import { dashboardKpis, isOnTheRoad, isUpNext, needsDriverToday, type DashboardKpis, type TripFigures } from "@/domain/kpis";
 import { isWithin, type TimeRange } from "@/domain/time";
 import { byPickupTime, tripRow, type TripRow } from "@/domain/trip-row";
 
@@ -40,7 +40,7 @@ export function dashboardLists(snapshot: DashboardSnapshot): DashboardLists {
   const today = todayRange(snapshot.today);
   const sorted = [...snapshot.trips].sort(byPickupTime);
   return {
-    needsDriver: sorted.filter((trip) => trip.status === "offer" && isWithin(new Date(trip.pickupAt), today)),
+    needsDriver: sorted.filter((trip) => needsDriverToday(figures(trip), today)),
     onTheRoad: sorted.filter(isOnTheRoad),
     upNext: sorted.filter((trip) => isUpNext(figures(trip), today)),
   };

@@ -6,8 +6,11 @@ import { drivers, trips } from "@/db/schema";
 import type { tripInput } from "@/domain/trip-form";
 import { getJobs, getTripsForExport } from "@/server/queries/jobs";
 import { getSuggestions } from "@/server/queries/suggestions";
+import { pastPickupMessage } from "@/domain/trip-form";
+import { wallTimeOf } from "@/domain/time";
+import { env } from "@/env";
 import { createTrip, moveTrip, reassignDriver, updateTrip } from "@/server/actions/trips";
-import { insertDriver } from "./database";
+import { demoUserId, insertDriver, insertOffer } from "./database";
 import { signInAsDemoUser, signOut } from "./session";
 
 const form: z.input<typeof tripInput> = {
@@ -109,6 +112,29 @@ describe("reassignDriver", () => {
   });
 });
 
+describe("pickup times in the past", () => {
+  const yesterday = () => wallTimeOf(new Date(Date.now() - 86_400_000), env.APP_TIMEZONE);
+
+  it("refuses to book a trip whose pickup has passed", async () => {
+    const { date, time } = yesterday();
+    expect(await createTrip({ ...form, pickupDate: date, pickupTime: time })).toMatchObject({ ok: false, message: pastPickupMessage });
+  });
+
+  it("refuses to move a trip's pickup into the past", async () => {
+    const created = await book();
+    const { date, time } = yesterday();
+    const result = await updateTrip({ ...form, tripId: created.id, pickupDate: date, pickupTime: time });
+    expect(result).toMatchObject({ ok: false, message: pastPickupMessage });
+  });
+
+  it("still edits a late trip when its pickup time is left alone", async () => {
+    const late = new Date(Math.floor((Date.now() - 2 * 3_600_000) / 60_000) * 60_000);
+    const tripId = await insertOffer(await demoUserId(), late);
+    const { date, time } = wallTimeOf(late, env.APP_TIMEZONE);
+    expect((await updateTrip({ ...form, tripId, pickupDate: date, pickupTime: time, fare: "300" })).ok).toBe(true);
+  });
+});
+
 describe("updateTrip", () => {
   it("edits an offer", async () => {
     const created = await book();
@@ -145,6 +171,14 @@ describe("getSuggestions", () => {
     expect(result?.vehicleClass).toBe("group_suv");
   });
 
+  it("never offers the current driver when reassigning", async () => {
+    const assigned = await book({ pickupDate: "2031-07-02", pickupTime: "09:00" });
+    await moveTrip({ tripId: assigned.id, from: "offer", to: "assigned", driverId: groupDrivers[1] });
+    const ids = (await getSuggestions(assigned.id))?.suggestions.map((driver) => driver.id) ?? [];
+    expect(ids).not.toContain(groupDrivers[1]);
+    expect(ids).toHaveLength(3);
+  });
+
   it("returns nothing for a trip that does not exist", async () => {
     expect(await getSuggestions(crypto.randomUUID())).toBeNull();
   });
@@ -156,6 +190,19 @@ describe("getJobs", () => {
     const found = await getJobs({ q: "100%", status: null, show: 25 });
     expect(found.trips.map((trip) => trip.customerName)).toEqual(["Percent 100% Guest"]);
     expect((await getJobs({ q: "%", status: null, show: 25 })).trips.every((trip) => trip.customerName.includes("%"))).toBe(true);
+  });
+
+  it("finds a trip by its pickup or drop-off address and by its driver's name", async () => {
+    const tag = crypto.randomUUID().slice(0, 8);
+    const booked = await book({ pickupAddress: `Lantern Quay ${tag}`, dropoffAddress: `Mossgate Pier ${tag}` });
+    const ids = async (q: string) => (await getJobs({ q, status: null, show: 25 })).trips.map((trip) => trip.id);
+    expect(await ids(`lantern quay ${tag}`)).toEqual([booked.id]);
+    expect(await ids(`Mossgate Pier ${tag}`)).toEqual([booked.id]);
+    const driverName = `Searchable Driver ${tag}`;
+    await db.update(drivers).set({ name: driverName }).where(eq(drivers.id, groupDrivers[2] ?? ""));
+    await moveTrip({ tripId: booked.id, from: "offer", to: "assigned", driverId: groupDrivers[2] });
+    expect(await ids(driverName)).toContain(booked.id);
+    await db.update(drivers).set({ name: "Test Driver" }).where(eq(drivers.id, groupDrivers[2] ?? ""));
   });
 
   it("finds a trip by its number, typed with or without the hash", async () => {

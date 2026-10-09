@@ -43,7 +43,7 @@ export function DashboardView({ initialData }: { initialData: DashboardSnapshot 
         <KpiTile
           label="Active jobs"
           value={String(kpis.activeJobs)}
-          detail={`${String(kpis.enRouteNow)} en route now`}
+          detail={`${String(kpis.needsDriver)} need a driver · ${String(kpis.enRouteNow)} en route`}
           icon={RouteIcon}
         />
         <KpiTile

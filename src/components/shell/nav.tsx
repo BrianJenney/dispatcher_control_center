@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
-import { isActive, navItems } from "@/components/shell/nav-items";
+import { isActive, navItems, phoneNavItems } from "@/components/shell/nav-items";
 import { tourTarget } from "@/components/tour-target";
 import { cn } from "@/components/ui/utils";
 
@@ -39,7 +39,7 @@ function BottomLinks({ pathname }: { pathname: string | null }) {
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
       <ul className="mx-auto flex max-w-md justify-around">
-        {navItems.map(({ href, label, icon: Icon, tour }) => {
+        {phoneNavItems.map(({ href, label, icon: Icon, tour }) => {
           const active = pathname !== null && isActive(pathname, href);
           return (
             <li key={href} className="min-w-0 flex-1">

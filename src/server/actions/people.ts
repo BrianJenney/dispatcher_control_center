@@ -5,13 +5,13 @@ import { z } from "zod";
 import { drivers, trips, vehicles } from "@/db/schema";
 import { classChangeProblem } from "@/domain/assignment";
 import { vehicleStatuses } from "@/domain/fleet";
-import { driverInput, updateDriverInput, updateVehicleInput, vehicleInput } from "@/domain/people";
+import { newDriverInput, updateDriverInput, updateVehicleInput, vehicleInput } from "@/domain/people";
 import { DomainError, missingRecord } from "@/domain/result";
 import { activeStatuses } from "@/domain/trip-status";
 import { defineAction } from "@/server/action";
 
-export const createDriver = defineAction(driverInput, async (input, { tx }) => {
-  const [created] = await tx.insert(drivers).values({ ...input, onDuty: false }).returning({ id: drivers.id, name: drivers.name });
+export const createDriver = defineAction(newDriverInput, async (input, { tx }) => {
+  const [created] = await tx.insert(drivers).values(input).returning({ id: drivers.id, name: drivers.name });
   if (!created) throw new Error("Creating the driver returned nothing.");
   return created;
 });

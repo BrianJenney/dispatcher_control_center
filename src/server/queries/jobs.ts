@@ -1,5 +1,6 @@
-import { and, eq, ilike, or } from "drizzle-orm";
-import { trips } from "@/db/schema";
+import { and, eq, ilike, inArray, or } from "drizzle-orm";
+import { db } from "@/db/client";
+import { drivers, trips } from "@/db/schema";
 import { exportLimit } from "@/domain/csv";
 import { tripReferenceIn, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { defineQuery } from "@/server/query";
@@ -12,7 +13,14 @@ function containing(text: string) {
 function searching(q: string) {
   if (!q) return undefined;
   const reference = tripReferenceIn(q);
-  return or(ilike(trips.customerName, containing(q)), reference === null ? undefined : eq(trips.reference, reference));
+  const pattern = containing(q);
+  return or(
+    ilike(trips.customerName, pattern),
+    ilike(trips.pickupAddress, pattern),
+    ilike(trips.dropoffAddress, pattern),
+    inArray(trips.driverId, db.select({ id: drivers.id }).from(drivers).where(ilike(drivers.name, pattern))),
+    reference === null ? undefined : eq(trips.reference, reference),
+  );
 }
 
 function matching(filter: Pick<JobsFilter, "q" | "status">) {

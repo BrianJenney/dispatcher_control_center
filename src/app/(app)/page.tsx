@@ -1,9 +1,12 @@
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { DashboardView } from "@/app/(app)/dashboard-view";
 import { KpiTileSkeleton } from "@/components/kpi-tile";
 import { PageHeader } from "@/components/page-header";
 import { LoadingState } from "@/components/states";
+import { Button } from "@/components/ui/button";
 import { getDashboard } from "@/server/queries/dashboard";
 
 export const metadata: Metadata = { title: "Dashboard · Dispatch Lite" };
@@ -11,7 +14,18 @@ export const metadata: Metadata = { title: "Dashboard · Dispatch Lite" };
 export default function DashboardPage() {
   return (
     <>
-      <PageHeader eyebrow="Live dispatch" title="Today at a glance" />
+      <PageHeader
+        eyebrow="Live dispatch"
+        title="Today at a glance"
+        actions={
+          <Button asChild>
+            <Link href="/jobs/new">
+              <Plus aria-hidden />
+              New trip
+            </Link>
+          </Button>
+        }
+      />
       <Suspense fallback={<DashboardSkeleton />}>
         <DashboardData />
       </Suspense>
@@ -33,8 +47,8 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <LoadingState label="Loading trips that need a driver" rows={3} />
-        <LoadingState label="Loading trips on the road" rows={3} />
+        <LoadingState label="Loading trips that need a driver" rows={3} shape="card" />
+        <LoadingState label="Loading trips on the road" rows={3} shape="card" />
       </div>
     </div>
   );

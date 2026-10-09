@@ -22,7 +22,7 @@ export function ActivityView({ filter, initialData }: { filter: ActivityFilter; 
       {data.entries.length === 0 ? (
         <EmptyState title="No activity yet" description="Booking, editing, assigning and moving trips will be recorded here." />
       ) : (
-        <ActivityList label="Activity" entries={data.entries} />
+        <ActivityList label="Activity" entries={data.entries} linkToTrip />
       )}
       {data.hasMore && nextShow === null ? (
         <p className="text-sm text-muted-foreground">Showing the newest {maxShown} changes.</p>

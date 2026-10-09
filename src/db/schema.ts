@@ -197,6 +197,8 @@ export const trips = pgTable(
     index("trips_pickup_at_idx").on(table.pickupAt),
     index("trips_driver_id_pickup_at_idx").on(table.driverId, table.pickupAt),
     index("trips_customer_name_trgm_idx").using("gin", sql`${table.customerName} gin_trgm_ops`),
+    index("trips_pickup_address_trgm_idx").using("gin", sql`${table.pickupAddress} gin_trgm_ops`),
+    index("trips_dropoff_address_trgm_idx").using("gin", sql`${table.dropoffAddress} gin_trgm_ops`),
   ],
 );
 

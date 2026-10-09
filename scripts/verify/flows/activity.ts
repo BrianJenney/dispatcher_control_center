@@ -96,6 +96,15 @@ export const activity: Flow = {
       },
     },
     {
+      name: "an entry opens its trip",
+      run: async ({ page }) => {
+        await entries(page).first().getByRole("link", { name: `Open trip ${String(guest.reference)} for ${guest.name}` }).click();
+        await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
+        await expect(page.getByRole("list", { name: "Trip history" })).toContainText("reassigned");
+        await page.goto("/activity");
+      },
+    },
+    {
       name: "show more loads older entries",
       run: async (context) => {
         const { page } = context;

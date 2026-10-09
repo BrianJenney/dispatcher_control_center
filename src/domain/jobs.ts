@@ -6,7 +6,7 @@ import { tripStatuses } from "@/domain/trip-status";
 
 export const jobsSearchId = "jobs-search";
 
-export const jobsSearchLabel = "Search by customer or trip number";
+export const jobsSearchLabel = "Search by customer, address, driver or trip number";
 
 const largestTripReference = 2_147_483_647;
 

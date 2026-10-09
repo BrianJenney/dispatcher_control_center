@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centsToDollars, dollarsToCents, durationLabel, tripInput, updateTripInput } from "@/domain/trip-form";
+import { centsToDollars, dollarsToCents, durationLabel, isPastPickup, tripInput, updateTripInput } from "@/domain/trip-form";
 
 const valid = {
   customerName: " Arden Ashdown ",
@@ -106,5 +106,18 @@ describe("durationLabel", () => {
     [120, "2 hr"],
   ])("reads %i minutes as %s", (minutes, expected) => {
     expect(durationLabel(minutes)).toBe(expected);
+  });
+});
+
+describe("isPastPickup", () => {
+  const now = new Date("2026-10-08T15:00:00Z");
+
+  it("allows a pickup from a quarter hour ago onwards", () => {
+    expect(isPastPickup(new Date("2026-10-08T14:45:00Z"), now)).toBe(false);
+    expect(isPastPickup(new Date("2026-10-08T16:00:00Z"), now)).toBe(false);
+  });
+
+  it("refuses a pickup further back than that", () => {
+    expect(isPastPickup(new Date("2026-10-08T14:44:59Z"), now)).toBe(true);
   });
 });

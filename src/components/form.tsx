@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import type { ActionResult, FieldErrors } from "@/domain/result";
 
 export const unreachableMessage = "We could not reach the server. Check your connection and try again.";
@@ -177,6 +178,30 @@ export function FormSelect({
       <p id={errorId} className="min-h-5 text-sm text-destructive">
         {error}
       </p>
+    </div>
+  );
+}
+
+export function FormSwitch({
+  label,
+  hint,
+  name,
+  defaultChecked,
+}: {
+  label: string;
+  hint: string;
+  name: string;
+  defaultChecked: boolean;
+}) {
+  const id = useId();
+  const saving = use(SavingContext);
+  return (
+    <div className="flex items-center justify-between gap-4 pb-5">
+      <div className="grid gap-1">
+        <Label htmlFor={id}>{label}</Label>
+        <p className="text-sm text-muted-foreground">{hint}</p>
+      </div>
+      <Switch id={id} name={name} defaultChecked={defaultChecked} disabled={saving} />
     </div>
   );
 }

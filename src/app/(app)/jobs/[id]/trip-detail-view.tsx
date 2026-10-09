@@ -26,7 +26,7 @@ export function TripDetailView({ initialData }: { initialData: TripDetail }) {
             {history.length === 0 ? (
               <EmptyState title="No history yet" description="Bookings, edits, assignments and status moves on this trip will show here." />
             ) : (
-              <ActivityList label="Trip history" entries={history} />
+              <ActivityList label="Trip history" entries={history} linkToTrip={false} />
             )}
           </section>
         </div>

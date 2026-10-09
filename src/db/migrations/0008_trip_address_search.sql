@@ -1,0 +1,2 @@
+CREATE INDEX "trips_pickup_address_trgm_idx" ON "trips" USING gin ("pickup_address" gin_trgm_ops);--> statement-breakpoint
+CREATE INDEX "trips_dropoff_address_trgm_idx" ON "trips" USING gin ("dropoff_address" gin_trgm_ops);

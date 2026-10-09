@@ -50,9 +50,13 @@ export function DriversView({ initialData }: { initialData: { drivers: DriverRow
                   <div>
                     <dt className="text-muted-foreground">Phone</dt>
                     <dd>
-                      <a href={`tel:${driver.phone}`} className="inline-flex items-center gap-1 font-medium hover:underline">
+                      <a
+                        href={`tel:${driver.phone}`}
+                        aria-label={`Call ${driver.name}`}
+                        className="inline-flex items-center gap-1 font-medium tabular-nums hover:underline"
+                      >
                         <Phone className="size-3" aria-hidden />
-                        Call
+                        {driver.phone}
                       </a>
                     </dd>
                   </div>

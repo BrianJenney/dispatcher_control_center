@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { drivers, vehicles } from "@/db/schema";
-import { createVehicle, setDriverDuty, setVehicleStatus, updateDriver } from "@/server/actions/people";
+import { createDriver, createVehicle, setDriverDuty, setVehicleStatus, updateDriver } from "@/server/actions/people";
 import { demoUserId, forceStatus, insertDriver, insertOffer } from "./database";
 import { signInAsDemoUser } from "./session";
 
@@ -11,6 +11,15 @@ beforeEach(async () => {
 });
 
 describe("drivers and vehicles", () => {
+  it("adds a driver on duty when the switch is on, and off duty otherwise", async () => {
+    const details = { name: "Fresh Driver", phone: "(555) 555-0177", vehicleClass: "luxury_sedan" } as const;
+    const onDuty = await createDriver({ ...details, onDuty: "on" });
+    const offDuty = await createDriver(details);
+    if (!onDuty.ok || !offDuty.ok) throw new Error("Adding a driver failed.");
+    expect((await db.query.drivers.findFirst({ where: eq(drivers.id, onDuty.data.id) }))?.onDuty).toBe(true);
+    expect((await db.query.drivers.findFirst({ where: eq(drivers.id, offDuty.data.id) }))?.onDuty).toBe(false);
+  });
+
   it("toggles a driver's duty", async () => {
     const driverId = await insertDriver();
     expect(await setDriverDuty({ driverId, onDuty: false })).toEqual({ ok: true, data: { onDuty: false } });
