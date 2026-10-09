@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
-import { documents } from "@/db/schema";
+import { documents, drivers } from "@/db/schema";
 import type { UploadPurpose } from "@/domain/uploads";
 import { reportError } from "@/observability";
 import { deleteDocument, prepareUpload, saveUpload } from "@/server/actions/uploads";
@@ -19,6 +19,15 @@ beforeEach(async () => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
+
+function beforeEachStorageDelete(look: () => Promise<void>) {
+  const realFetch = globalThis.fetch;
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+    const method = input instanceof Request ? input.method : init?.method;
+    if (method === "DELETE") await look();
+    return realFetch(input, init);
+  });
+}
 
 function storageRefusesDeletes() {
   const realFetch = globalThis.fetch;
@@ -177,5 +186,37 @@ describe("storage failures", () => {
     storageRefusesDeletes();
     expect(await saveUpload(request)).toMatchObject({ ok: false, message: notWhatItSays });
     expect(vi.mocked(reportError)).toHaveBeenCalledOnce();
+  });
+});
+
+describe("delete ordering", () => {
+  it("removes a document's file only after the row is gone for everyone", async () => {
+    const driverId = await insertDriver();
+    const { key } = await license(driverId);
+    const row = await db.query.documents.findFirst({ where: eq(documents.storageKey, key) });
+    const rowsSeenFromOutside: number[] = [];
+    beforeEachStorageDelete(async () => {
+      rowsSeenFromOutside.push((await db.select({ id: documents.id }).from(documents).where(eq(documents.storageKey, key))).length);
+    });
+    expect((await deleteDocument({ documentId: row?.id ?? "" })).ok).toBe(true);
+    expect(rowsSeenFromOutside).toEqual([0]);
+    vi.restoreAllMocks();
+    expect(await storage.describe(key)).toBeNull();
+  });
+
+  it("removes a replaced photo only after the driver points at the new one", async () => {
+    const driverId = await insertDriver();
+    const first = await photo(driverId);
+    const second = await put({ purpose: "driver_photo", ownerId: driverId, fileName: "me.png", contentType: "image/png", body: png });
+    const photoSeenFromOutside: (string | null)[] = [];
+    beforeEachStorageDelete(async () => {
+      const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId), columns: { photoKey: true } });
+      photoSeenFromOutside.push(driver?.photoKey ?? null);
+    });
+    expect((await saveUpload(second)).ok).toBe(true);
+    expect(photoSeenFromOutside).toEqual([second.key]);
+    vi.restoreAllMocks();
+    expect(await storage.describe(first.key)).toBeNull();
+    expect(await storage.describe(second.key)).not.toBeNull();
   });
 });

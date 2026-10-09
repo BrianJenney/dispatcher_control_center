@@ -3,8 +3,9 @@ import { db, type Transaction } from "@/db/client";
 import { DomainError, failure, type ActionResult } from "@/domain/result";
 import { friendlyDatabaseError } from "@/server/database-errors";
 import { currentUser } from "@/server/session";
+import { storage } from "@/server/storage";
 
-type ActionContext = { tx: Transaction; userId: string };
+type ActionContext = { tx: Transaction; userId: string; discardAfterCommit: (storageKey: string) => void };
 
 export function parseInput<S extends z.ZodType>(schema: S, input: unknown) {
   const parsed = schema.safeParse(input);
@@ -29,7 +30,12 @@ export function defineAction<S extends z.ZodType, R>(
     if (!parsed.ok) return parsed.failure;
 
     try {
-      const data = await db.transaction((tx) => run(parsed.data, { tx, userId: user.id }));
+      const discarded: string[] = [];
+      const discardAfterCommit = (storageKey: string) => {
+        discarded.push(storageKey);
+      };
+      const data = await db.transaction((tx) => run(parsed.data, { tx, userId: user.id, discardAfterCommit }));
+      await Promise.all(discarded.map((storageKey) => storage.discard(storageKey)));
       return { ok: true, data };
     } catch (error) {
       if (error instanceof DomainError) return failure(error.message);

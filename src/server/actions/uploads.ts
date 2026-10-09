@@ -50,15 +50,15 @@ export const prepareUpload = defineAction(uploadRequest, async (input, { tx }) =
   return { key, url: await storage.uploadUrl(key, input) };
 });
 
-export const saveUpload = defineAction(savedUpload, async (input, { tx, userId }) => {
+export const saveUpload = defineAction(savedUpload, async (input, { tx, userId, discardAfterCommit }) => {
   if (!keyBelongsTo(input.key, input.purpose, input.ownerId)) throw new DomainError("That upload does not belong here.");
   await ownerExists(tx, input.purpose, input.ownerId);
   await checkStoredFile(input);
 
   if (input.purpose === "driver_photo") {
-    const [previous] = await tx.select({ photoKey: drivers.photoKey }).from(drivers).where(eq(drivers.id, input.ownerId));
+    const [previous] = await tx.select({ photoKey: drivers.photoKey }).from(drivers).where(eq(drivers.id, input.ownerId)).for("update");
     await tx.update(drivers).set({ photoKey: input.key }).where(eq(drivers.id, input.ownerId));
-    if (previous?.photoKey) await storage.discard(previous.photoKey);
+    if (previous?.photoKey) discardAfterCommit(previous.photoKey);
     return { id: input.ownerId };
   }
 
@@ -79,12 +79,12 @@ export const saveUpload = defineAction(savedUpload, async (input, { tx, userId }
   return saved;
 });
 
-export const deleteDocument = defineAction(z.object({ documentId: z.uuid() }), async (input, { tx }) => {
+export const deleteDocument = defineAction(z.object({ documentId: z.uuid() }), async (input, { tx, discardAfterCommit }) => {
   const [removed] = await tx
     .delete(documents)
     .where(eq(documents.id, input.documentId))
     .returning({ storageKey: documents.storageKey, fileName: documents.fileName });
   if (!removed) throw new DomainError("That document was already deleted.");
-  await storage.discard(removed.storageKey);
+  discardAfterCommit(removed.storageKey);
   return { fileName: removed.fileName };
 });
