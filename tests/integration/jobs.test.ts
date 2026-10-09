@@ -4,7 +4,7 @@ import type { z } from "zod";
 import { db } from "@/db/client";
 import { drivers, trips } from "@/db/schema";
 import type { tripInput } from "@/domain/trip-form";
-import { getJobs } from "@/server/queries/jobs";
+import { getJobs, getTripsForExport } from "@/server/queries/jobs";
 import { getSuggestions } from "@/server/queries/suggestions";
 import { createTrip, moveTrip, reassignDriver, updateTrip } from "@/server/actions/trips";
 import { insertDriver } from "./database";
@@ -156,6 +156,18 @@ describe("getJobs", () => {
     const found = await getJobs({ q: "100%", status: null, show: 25 });
     expect(found.trips.map((trip) => trip.customerName)).toEqual(["Percent 100% Guest"]);
     expect((await getJobs({ q: "%", status: null, show: 25 })).trips.every((trip) => trip.customerName.includes("%"))).toBe(true);
+  });
+
+  it("finds a trip by its number, typed with or without the hash", async () => {
+    const booked = await book({ customerName: "Reference Search Guest" });
+    const ids = async (q: string, status: "offer" | "completed" | null = null) =>
+      (await getJobs({ q, status, show: 25 })).trips.map((trip) => trip.id);
+    expect(await ids(`#${String(booked.reference)}`)).toEqual([booked.id]);
+    expect(await ids(String(booked.reference))).toEqual([booked.id]);
+    expect(await ids(`#${String(booked.reference)}`, "offer")).toEqual([booked.id]);
+    expect(await ids(`#${String(booked.reference)}`, "completed")).toEqual([]);
+    expect(await ids(String(booked.reference).slice(0, -1))).not.toContain(booked.id);
+    expect((await getTripsForExport({ q: `#${String(booked.reference)}`, status: null })).map((trip) => trip.id)).toEqual([booked.id]);
   });
 
   it("filters by status and pages", async () => {

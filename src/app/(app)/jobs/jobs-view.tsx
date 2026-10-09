@@ -12,7 +12,7 @@ import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
-import { jobsSearch, jobsSearchId, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
+import { jobsSearch, jobsSearchId, jobsSearchLabel, tripReferenceIn, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { maxShown, nextShownCount, pageSize } from "@/domain/paging";
 import { statusLabels, tripStatuses } from "@/domain/trip-status";
 
@@ -29,6 +29,11 @@ function exportHref(filter: JobsFilter): string {
   if (filter.status) params.set("status", filter.status);
   const search = params.toString();
   return search ? `/api/jobs/export?${search}` : "/api/jobs/export";
+}
+
+function noMatchHint(q: string): string {
+  const check = tripReferenceIn(q) === null ? "the spelling" : "the trip number";
+  return `Nothing found for "${q}". Check ${check} or try another status.`;
 }
 
 export function JobsView({ filter, initialData }: { filter: JobsFilter; initialData: JobsSnapshot }) {
@@ -60,8 +65,8 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
             ref={searchBox}
             id={jobsSearchId}
             type="search"
-            aria-label="Search by customer"
-            placeholder="Search by customer"
+            aria-label={jobsSearchLabel}
+            placeholder={jobsSearchLabel}
             defaultValue={filter.q}
             className="pl-9"
             onChange={(event) => {
@@ -108,7 +113,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
           filter.q || filter.status ? (
             <EmptyState
               title="No trips match"
-              description={filter.q ? `Nothing found for "${filter.q}". Check the spelling or try another status.` : "No trips have this status yet."}
+              description={filter.q ? noMatchHint(filter.q) : "No trips have this status yet."}
               action={
                 <Button
                   variant="outline"
@@ -138,7 +143,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
       {data.hasMore ? (
         nextShow === null ? (
           <p className="text-sm text-muted-foreground">
-            Showing the newest {maxShown}. Search by customer or pick a status to find older trips.
+            Showing the newest {maxShown}. Search by customer or trip number, or pick a status, to find older trips.
           </p>
         ) : (
           <Button

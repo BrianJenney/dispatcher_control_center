@@ -1,7 +1,7 @@
-import { and, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike, or } from "drizzle-orm";
 import { trips } from "@/db/schema";
 import { exportLimit } from "@/domain/csv";
-import type { JobsFilter, JobsSnapshot } from "@/domain/jobs";
+import { tripReferenceIn, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { defineQuery } from "@/server/query";
 import { tripRows } from "@/server/trip-rows";
 
@@ -9,11 +9,14 @@ function containing(text: string) {
   return `%${text.replace(/[\\%_]/g, (character) => `\\${character}`)}%`;
 }
 
+function searching(q: string) {
+  if (!q) return undefined;
+  const reference = tripReferenceIn(q);
+  return or(ilike(trips.customerName, containing(q)), reference === null ? undefined : eq(trips.reference, reference));
+}
+
 function matching(filter: Pick<JobsFilter, "q" | "status">) {
-  return and(
-    filter.status ? eq(trips.status, filter.status) : undefined,
-    filter.q ? ilike(trips.customerName, containing(filter.q)) : undefined,
-  );
+  return and(filter.status ? eq(trips.status, filter.status) : undefined, searching(filter.q));
 }
 
 export const getTripsForExport = defineQuery("signed-in", (filter: Pick<JobsFilter, "q" | "status">) =>
