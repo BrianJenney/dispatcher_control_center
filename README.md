@@ -129,7 +129,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | Managed hosting, automatic deploys | Done | Vercel deploys every push; production from `main` |
 | Separate environments | Done | Production, preview and local each have their own database and files |
 | Private documents on expiring links | Done, checked by hand on the live site | Private buckets, signed links that expire after 5 minutes |
-| Migrations and indexes for 100,000 trips | Done, measured | `docs/load-test.md`: every page and poll answers in under 140 ms with 100,287 trips |
+| Migrations and indexes for 100,000 trips | Done, measured | `docs/load-test.md`: with 100,287 trips, 95% of page loads and polls answered in under 125 ms and the slowest in 394 ms |
 | Backups you can restore | Done | `docs/backup-restore.md`, with a recorded drill |
 | Clear monthly cost estimate | Done | "Running cost" below, and `docs/cost-estimate.md` |
 
@@ -239,7 +239,7 @@ The rules that matter are enforced by the database as well as the app, so they h
 - **History of edits:** editing a trip writes one `trip_edits` row per changed field, with its old and new value in a column of the right type (cents stay integers, times stay `timestamptz`). A check keeps each row to the one pair of columns its field uses, and a deferred trigger refuses any change to a trip's details that has no matching row.
 - **Append only:** `trip_events` and `trip_edits` cannot be updated or deleted from.
 - **Documents:** a licence belongs to a driver and a registration to a vehicle, only PDFs and images, 10 MB at most.
-- **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. Measured with 100,287 trips: every page and poll answered in under 140 ms, and the 5 second polls in under 20 ms (`docs/load-test.md`).
+- **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. Measured with 100,287 trips: 95% of page loads and polls answered in under 125 ms, the slowest request (the first after start-up) in 394 ms, and the dashboard and jobs polls in under 20 ms (`docs/load-test.md`).
 
 ## How a request flows
 
@@ -372,7 +372,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 ### 07 Fleet
 
 1. Fleet, "Add vehicle". A duplicate fleet number is explained in plain language.
-2. Flip a vehicle to In service with its switch. Fleet ready on the dashboard drops by one within 5 seconds, and the schedule's vehicle class availability follows.
+2. Flip a vehicle to In service with its switch. Fleet ready on the dashboard drops by one within 5 seconds.
 
 ### 08 Schedule
 

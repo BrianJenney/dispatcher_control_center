@@ -40,7 +40,7 @@ Milliseconds per request, across both widths and all six flows. Requests seen on
 | `GET /api/trips/[id]/suggestions` (top 3 drivers) | 4 | 56 | 102 | 102 |
 | `POST /jobs` (book a trip) | 3 | 22 | 23 | 23 |
 
-The single 394 ms dashboard request is the first request after the server started. The polling reads that run every 5 seconds stay under 20 ms because they only read today and trips still on the road, whatever the size of the history.
+The single 394 ms dashboard request is the first request after the server started. The dashboard and jobs polls that run every 5 seconds stay under 20 ms because they only read today, trips still on the road and one page of the list, whatever the size of the history. The Insights poll reads seven days of trips and took 110 ms.
 
 ## What keeps it fast
 
