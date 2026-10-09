@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useIsMutating, useQuery } from "@tanstack/react-query";
 import type { z } from "zod";
 import type { LiveQueryDefinition } from "@/components/queries";
 
@@ -13,12 +13,14 @@ async function readJson<T>(url: string, schema: z.ZodType<T>): Promise<T> {
 }
 
 export function useLiveQuery<T extends object>(definition: LiveQueryDefinition<T>, initialData: T) {
+  const saving = useIsMutating() > 0;
   return useQuery({
     queryKey: definition.queryKey,
     queryFn: () => readJson(definition.url, definition.schema),
     initialData,
     staleTime: POLL_INTERVAL_MS,
-    refetchInterval: POLL_INTERVAL_MS,
+    refetchInterval: saving ? false : POLL_INTERVAL_MS,
+    refetchOnWindowFocus: !saving,
   });
 }
 
