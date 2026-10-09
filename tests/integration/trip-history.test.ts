@@ -6,6 +6,7 @@ import { tripEdits, tripEvents, trips } from "@/db/schema";
 import { updateTripDetails } from "@/db/trip-writes";
 import type { tripInput } from "@/domain/trip-form";
 import { createTrip, moveTrip, reassignDriver, updateTrip } from "@/server/actions/trips";
+import { getActivity } from "@/server/queries/activity";
 import { demoUserId, expectRejectedBy, forceStatus, insertDriver, insertOffer } from "./database";
 import { signInAsDemoUser } from "./session";
 
@@ -113,6 +114,26 @@ describe("assigning and reassigning record both drivers", () => {
       ["offer", "assigned", null, first, actorId],
       ["assigned", "assigned", first, second, actorId],
       ["assigned", "en_route", second, second, actorId],
+    ]);
+  });
+});
+
+describe("the activity log reads the history in plain words", () => {
+  it("lists the reassignment and the fare change newest first", async () => {
+    const trip = await book();
+    const [first = "", second = ""] = vanDrivers;
+    await db.execute(sql`update drivers set name = 'Ana Ruiz' where id = ${first}`);
+    await db.execute(sql`update drivers set name = 'Ben Okafor' where id = ${second}`);
+    await moveTrip({ tripId: trip.id, from: "offer", to: "assigned", driverId: first });
+    await reassignDriver({ tripId: trip.id, driverId: second });
+    await updateTrip({ ...form, tripId: trip.id, pickupDate: trip.pickupDate, fare: "210" });
+    const { entries } = await getActivity({ show: 25 });
+    const mine = entries.filter((entry) => entry.tripId === trip.id);
+    expect(mine.map((entry) => (entry.kind === "edit" ? entry.edit : [entry.fromDriverName, entry.toDriverName]))).toEqual([
+      { field: "fare_cents", from: 18_000, to: 21_000 },
+      ["Ana Ruiz", "Ben Okafor"],
+      [null, "Ana Ruiz"],
+      [null, null],
     ]);
   });
 });
