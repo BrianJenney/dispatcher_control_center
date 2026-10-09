@@ -3,10 +3,12 @@
 import { EditVehicleForm } from "@/app/(app)/fleet/vehicle-form";
 import { useLiveQuery } from "@/components/live-query";
 import { PageHeader } from "@/components/page-header";
+import { VehiclePhoto } from "@/components/people/vehicle-photo";
 import { VehicleStatusSwitch } from "@/components/people/vehicle-status-switch";
 import { liveQueries } from "@/components/queries";
 import { LiveUpdatesPaused } from "@/components/states";
 import { DocumentsPanel } from "@/components/uploads/documents-panel";
+import { PhotoPanel } from "@/components/uploads/photo-panel";
 import type { VehicleProfile } from "@/domain/people";
 
 export function VehicleProfileView({ initialData }: { initialData: VehicleProfile }) {
@@ -17,7 +19,17 @@ export function VehicleProfileView({ initialData }: { initialData: VehicleProfil
       <div className="space-y-6">
         {isError ? <LiveUpdatesPaused what="this vehicle" onRetry={() => void refetch()} /> : null}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <EditVehicleForm vehicleId={vehicle.id} values={vehicle} />
+          <div className="space-y-6">
+            <PhotoPanel
+              purpose="vehicle_photo"
+              ownerId={vehicle.id}
+              hasPhoto={vehicle.photoVersion !== null}
+              preview={<VehiclePhoto vehicle={vehicle} width={120} height={80} />}
+              shownHint="This photo shows on the fleet list."
+              missingHint="No photo yet. A three quarter front view in good light works best."
+            />
+            <EditVehicleForm vehicleId={vehicle.id} values={vehicle} />
+          </div>
           <DocumentsPanel title="Registrations" purpose="vehicle_registration" ownerId={vehicle.id} documents={vehicle.documents} />
         </div>
       </div>

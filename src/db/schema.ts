@@ -148,6 +148,7 @@ export const vehicles = pgTable(
     model: text("model").notNull(),
     unitNumber: text("unit_number").notNull().unique(),
     plate: text("plate").notNull().unique(),
+    photoKey: text("photo_key"),
     vehicleClass: vehicleClass("vehicle_class").notNull(),
     status: vehicleStatus("status").default("ready").notNull(),
     createdAt: createdAt(),

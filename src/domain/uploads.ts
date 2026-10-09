@@ -1,8 +1,23 @@
 import { z } from "zod";
 import { documentContentTypes, maxDocumentBytes } from "@/domain/fleet";
 
-export const uploadPurposes = ["driver_license", "vehicle_registration", "driver_photo"] as const;
+export const uploadPurposes = ["driver_license", "vehicle_registration", "driver_photo", "vehicle_photo"] as const;
 export type UploadPurpose = (typeof uploadPurposes)[number];
+
+const photoPurposes = ["driver_photo", "vehicle_photo"] as const;
+export type PhotoPurpose = (typeof photoPurposes)[number];
+export type DocumentPurpose = Exclude<UploadPurpose, PhotoPurpose>;
+
+export function isPhotoPurpose(purpose: UploadPurpose): purpose is PhotoPurpose {
+  return photoPurposes.some((photoPurpose) => photoPurpose === purpose);
+}
+
+export const uploadOwners: Record<UploadPurpose, "driver" | "vehicle"> = {
+  driver_license: "driver",
+  vehicle_registration: "vehicle",
+  driver_photo: "driver",
+  vehicle_photo: "vehicle",
+};
 
 export const photoContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
 
@@ -58,6 +73,7 @@ const allowed: Record<UploadPurpose, readonly string[]> = {
   driver_license: documentContentTypes,
   vehicle_registration: documentContentTypes,
   driver_photo: photoContentTypes,
+  vehicle_photo: photoContentTypes,
 };
 
 export const uploadMessages = {
@@ -71,6 +87,7 @@ const wrongType: Record<UploadPurpose, string> = {
   driver_license: uploadMessages.notADocument,
   vehicle_registration: uploadMessages.notADocument,
   driver_photo: uploadMessages.notAPhoto,
+  vehicle_photo: uploadMessages.notAPhoto,
 };
 
 const fileOnly = z.object({

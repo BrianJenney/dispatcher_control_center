@@ -53,6 +53,7 @@ export const getFleet = defineQuery("signed-in", async (): Promise<{ vehicles: V
       plate: vehicle.plate,
       vehicleClass: vehicle.vehicleClass,
       status: vehicle.status,
+      photoVersion: uploadIdOf(vehicle.photoKey),
       registrations: registrations.get(vehicle.id) ?? 0,
     })),
   };
@@ -104,6 +105,7 @@ export const getVehicleProfile = defineQuery("signed-in", async (id: unknown): P
     plate: vehicle.plate,
     vehicleClass: vehicle.vehicleClass,
     status: vehicle.status,
+    photoVersion: uploadIdOf(vehicle.photoKey),
     documents: toDocumentRows(registrations),
   };
 });
@@ -115,10 +117,21 @@ export const getDocumentFile = defineQuery("signed-in", async (id: unknown) => {
   return document ? { key: document.storageKey, fileName: document.fileName, contentType: document.contentType } : null;
 });
 
+function photoFile(photoKey: string | null | undefined, fallbackName: string) {
+  if (!photoKey) return null;
+  return { key: photoKey, fileName: photoKey.split("/").at(-1) ?? fallbackName, contentType: contentTypeOfKey(photoKey) };
+}
+
 export const getDriverPhoto = defineQuery("signed-in", async (id: unknown) => {
   const driverId = recordId(id);
   if (!driverId) return null;
   const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId), columns: { photoKey: true, name: true } });
-  if (!driver?.photoKey) return null;
-  return { key: driver.photoKey, fileName: driver.photoKey.split("/").at(-1) ?? driver.name, contentType: contentTypeOfKey(driver.photoKey) };
+  return driver ? photoFile(driver.photoKey, driver.name) : null;
+});
+
+export const getVehiclePhoto = defineQuery("signed-in", async (id: unknown) => {
+  const vehicleId = recordId(id);
+  if (!vehicleId) return null;
+  const vehicle = await db.query.vehicles.findFirst({ where: eq(vehicles.id, vehicleId), columns: { photoKey: true, unitNumber: true } });
+  return vehicle ? photoFile(vehicle.photoKey, vehicle.unitNumber) : null;
 });

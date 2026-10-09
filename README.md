@@ -44,7 +44,7 @@ Three separate environments, each with its own database and its own files, so a 
 
 Each environment also has its own sign-in secret, so a session from one is useless in another. Previews sign in on their own address, which the app reads from Vercel. A branch per preview needs the Neon integration for Vercel (https://vercel.com/integrations/neon); until it is installed all previews share the one `preview` branch, still isolated from production.
 
-Documents are private. Both buckets have public access switched off and no custom domains, so a file cannot be reached by its address alone. Viewing a file always goes through the app: it checks the person is signed in on every request and streams the file itself, so there is no file address to copy and share, and a signed-out request is refused with a 401. None of these files go through a shared CDN cache, because a shared cache would hand a private file to anyone with its address. Driver photos are cached by the viewer's own browser for an hour (each new photo gets a new address, so a change shows at once); licences and registrations are never cached. The app's own scripts, styles and fonts are served from Vercel's CDN. Uploads go straight from the browser to the bucket on a signed link that expires after 5 minutes, handed out only to signed-in users. Upload limits (PDF or image, 10 MB) are enforced by the app and again by the database.
+Documents are private. Both buckets have public access switched off and no custom domains, so a file cannot be reached by its address alone. Viewing a file always goes through the app: it checks the person is signed in on every request and streams the file itself, so there is no file address to copy and share, and a signed-out request is refused with a 401. None of these files go through a shared CDN cache, because a shared cache would hand a private file to anyone with its address. Driver and vehicle photos are cached by the viewer's own browser for an hour (each new photo gets a new address, so a change shows at once); licences and registrations are never cached. The app's own scripts, styles and fonts are served from Vercel's CDN. Uploads go straight from the browser to the bucket on a signed link that expires after 5 minutes, handed out only to signed-in users. Upload limits (PDF or image, 10 MB) are enforced by the app and again by the database.
 
 ## Backups and restoring
 
@@ -105,7 +105,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | 04 | Assign driver | "Assign driver" on any offer: top 3 matches, two clicks, works by keyboard |
 | 05 | Status updates | "Start trip" and "Complete trip"; the dashboard updates within 5 seconds |
 | 06 | Drivers | `/drivers`, add and edit with photo, phone, class and an on duty switch |
-| 07 | Fleet | `/fleet`, Ready or In service; changes the Fleet ready tile |
+| 07 | Fleet | `/fleet`, Ready or In service; changes the Fleet ready tile; a photo for each vehicle |
 | 08 | Schedule | `/schedule`, today's trips on a timeline in time order, one chart row per driver with a now line, filter by driver and status |
 | 09 | Documents | Driver licences and vehicle registrations, PDF or image up to 10 MB, signed-in only |
 
@@ -189,6 +189,7 @@ erDiagram
         text model
         text unit_number UK
         text plate UK
+        text photo_key "object storage key"
         enum vehicle_class
         enum status "ready or in_service"
     }
@@ -298,7 +299,7 @@ The same property gives local development a safe option: work against a local Po
 
 **Money and time.** Fares are integer cents everywhere and only formatted for display. Times are stored as `timestamptz`, and "today" means today in the business's time zone (`APP_TIMEZONE`), not the server's.
 
-**Left out on purpose.** No maps, no vehicle photos and no dispatcher and admin roles in this submission. Each is listed under "What to build next" or in the quote.
+**Left out on purpose.** No maps and no dispatcher and admin roles in this submission. Each is listed under "What to build next" or in the quote.
 
 ## Known issues
 
@@ -318,9 +319,8 @@ The same property gives local development a safe option: work against a local Po
 1. **Real addresses with a maps service.** Pickup and drop off become searchable, verified places with coordinates instead of free text. That gives a map on each trip, real travel times, and fewer wrong addresses. It needs a maps provider and an API key, so it is a deliberate choice of service and cost.
 2. **Calling and messaging drivers from the app.** Drivers already have a tap to call link that opens the phone's dialer. The next step is calling through the app with masked numbers, so neither side sees the other's personal number, plus a log of calls per trip and a text to the driver with the trip details when they are assigned.
 3. **Smarter driver matching.** Today the top three are on duty, drive the right class, are free at that time, and have the fewest trips that day. With real locations from step 1 the ranking can also weigh how close the driver will be when the trip starts (where their previous drop off ends), a buffer for travel between trips, a client's preferred driver for VIP accounts, and shift end times, so nobody is booked past their shift.
-4. A photo for each vehicle, using the same private upload as driver photos.
-5. A week view of the schedule alongside the day timeline.
-6. A branch per preview using the Neon integration for Vercel, and a soft delete for documents so a removed file can be recovered for 30 days.
+4. A week view of the schedule alongside the day timeline.
+5. A branch per preview using the Neon integration for Vercel, and a soft delete for documents so a removed file can be recovered for 30 days.
 
 ## Demo walkthrough
 
@@ -386,6 +386,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 
 1. Fleet, "Add vehicle". A duplicate fleet number is explained in plain language.
 2. Flip a vehicle to In service with its switch. Fleet ready on the dashboard drops by one within 5 seconds.
+3. "Details" on a vehicle, "Upload photo". The photo shows on the vehicle page and on its card in Fleet.
 
 ### 08 Schedule
 

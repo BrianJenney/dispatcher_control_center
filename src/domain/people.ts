@@ -66,6 +66,7 @@ export const vehicleRow = z.object({
   plate: z.string(),
   vehicleClass: z.enum(vehicleClasses),
   status: z.enum(vehicleStatuses),
+  photoVersion: z.string().nullable(),
   registrations: z.number().int(),
 });
 
@@ -76,7 +77,7 @@ export const fleetSnapshot = z.object({ vehicles: z.array(vehicleRow) });
 export type FleetSnapshot = z.infer<typeof fleetSnapshot>;
 
 export const vehicleProfile = vehicleRow
-  .pick({ id: true, model: true, unitNumber: true, plate: true, vehicleClass: true, status: true })
+  .pick({ id: true, model: true, unitNumber: true, plate: true, vehicleClass: true, status: true, photoVersion: true })
   .extend({ documents: z.array(documentRow) });
 
 export type VehicleProfile = z.infer<typeof vehicleProfile>;

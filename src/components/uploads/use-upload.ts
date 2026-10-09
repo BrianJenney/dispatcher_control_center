@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { unreachableMessage } from "@/components/form";
 import { driversQueryKey, fleetQueryKey } from "@/components/queries";
 import { failure, type ActionResult } from "@/domain/result";
-import { uploadProblem, type UploadPurpose } from "@/domain/uploads";
+import { uploadOwners, uploadProblem, type UploadPurpose } from "@/domain/uploads";
 import { prepareUpload, saveUpload } from "@/server/actions/uploads";
 
 async function upload(purpose: UploadPurpose, ownerId: string, file: File): Promise<ActionResult<unknown>> {
@@ -20,7 +20,7 @@ async function upload(purpose: UploadPurpose, ownerId: string, file: File): Prom
 }
 
 export function ownerQueryKey(purpose: UploadPurpose) {
-  return purpose === "vehicle_registration" ? fleetQueryKey : driversQueryKey;
+  return uploadOwners[purpose] === "vehicle" ? fleetQueryKey : driversQueryKey;
 }
 
 export function useUpload(purpose: UploadPurpose, ownerId: string) {
