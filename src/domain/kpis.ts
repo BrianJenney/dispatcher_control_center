@@ -17,6 +17,10 @@ export function tripsTodayByDriver(trips: readonly TripFigures[], today: TimeRan
   return counts;
 }
 
+export function needsDriverToday(trip: Pick<TripFigures, "status" | "pickupAt">, today: TimeRange): boolean {
+  return trip.status === "offer" && isWithin(trip.pickupAt, today);
+}
+
 export function isUpNext(trip: Pick<TripFigures, "status" | "pickupAt">, today: TimeRange): boolean {
   return trip.status === "assigned" && isWithin(trip.pickupAt, today);
 }
@@ -27,6 +31,7 @@ export function isOnTheRoad(trip: Pick<TripFigures, "status">): boolean {
 
 export type DashboardKpis = {
   activeJobs: number;
+  needsDriver: number;
   enRouteNow: number;
   driversOnDuty: number;
   driversTotal: number;
@@ -43,10 +48,12 @@ export function dashboardKpis(input: {
   today: TimeRange;
 }): DashboardKpis {
   const completedToday = input.trips.filter((trip) => trip.status === "completed" && isWithin(trip.pickupAt, input.today));
+  const needsDriver = input.trips.filter((trip) => needsDriverToday(trip, input.today)).length;
   const upNext = input.trips.filter((trip) => isUpNext(trip, input.today)).length;
   const enRouteNow = input.trips.filter(isOnTheRoad).length;
   return {
-    activeJobs: upNext + enRouteNow,
+    activeJobs: needsDriver + upNext + enRouteNow,
+    needsDriver,
     enRouteNow,
     driversOnDuty: input.drivers.filter((driver) => driver.onDuty).length,
     driversTotal: input.drivers.length,

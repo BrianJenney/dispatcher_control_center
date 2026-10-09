@@ -39,7 +39,8 @@ const snapshot: DashboardSnapshot = {
 describe("summarizeDashboard", () => {
   it("turns the polled snapshot into the four tiles", () => {
     expect(summarizeDashboard(snapshot)).toEqual({
-      activeJobs: 1,
+      activeJobs: 2,
+      needsDriver: 1,
       enRouteNow: 1,
       driversOnDuty: 1,
       driversTotal: 2,
@@ -106,7 +107,8 @@ describe("dashboardLists", () => {
 
   it("agrees with the active jobs tile", () => {
     const kpis = summarizeDashboard(mixedDays);
-    expect(kpis.activeJobs).toBe(lists.onTheRoad.length + lists.upNext.length);
+    expect(kpis.activeJobs).toBe(lists.needsDriver.length + lists.onTheRoad.length + lists.upNext.length);
+    expect(kpis.needsDriver).toBe(lists.needsDriver.length);
     expect(kpis.enRouteNow).toBe(lists.onTheRoad.length);
   });
 });
