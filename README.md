@@ -101,7 +101,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 |---|---|---|
 | 01 | Login | Any page while signed out sends you to sign in; sign out icon in the menu |
 | 02 | Dashboard | `/`, four live tiles that match the database |
-| 03 | Jobs | `/jobs`, create, edit, cancel with a reason, search and status filters |
+| 03 | Jobs | `/jobs`, create, edit, cancel with a reason, search by customer or trip number, status filters |
 | 04 | Assign driver | "Assign driver" on any offer: top 3 matches, two clicks, works by keyboard |
 | 05 | Status updates | "Start trip" and "Complete trip"; the dashboard updates within 5 seconds |
 | 06 | Drivers | `/drivers`, add and edit with photo, phone, class and an on duty switch |
@@ -312,7 +312,8 @@ Proves: every number comes from the database.
 3. Fill every field and book it. It appears at the top of Jobs as Offer.
 4. "Edit" on that trip, change the fare, save. The new fare shows.
 5. Search by customer name, then use the status buttons. The list narrows. "Show more" loads the next page.
-6. "Cancel trip" on an offer. The dialog asks for a reason, and will not continue without one. Confirm. The trip shows Cancelled with the reason.
+6. Clear the search and type a trip number from any card or toast, as `1234` or `#1234`. Exactly that trip shows, however old it is, and the status buttons still narrow it.
+7. "Cancel trip" on an offer. The dialog asks for a reason, and will not continue without one. Confirm. The trip shows Cancelled with the reason.
 
 Proves: validation, search and filters, a safety step before anything destructive.
 
@@ -373,7 +374,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 
 **CSV export** (Jobs, "Export CSV")
 1. Press "Export CSV" with no filters for every trip, newest first.
-2. Choose a status or type a customer name first and the file contains only those trips.
+2. Choose a status or type a customer name or trip number first and the file contains only those trips.
 3. Cells that start with `=`, `+`, `-` or `@` are prefixed with an apostrophe so a spreadsheet cannot run them as formulas.
 
 **Theme switcher** (button beside sign out)
