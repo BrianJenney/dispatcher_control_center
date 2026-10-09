@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useFormat } from "@/components/format";
+import { RecordLink } from "@/components/record-link";
 import { AssignDialog } from "@/components/trips/assign-dialog";
 import { useTripMove } from "@/components/trips/use-trip-move";
 import { Button } from "@/components/ui/button";
@@ -78,9 +78,9 @@ export function TripActions({ trip }: { trip: TripRow }) {
       {trip.status === "assigned" ? <AssignDialog trip={trip} /> : null}
       {isEditable(trip.status) ? (
         <Button asChild size="sm" variant="outline">
-          <Link href={`/jobs/${trip.id}/edit`} aria-label={`Edit trip ${String(trip.reference)}`}>
+          <RecordLink href={`/jobs/${trip.id}/edit`} aria-label={`Edit trip ${String(trip.reference)}`}>
             Edit
-          </Link>
+          </RecordLink>
         </Button>
       ) : null}
       {isFinal(trip.status) ? null : (

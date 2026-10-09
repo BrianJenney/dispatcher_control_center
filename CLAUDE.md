@@ -51,6 +51,7 @@ src/components/ ui/ (shadcn primitives) and feature components.
 - **Trip status:** changes only through `transitionTrip()`. Nothing else writes `trips.status`.
 - **Forms:** one form helper, zod schema shared between client and server, error messages in plain language.
 - **Screens:** every list and tile has designed empty, loading and error states. Use the shared components.
+- **Links to one record** (a trip, driver or vehicle) use `RecordLink`, which warms the page on hover, focus or touch instead of prefetching every row on screen.
 - **Destructive actions:** always behind the shared confirm dialog.
 - **Money:** integer cents everywhere. Format only at the edge.
 - **Time:** stored as `timestamptz`. "Today" means today in `APP_TIMEZONE`.
