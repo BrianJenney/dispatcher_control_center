@@ -36,7 +36,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
             <h1 className="text-2xl font-semibold">Sign in</h1>
             <p className="text-sm text-muted-foreground">Welcome back. Sign in to run today&apos;s dispatch.</p>
           </div>
-          <div className="min-h-[25rem]">
+          <div className="min-h-[16rem]">
             <Suspense fallback={<LoadingState label="Preparing sign in" rows={4} />}>
               <SignInPanel searchParams={searchParams} />
             </Suspense>
