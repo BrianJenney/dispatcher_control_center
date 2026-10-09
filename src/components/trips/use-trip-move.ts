@@ -4,23 +4,27 @@ import type { z } from "zod";
 import { tripsQueryKey } from "@/components/queries";
 import { keepFocusNearTrip } from "@/components/trips/trip-focus";
 import { useOptimisticAction } from "@/components/use-optimistic-action";
+import type { ActivitySnapshot } from "@/domain/activity";
+import type { DashboardSnapshot } from "@/domain/dashboard";
+import type { InsightsSnapshot } from "@/domain/insights";
+import type { JobsSnapshot } from "@/domain/jobs";
 import type { ActionResult } from "@/domain/result";
+import type { ScheduleSnapshot } from "@/domain/schedule";
 import { patchTrips, type TripPatch, type TripRow } from "@/domain/trip-row";
 import { statusLabels, type moveTripInput } from "@/domain/trip-status";
 import { moveTrip, reassignDriver } from "@/server/actions/trips";
 
-
-type TripLists = { trips: TripRow[] };
+type TripsData = DashboardSnapshot | ScheduleSnapshot | JobsSnapshot | InsightsSnapshot | ActivitySnapshot;
 
 function useTripMutation<V extends { tripId: string; reference: number }>(options: {
   send: (request: V) => Promise<ActionResult<unknown>>;
   patch: (request: V) => TripPatch;
   done: (request: V) => string;
 }) {
-  return useOptimisticAction<V, TripLists>({
+  return useOptimisticAction<V, TripsData>({
     queryKey: tripsQueryKey,
     action: options.send,
-    update: (data, request) => ({ ...data, trips: patchTrips(data.trips, options.patch(request)) }),
+    update: (data, request) => ("trips" in data ? { ...data, trips: patchTrips(data.trips, options.patch(request)) } : data),
     done: options.done,
     settled: (request) => {
       keepFocusNearTrip(request.tripId);
