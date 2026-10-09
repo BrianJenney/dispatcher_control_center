@@ -261,7 +261,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | GitHub repo with real history | Done |
 | README | Done |
 | Video walkthrough | Submitted separately |
-| Time log and AI disclosure | AI use is under "How it was built" below; hours by day are submitted separately |
+| Time log and AI disclosure | Done, under "How it was built" below |
 | Price quote and salary expectations | Written separately |
 
 Known gaps: the Sentry alert for slow requests has to be created in the Sentry screen, preview deployments share one database branch until the Neon integration for Vercel is installed, and the cost figures are estimates from public pricing.
@@ -489,9 +489,20 @@ How a user reaches each feature and what working means. `pnpm lint` fails if a p
 
 ## How it was built
 
+### Time log
+
+Hands-on hours are the developer's time directing, reviewing, testing, deploying and setting up services. Time the coding agent spent working on its own is not counted. The estimates come from the commit history and the timestamps of the developer's messages to the agent, so they are approximate. Times are UTC.
+
+| Day | Hands-on hours | Commits | What the developer did |
+|---|---|---|---|
+| Wed, Oct 7 | about 4 | 73, from 16:10 to 23:41 | Read the brief, set the scope, rules and technology choices, created the Vercel, Neon, Cloudflare, Sentry and Better Stack accounts and tokens, answered the design questions, and reviewed the first working build |
+| Thu, Oct 8 | about 3 | 40, from 00:02 to 23:56 | Reviewed the app on a phone (about 16:00 to 16:20), set up the preview environment, then a longer desktop review from about 21:10 to 22:40: what was required against what was built, UI bugs, restore and preview checks, what to build next |
+| Fri, Oct 9 | about 3 | 102, from 00:02 to 22:29 | Tested preview and production on phone and desktop, reported bugs (Insights links, driver assign, shareable file links, an N+1 query), checked the build against the brief, asked for vehicle photos, and reviewed and merged pull requests |
+| **Total** | **about 10** | **215** | |
+
 | Tool | Used for |
 |---|---|
-| Claude Code (Anthropic's coding agent) | Wrote most of the application code, tests, SQL migrations, CI configuration, verification scripts and documentation from the brief and a set of written project rules. Ran the test suites and verification flows and fixed what failed. Each commit it wrote names the model in its Co-Authored-By line |
+| Claude Code (Anthropic's coding agent) | Wrote most of the code, under the developer's direction and review: most of the application code, tests, SQL migrations, CI configuration, verification scripts and documentation from the brief and a set of written project rules. Ran the test suites and verification flows and fixed what failed. Each commit it wrote names the model in its Co-Authored-By line |
 | Claude Code subagents | A reviewer agent checked merged changes for patterns that would spread if copied. Short-lived worker agents built separate pieces of work in their own working copies |
 | Claude Code with provider APIs | Created and configured the Vercel project, Neon project and branches, R2 buckets, Sentry project and alerts, and Better Stack monitors, using access tokens the developer supplied |
 | shadcn/ui CLI | Generated the UI primitives in `src/components/ui` |
