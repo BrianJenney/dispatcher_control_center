@@ -25,8 +25,12 @@ const demoLoginInApp = {
   message: "The demo login is for seeding, tests and verify flows only. The app never reads it.",
 };
 
+function restrictImports({ paths = [queriesThroughLiveQuery], patterns = [] }) {
+  return ["error", { paths, patterns: [aliasOnly, strayCnPackage, demoLoginInApp, ...patterns] }];
+}
+
 function layer(...patterns) {
-  return ["error", { paths: [queriesThroughLiveQuery], patterns: [aliasOnly, strayCnPackage, demoLoginInApp, ...patterns] }];
+  return restrictImports({ patterns });
 }
 
 const signedInPagesCheckTheSession = {
@@ -155,19 +159,16 @@ export default defineConfig([
   {
     files: ["**/src/app/(app)/**"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [queriesThroughLiveQuery, signedInPagesCheckTheSession],
-          patterns: [aliasOnly, strayCnPackage, demoLoginInApp, noDatabase, readsThroughQueries],
-        },
-      ],
+      "no-restricted-imports": restrictImports({
+        paths: [queriesThroughLiveQuery, signedInPagesCheckTheSession],
+        patterns: [noDatabase, readsThroughQueries],
+      }),
     },
   },
   {
     files: ["**/src/components/live-query.ts"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: [aliasOnly, strayCnPackage, demoLoginInApp, noDatabase, readsThroughQueries] }],
+      "no-restricted-imports": restrictImports({ paths: [], patterns: [noDatabase, readsThroughQueries] }),
     },
   },
 ]);
