@@ -53,7 +53,9 @@ test.describe("signed out visitors", () => {
   }
 
   test("can still reach the health check used for uptime monitoring", async ({ request }) => {
-    expect((await request.get("/api/health")).status()).toBe(200);
+    const response = await request.get("/api/health");
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({ database: "ok" });
   });
 });
 

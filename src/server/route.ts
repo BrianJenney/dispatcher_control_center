@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { uptimeAnswer } from "@/domain/health-check";
 import { missingRecord } from "@/domain/result";
 import { servedFile } from "@/domain/uploads";
 import { currentUser } from "@/server/session";
@@ -25,7 +26,15 @@ export function pollingRoute<T>({ access, read }: PollingRoute<T>) {
   };
 }
 
-type StoredFile = { key: string; fileName: string; contentType: string | null };
+export function uptimeRoute(databaseReachable: () => Promise<boolean>) {
+  return async function GET() {
+    await connection();
+    const answer = uptimeAnswer(await databaseReachable());
+    return Response.json(answer.body, { status: answer.status, headers: { "Cache-Control": "no-store" } });
+  };
+}
+
+type StoredFile ={ key: string; fileName: string; contentType: string | null };
 
 export function fileRoute({ read }: { read: (params: RouteParams) => Promise<StoredFile | null> }) {
   return async function GET(_request: Request, context: { params: Promise<RouteParams> }) {

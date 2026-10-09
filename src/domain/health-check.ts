@@ -23,3 +23,9 @@ export const healthSnapshot = z.object({
 });
 
 export type HealthSnapshot = z.infer<typeof healthSnapshot>;
+
+export function uptimeAnswer(databaseReachable: boolean) {
+  return databaseReachable
+    ? { status: 200, body: { database: "ok" } }
+    : { status: 503, body: { database: "unreachable" } };
+}

@@ -427,6 +427,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 1. The "Error and speed monitoring" card says whether Sentry is switched on. It reads On when `SENTRY_DSN` is set and "Not set up" when it is not.
 2. When it is on, "Send a test error and trace" sends one error and one timed trace. They appear in the Sentry project within a minute, which proves the alerts and the dashboard are connected.
 3. Traces are sampled at 100% (`src/observability.ts`). Lower that number once traffic grows.
+4. Better Stack calls `/api/health` every 15 minutes. It is public and says only whether the database answers: 200 with `{"database":"ok"}`, or 503 with `{"database":"unreachable"}`, so the monitor alerts on the status code. Whether Sentry is on and the check history are only on this page, behind sign in (`/api/health/details`).
 
 ### Trying to break it
 

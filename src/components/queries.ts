@@ -14,7 +14,7 @@ export const driversQueryKey = ["drivers"] as const;
 export const fleetQueryKey = ["fleet"] as const;
 
 export const liveQueries = {
-  health: { queryKey: ["health"], url: "/api/health", schema: healthSnapshot },
+  health: { queryKey: ["health"], url: "/api/health/details", schema: healthSnapshot },
   dashboard: { queryKey: [...tripsQueryKey, "dashboard"], url: "/api/dashboard", schema: dashboardSnapshot },
   insights: { queryKey: [...tripsQueryKey, "insights"], url: "/api/insights", schema: insightsSnapshot },
   schedule: { queryKey: [...tripsQueryKey, "schedule"], url: "/api/schedule", schema: scheduleSnapshot },
