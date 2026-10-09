@@ -55,6 +55,7 @@ export default defineConfig([
     ".verify/**",
     "playwright-report/**",
     "test-results/**",
+    ".claude/worktrees/**",
   ]),
   {
     linterOptions: { noInlineConfig: true },

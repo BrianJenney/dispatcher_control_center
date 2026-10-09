@@ -9,6 +9,7 @@
 /playwright-report/
 /playwright/.auth/
 /.verify/
+/.claude/worktrees/
 /.storage/
 .DS_Store
 *.pem
