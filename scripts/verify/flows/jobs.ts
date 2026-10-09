@@ -219,13 +219,15 @@ export const jobsCancel: Flow = {
       run: async (context) => {
         const label = await jobsList(context.page).getByRole("article").getAttribute("aria-label");
         const reference = Number(/Trip (\d+)/.exec(label ?? "")?.[1]);
-        expect(
-          await context.number(
-            `select count(*) as value from trip_events join trips on trips.id = trip_events.trip_id
-              where trips.reference = $1 and to_status = 'cancelled' and reason = 'Flight cancelled'`,
-            [reference],
-          ),
-        ).toBe(1);
+        await expect
+          .poll(() =>
+            context.number(
+              `select count(*) as value from trip_events join trips on trips.id = trip_events.trip_id
+                where trips.reference = $1 and to_status = 'cancelled' and reason = 'Flight cancelled'`,
+              [reference],
+            ),
+          )
+          .toBe(1);
       },
     },
   ],
