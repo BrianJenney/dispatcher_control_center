@@ -221,10 +221,10 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 |---|---|---|
 | 01 | Login | Any page while signed out sends you to sign in; sign out icon in the menu |
 | 02 | Dashboard | `/`, four live tiles that match the database |
-| 03 | Jobs | `/jobs`, create, edit, cancel with a reason, search by customer or trip number, status filters |
+| 03 | Jobs | `/jobs`, create, edit, cancel with a reason, search by customer, address, driver or trip number, status filters; past pickup times are refused |
 | 04 | Assign driver | "Assign driver" on any offer: top 3 matches, two clicks, works by keyboard |
 | 05 | Status updates | "Start trip" and "Complete trip"; the dashboard updates within 5 seconds |
-| 06 | Drivers | `/drivers`, add and edit with photo, phone, class and an on duty switch |
+| 06 | Drivers | `/drivers`, add and edit with photo, phone, class and an on duty switch (a new driver can start on duty from the add form) |
 | 07 | Fleet | `/fleet`, Ready or In service; changes the Fleet ready tile; a photo for each vehicle |
 | 08 | Schedule | `/schedule`, today's trips on a timeline in time order, one chart row per driver with a now line, filter by driver and status |
 | 09 | Documents | Driver licences and vehicle registrations, PDF or image up to 10 MB, signed-in only |
@@ -238,7 +238,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | Theme switcher | Done | Sun or moon button beside sign out (light and dark) |
 | Guided first time tour | Done | Opens on a first visit and highlights the part of the app each step describes; question mark button reopens it |
 | CSV export of trips | Done | "Export CSV" on Jobs, follows the search and status on screen |
-| Activity log | Done | `/activity`, who changed which trip and when, with old and new values for edits and both drivers for reassignments |
+| Activity log | Done | `/activity` (Activity in the sidebar), who changed which trip and when, each entry linking to its trip, with old and new values for edits and both drivers for reassignments |
 | Automated tests on the matching logic | Done | `src/domain/matching.test.ts`, plus mutation testing on the domain code (run by hand from GitHub Actions) |
 | Keyboard shortcuts | Done | Press `?` for the list; `g` then a letter jumps between pages |
 
@@ -469,11 +469,11 @@ How a user reaches each feature and what working means. `pnpm lint` fails if a p
 | `health` | Paved path example | `/health` | Open the URL directly | Tab to "Skip to content", Enter, Tab to "Check name", type, Enter records; Tab to "Clear all checks", Enter, Tab to "Clear checks", Enter | The database badge reads Connected; an empty name shows "Give the check a short name."; a recorded check appears as the latest; clearing asks for confirmation and then shows "No checks yet"; the public `/api/health` answers only {"database":"ok"} |
 | `login` | 01 Login | `/login` | Any protected page while signed out sends you here; the demo dispatcher signs in with the email and password from the submission message; the sign out icon sits in the sidebar footer (desktop) or top bar (phone) | Tab to Email, type, Tab to Password, type, Enter; "Skip to content" is the first Tab stop inside the app | Demo user signs in and lands on the dashboard; signing out returns to login; a protected URL while logged out redirects to login |
 | `dashboard` | 02 Dashboard | `/` | "Dashboard" in the sidebar (desktop) or bottom bar (phone) | Tab to "Dashboard" in the main navigation, Enter | Four tiles show active jobs, drivers on duty, fleet ready, today's revenue, and match the database |
-| `jobs-create` | 03 Jobs | `/jobs/new` | "Jobs" in the navigation, then "New trip" | Tab to "New trip", Enter; Tab through the fields, Space opens a select, Enter on "Book trip" | A trip is created with all fields and appears in the list as Offer |
-| `jobs-detail` | 03 Jobs | `/jobs/[id]` | "Open" beside a trip in "Needs attention" on Insights | Tab to the trip's "Open", Enter | The page shows that one trip with its actions and its history newest first; acting on it updates the page without a refresh |
+| `jobs-create` | 03 Jobs | `/jobs/new` | "New trip" on the dashboard, or "Jobs" in the navigation, then "New trip" | Tab to "New trip", Enter; Tab through the fields, Space opens a select, Enter on "Book trip" | A trip is created with all fields and appears in the list as Offer |
+| `jobs-detail` | 03 Jobs | `/jobs/[id]` | The trip number and customer at the top of any trip card, an entry in the activity log, or "Open" beside a trip in "Needs attention" on Insights | Tab to the trip's link, Enter | The page shows that one trip with its actions and its history newest first; acting on it updates the page without a refresh |
 | `jobs-edit` | 03 Jobs | `/jobs/[id]/edit` | "Edit" on an offer or assigned trip card in Jobs, the dashboard or the schedule | Tab to the card's "Edit", Enter; Enter on "Save changes" | Edited fields persist |
 | `jobs-cancel` | 03 Jobs | `/jobs` | "Cancel trip" on any trip card that is not finished | Tab to "Cancel trip", Enter, type the reason, Tab to "Cancel trip", Enter | Cancel asks for confirmation and a reason; trip shows Cancelled |
-| `jobs-search` | 03 Jobs | `/jobs` | "Jobs" in the navigation; type a customer name or a trip number (1234 or #1234) in "Search by customer or trip number"; status buttons below it; "Show more" at the end | Tab to the search box and type; Tab to a status button, Enter | Search and status filters narrow the list; a trip number finds exactly that trip |
+| `jobs-search` | 03 Jobs | `/jobs` | "Jobs" in the navigation; type a customer name, pickup or drop-off address, driver name or trip number (1234 or #1234) in "Search by customer, address, driver or trip number"; status buttons below it; "Show more" at the end | Tab to the search box and type; Tab to a status button, Enter | Search and status filters narrow the list; a trip number finds exactly that trip |
 | `assign` | 04 Assign driver | `/` and `/jobs` | Dashboard, "Assign driver" on a trip in "Needs a driver" (click 1), then "Assign" beside a suggested driver (click 2) | Tab to "Assign driver", Enter; the best match is focused, Enter assigns | Top 3 suggestions respect all four rules; one click assigns; three clicks or fewer from dashboard |
 | `status` | 05 Status updates | `/schedule` and `/` | "Start trip", "Complete trip" and "Cancel trip" on each trip card on the dashboard or schedule | Tab to the trip's button, Enter; in the cancel dialog type the reason, Tab to "Cancel trip", Enter | Trip moves Offer to Completed step by step; illegal moves are not offered; tiles change without refresh |
 | `drivers` | 06 Drivers | `/drivers`, `/drivers/new` and `/drivers/[id]` | "Drivers" in the navigation; "Add driver"; "Profile" on a card for photo, details and licenses | Tab to a driver's duty switch, Space toggles it; Tab to "Add driver", Enter | Add and edit with photo, phone, class; on duty toggle changes the tile; on a profile the switch flips before the server answers and the toast follows the save; a change made in another tab shows on the open profile within one polling interval |
@@ -481,7 +481,7 @@ How a user reaches each feature and what working means. `pnpm lint` fails if a p
 | `schedule` | 08 Schedule | `/schedule` | "Schedule" in the sidebar (desktop) or bottom bar (phone); status buttons and the Driver menu at the top; "Jump to now"; a bar on "Day at a glance" jumps to its trip card | Tab to "Schedule" in the main navigation, Enter; Tab to a status button, Enter; Tab to the Driver filter, Space opens, arrows choose, Enter; `j` and `k` step through the timeline's trip cards | Today's trips in pickup order, each with start, end, duration, driver and vehicle class; one chart row per driver shows gaps and overlaps to scale, with a now line that follows the clock and a "Now" marker in the timeline; status and driver filters are in the address and survive a refresh; trip actions work from each card |
 | `documents` | 09 Documents | `/drivers/[id]` and `/fleet/[id]` | "Licenses" on a driver profile, "Registrations" on a vehicle; "Upload", "View" and "Delete" on each | Tab to "Upload license", Enter opens the file chooser; Tab to "View" or "Delete", Enter | Upload, view, delete without a page reload; 10 MB and file type limits enforced; a file whose bytes are not the PDF or image it claims is refused; the link opens the PDF as application/pdf and is refused when logged out; a file added in another tab shows on the open profile within one polling interval |
 | `insights` | Stretch: metrics | `/insights` | "Insights" in the sidebar (desktop) or bottom bar (phone) | Tab to "Insights" in the main navigation, Enter | Seven day numbers match the database; trips per day and revenue per day charts; driver load; offers due within two hours and late trips are flagged and update without a refresh |
-| `activity` | Stretch: activity log | `/activity` | "Activity log" button on the Insights page | Tab to "Activity log", Enter; Tab to "Show more", Enter | Every booking, assignment, reassignment, detail edit, status move and cancellation is listed newest first in plain words with who did it; an edit shows the field with its old and new value, an assignment names the driver and a reassignment names both drivers; new entries appear without a refresh; "Show more" loads older ones |
+| `activity` | Stretch: activity log | `/activity` | "Activity" in the sidebar (desktop), or the "Activity log" button on the Insights page | Tab to "Activity log", Enter; Tab to "Show more", Enter | Every booking, assignment, reassignment, detail edit, status move and cancellation is listed newest first in plain words with who did it; an edit shows the field with its old and new value, an assignment names the driver and a reassignment names both drivers; new entries appear without a refresh; "Show more" loads older ones |
 | `jobs-export` | Stretch: CSV export | `/jobs` and `/api/jobs/export` | "Export CSV" above the status buttons on Jobs | Tab to "Export CSV", Enter | Downloads a CSV of the trips matching the search and status on screen; spreadsheet formulas are neutralised; refused when signed out |
 | `theme` | Stretch: theme switcher | `/` and every other page | The sun or moon button beside the sign out icon (top bar on phone, sidebar footer on desktop) | Tab to "Theme", Enter flips between Light and Dark | Dark mode applies on every page and survives a reload without a flash; before any choice is made the first paint follows the device, and a stored choice always wins |
 | `tour` | Stretch: guided first time tour | `/` | Opens by itself on a first visit; the question mark button beside the theme button (top bar on phone, sidebar footer on desktop) opens it again | Tab to "Take the tour", Enter; Tab to Next, Enter; Escape skips | Six short steps with Next, Back and Skip; each step rings the part of the page it describes (no ring when that part is not on the current page) and the card is docked below or beside it; finishing or skipping remembers the choice; a step can open the page it describes |
@@ -528,17 +528,17 @@ Proves: protected routes, redirects, no account guessing. `e2e/access.spec.ts` a
 ### 02 Dashboard
 
 1. Open the dashboard. Four tiles: Active jobs, Drivers on duty, Fleet ready, Today's revenue.
-2. Compare each tile with the data: active jobs is today's Assigned trips plus every trip En route (a trip in progress stays live whatever its pickup date), drivers on duty matches the toggles on the Drivers page, Fleet ready matches the Ready vehicles on the Fleet page, revenue is the sum of today's Completed trips only.
+2. Compare each tile with the data: active jobs is today's Offers waiting for a driver, plus today's Assigned trips, plus every trip En route (a trip in progress stays live whatever its pickup date); the tile reads "N need a driver · M en route", drivers on duty matches the toggles on the Drivers page, Fleet ready matches the Ready vehicles on the Fleet page, revenue is the sum of today's Completed trips only.
 
 Proves: every number comes from the database.
 
 ### 03 Jobs
 
 1. Jobs, "New trip". Submit empty. Each field explains what is missing.
-2. Enter more passengers than the vehicle class holds. The form says how many it seats.
+2. Enter more passengers than the vehicle class holds. The form says how many it seats. Pick a pickup time that has already passed and the form says so.
 3. Fill every field and book it. It appears at the top of Jobs as Offer.
 4. "Edit" on that trip, change the fare, save. The new fare shows.
-5. Search by customer name, then use the status buttons. The list narrows. "Show more" loads the next page.
+5. Search by customer name, an address or a driver's name, then use the status buttons. The list narrows. "Show more" loads the next page.
 6. Clear the search and type a trip number from any card or toast, as `1234` or `#1234`. Exactly that trip shows, however old it is, and the status buttons still narrow it.
 7. "Cancel trip" on an offer. The dialog asks for a reason, and will not continue without one. Confirm. The trip shows Cancelled with the reason.
 
@@ -565,7 +565,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 
 ### 06 Drivers
 
-1. Drivers, "Add driver". Submit empty to see validation, then add a driver with phone and vehicle class.
+1. Drivers, "Add driver". Submit empty to see validation, then add a driver with phone and vehicle class, with "Start on duty" switched on. Drivers on duty goes up by one.
 2. "Profile" on that driver. Edit the phone, and upload a photo.
 3. Flip the on duty switch on the list. Drivers on duty on the dashboard changes within 5 seconds.
 
@@ -599,7 +599,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 2. "Needs attention" lists offers due within two hours, offers whose pickup time has passed, and assigned trips not started 15 minutes after pickup. Book an offer for the next hour and it appears within 5 seconds. "Open" on any item goes to that trip's own page, with its actions and history, ready to assign or cancel, even when it is from an earlier day.
 3. The charts show trips per day (completed, still open, cancelled), revenue per day (completed trips only), why trips were cancelled, and trips per driver today, so an uneven load is visible at a glance.
 
-**Activity log** (`/activity`, from the "Activity log" button on Insights)
+**Activity log** (`/activity`, from Activity in the sidebar or the "Activity log" button on Insights)
 1. Every booking, assignment, reassignment, edit, status move and cancellation is listed newest first in plain words, with who did it and when.
 2. Edit a trip's fare from $150 to $199 on Jobs. The newest entry reads "Demo Dispatcher changed the fare on trip #1282 from $150 to $199", marked Edited. Any changed detail reads the same way: customer, addresses, pickup time, duration, passengers, vehicle class.
 3. Assign that trip, then press "Reassign" and pick someone else. The log reads "assigned trip #1282 to Adele Fairbanks", then "reassigned trip #1282 from Adele Fairbanks to Esme Calloway".
