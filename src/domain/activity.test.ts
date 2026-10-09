@@ -6,7 +6,7 @@ const format = { money: (cents: number) => `$${(cents / 100).toFixed(2)}`, momen
 
 const base = {
   createdAt: "2026-10-09T15:30:00.000Z",
-  actorName: "Brian",
+  actorName: "Dana Reyes",
   tripId: "00000000-0000-4000-8000-000000000001",
   reference: 1042,
   customerName: "Arden Ashdown",
