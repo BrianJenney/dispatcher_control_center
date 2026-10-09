@@ -1,14 +1,14 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useFormat } from "@/components/format";
 import { EmptyState } from "@/components/states";
 import { FilePicker } from "@/components/uploads/file-picker";
-import { useUpload } from "@/components/uploads/use-upload";
+import { ownerQueryKey, useUpload } from "@/components/uploads/use-upload";
 import { Button } from "@/components/ui/button";
 import { documentContentTypes, maxDocumentBytes } from "@/domain/fleet";
 import type { DocumentRow, UploadPurpose } from "@/domain/uploads";
@@ -25,7 +25,7 @@ export function DocumentsPanel({
   ownerId: string;
   documents: DocumentRow[];
 }) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const format = useFormat();
   const upload = useUpload(purpose, ownerId);
   const panel = useRef<HTMLElement>(null);
@@ -83,7 +83,7 @@ export function DocumentsPanel({
                 returnFocus={() => panel.current}
                 onConfirmed={() => {
                   toast.success(`${document.fileName} is deleted.`);
-                  router.refresh();
+                  void queryClient.invalidateQueries({ queryKey: ownerQueryKey(purpose) });
                 }}
               />
             </li>

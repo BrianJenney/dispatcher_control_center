@@ -4,24 +4,22 @@ import { driversQueryKey, tripsQueryKey } from "@/components/queries";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useOptimisticAction } from "@/components/use-optimistic-action";
-import type { DriverRow } from "@/domain/people";
+import { withDriverOnDuty, type DriverData } from "@/domain/people";
 import { setDriverDuty } from "@/server/actions/people";
 
 type DutyRequest = { driverId: string; name: string; onDuty: boolean };
 
 export function useDutyToggle() {
-  return useOptimisticAction<DutyRequest, { drivers: DriverRow[] }>({
+  return useOptimisticAction<DutyRequest, DriverData>({
     queryKey: driversQueryKey,
     action: (request) => setDriverDuty({ driverId: request.driverId, onDuty: request.onDuty }),
-    update: (data, request) => ({
-      drivers: data.drivers.map((driver) => (driver.id === request.driverId ? { ...driver, onDuty: request.onDuty } : driver)),
-    }),
+    update: (data, request) => withDriverOnDuty(data, request.driverId, request.onDuty),
     done: (request) => `${request.name} is ${request.onDuty ? "on duty" : "off duty"}.`,
     alsoRefresh: [tripsQueryKey],
   });
 }
 
-export function DutySwitch({ driver, onChanged }: { driver: { id: string; name: string; onDuty: boolean }; onChanged?: () => void }) {
+export function DutySwitch({ driver }: { driver: { id: string; name: string; onDuty: boolean } }) {
   const toggle = useDutyToggle();
   const id = `duty-${driver.id}`;
   return (
@@ -33,7 +31,7 @@ export function DutySwitch({ driver, onChanged }: { driver: { id: string; name: 
         aria-label={`${driver.name} on duty`}
         onCheckedChange={(onDuty) => {
           if (toggle.isPending) return;
-          toggle.mutate({ driverId: driver.id, name: driver.name, onDuty }, { onSettled: onChanged });
+          toggle.mutate({ driverId: driver.id, name: driver.name, onDuty });
         }}
       />
       <Label htmlFor={id} className="text-sm font-normal text-muted-foreground">

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { driverInput, vehicleInput } from "@/domain/people";
+import {
+  driverInput,
+  vehicleInput,
+  withDriverOnDuty,
+  withVehicleStatus,
+  type DriverProfile,
+  type DriverRow,
+  type VehicleProfile,
+  type VehicleRow,
+} from "@/domain/people";
 
 describe("driverInput", () => {
   it("accepts a driver", () => {
@@ -50,5 +59,44 @@ describe("anchored and trimmed fields", () => {
     expect(vehicleInput.safeParse({ ...vehicle, unitNumber: "   " }).success).toBe(false);
     expect(vehicleInput.safeParse({ ...vehicle, plate: "    " }).success).toBe(false);
     expect(vehicleInput.parse({ ...vehicle, unitNumber: " DL-1 " }).unitNumber).toBe("DL-1");
+  });
+});
+
+describe("optimistic patches reach both the list and the detail page", () => {
+  const first = "00000000-0000-4000-8000-000000000001";
+  const second = "00000000-0000-4000-8000-000000000002";
+  const driver: DriverRow = {
+    id: first,
+    name: "Ava",
+    phone: "1",
+    vehicleClass: "luxury_sedan",
+    onDuty: false,
+    photoVersion: null,
+    tripsToday: 2,
+    licenses: 1,
+  };
+  const profile: DriverProfile = { id: first, name: "Ava", phone: "1", vehicleClass: "luxury_sedan", onDuty: false, photoVersion: null, documents: [] };
+
+  it("puts one driver on duty in the list and leaves the others alone", () => {
+    const list = { drivers: [driver, { ...driver, id: second, name: "Ben" }] };
+    expect(withDriverOnDuty(list, first, true)).toEqual({ drivers: [{ ...driver, onDuty: true }, { ...driver, id: second, name: "Ben" }] });
+  });
+
+  it("puts the driver on duty on their own profile and ignores other profiles", () => {
+    expect(withDriverOnDuty(profile, first, true)).toEqual({ ...profile, onDuty: true });
+    expect(withDriverOnDuty(profile, second, true)).toBe(profile);
+  });
+
+  const vehicle: VehicleRow = { id: first, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "ready", registrations: 0 };
+  const details: VehicleProfile = { id: first, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "ready", documents: [] };
+
+  it("sends one vehicle to service in the list and leaves the others alone", () => {
+    const list = { vehicles: [vehicle, { ...vehicle, id: second }] };
+    expect(withVehicleStatus(list, first, "in_service")).toEqual({ vehicles: [{ ...vehicle, status: "in_service" }, { ...vehicle, id: second }] });
+  });
+
+  it("sends the vehicle to service on its own page and ignores other vehicles", () => {
+    expect(withVehicleStatus(details, first, "in_service")).toEqual({ ...details, status: "in_service" });
+    expect(withVehicleStatus(details, second, "in_service")).toBe(details);
   });
 });

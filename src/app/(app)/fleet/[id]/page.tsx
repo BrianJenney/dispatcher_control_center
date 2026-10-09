@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { RefreshingStatusSwitch } from "@/app/(app)/fleet/[id]/refreshing-status-switch";
-import { EditVehicleForm } from "@/app/(app)/fleet/vehicle-form";
-import { PageHeader } from "@/components/page-header";
+import { VehicleDetailsView } from "@/app/(app)/fleet/[id]/vehicle-details-view";
 import { LoadingState } from "@/components/states";
-import { DocumentsPanel } from "@/components/uploads/documents-panel";
 import { getVehicleProfile } from "@/server/queries/people";
 
 export const metadata: Metadata = { title: "Vehicle · Dispatch Lite" };
@@ -23,17 +20,5 @@ async function VehicleProfile({ params }: Pick<PageProps<"/fleet/[id]">, "params
   await connection();
   const vehicle = await getVehicleProfile((await params).id);
   if (!vehicle) notFound();
-  return (
-    <>
-      <PageHeader
-        eyebrow={`Fleet · ${vehicle.unitNumber}`}
-        title={vehicle.model}
-        actions={<RefreshingStatusSwitch vehicle={vehicle} />}
-      />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <EditVehicleForm vehicleId={vehicle.id} values={vehicle} />
-        <DocumentsPanel title="Registrations" purpose="vehicle_registration" ownerId={vehicle.id} documents={vehicle.documents} />
-      </div>
-    </>
-  );
+  return <VehicleDetailsView initialData={vehicle} />;
 }

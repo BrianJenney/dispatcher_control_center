@@ -13,7 +13,26 @@ function filePicker(page: Page, label: string) {
   return page.locator(`input[type="file"][aria-label="${label}"]`);
 }
 
+async function holdTheNetwork(page: Page) {
+  const held = Promise.withResolvers<undefined>();
+  await page.route("**/*", async (route) => {
+    if (route.request().resourceType() === "fetch") await held.promise;
+    await route.continue();
+  });
+  return async () => {
+    held.resolve(undefined);
+    await page.unrouteAll({ behavior: "wait" });
+  };
+}
+
+async function openInAnotherTab(page: Page) {
+  const other = await page.context().newPage();
+  await other.goto(page.url(), { waitUntil: "networkidle" });
+  return other;
+}
+
 let newDriverName = "";
+let newUnit = "";
 
 export const drivers: Flow = {
   route: "/drivers",
@@ -77,6 +96,35 @@ export const drivers: Flow = {
         await filePicker(page, "Upload photo").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: onePixelPng });
         await expect(page.getByRole("img", { name: `Photo of ${newDriverName}` })).toBeVisible();
         await expect.poll(() => context.number(`select count(*) as value from drivers where name = $1 and photo_key is not null`, [newDriverName])).toBe(1);
+      },
+    },
+    {
+      name: "the duty switch on the profile flips before the server answers, and the toast follows the save",
+      run: async (context) => {
+        const { page } = context;
+        const duty = page.getByRole("switch", { name: `${newDriverName} on duty` });
+        await expect(duty).not.toBeChecked();
+        const release = await holdTheNetwork(page);
+        await duty.click();
+        await expect(duty).toBeChecked({ timeout: 1_000 });
+        await expect(page.getByRole("main").getByText("On duty", { exact: true })).toBeVisible();
+        await expect(page.getByText(`${newDriverName} is on duty.`)).toHaveCount(0);
+        await release();
+        await expect(page.getByText(`${newDriverName} is on duty.`)).toBeVisible();
+        await expect.poll(() => context.number(`select count(*) as value from drivers where name = $1 and on_duty`, [newDriverName])).toBe(1);
+        await expect(duty).toBeChecked();
+      },
+    },
+    {
+      name: "taking the driver off duty in another tab shows on this profile within one polling interval",
+      run: async (context) => {
+        const { page } = context;
+        const other = await openInAnotherTab(page);
+        await other.getByRole("switch", { name: `${newDriverName} on duty` }).click();
+        await expect.poll(() => context.number(`select count(*) as value from drivers where name = $1 and not on_duty`, [newDriverName])).toBe(1);
+        await other.close();
+        await expect(page.getByRole("switch", { name: `${newDriverName} on duty` })).not.toBeChecked({ timeout: 7_000 });
+        await expect(page.getByRole("main").getByText("Off duty", { exact: true })).toBeVisible();
       },
     },
     {
@@ -169,11 +217,40 @@ export const fleet: Flow = {
       name: "add a vehicle and land on its details",
       run: async (context) => {
         const { page } = context;
-        const unit = `VF-${viewportTag(page).charAt(0).toUpperCase()}${String(Date.now()).slice(-5)}`;
-        await page.getByRole("textbox", { name: "Fleet number" }).fill(unit);
+        newUnit = `VF-${viewportTag(page).charAt(0).toUpperCase()}${String(Date.now()).slice(-5)}`;
+        await page.getByRole("textbox", { name: "Fleet number" }).fill(newUnit);
         await page.getByRole("button", { name: "Add vehicle" }).click();
         await expect(page.getByRole("heading", { name: "Genesis G90" })).toBeVisible();
-        await expect.poll(() => context.number(`select count(*) as value from vehicles where unit_number = $1 and status = 'ready'`, [unit])).toBe(1);
+        await expect.poll(() => context.number(`select count(*) as value from vehicles where unit_number = $1 and status = 'ready'`, [newUnit])).toBe(1);
+      },
+    },
+    {
+      name: "the Ready switch on the vehicle page flips before the server answers, and the toast follows the save",
+      run: async (context) => {
+        const { page } = context;
+        const ready = page.getByRole("switch", { name: `${newUnit} ready` });
+        await expect(ready).toBeChecked();
+        const release = await holdTheNetwork(page);
+        await ready.click();
+        await expect(ready).not.toBeChecked({ timeout: 1_000 });
+        await expect(page.getByRole("main").getByText("In service", { exact: true })).toBeVisible();
+        await expect(page.getByText(`${newUnit} is in service.`)).toHaveCount(0);
+        await release();
+        await expect(page.getByText(`${newUnit} is in service.`)).toBeVisible();
+        await expect.poll(() => context.number(`select count(*) as value from vehicles where unit_number = $1 and status = 'in_service'`, [newUnit])).toBe(1);
+        await expect(ready).not.toBeChecked();
+      },
+    },
+    {
+      name: "marking the vehicle ready in another tab shows on this page within one polling interval",
+      run: async (context) => {
+        const { page } = context;
+        const other = await openInAnotherTab(page);
+        await other.getByRole("switch", { name: `${newUnit} ready` }).click();
+        await expect.poll(() => context.number(`select count(*) as value from vehicles where unit_number = $1 and status = 'ready'`, [newUnit])).toBe(1);
+        await other.close();
+        await expect(page.getByRole("switch", { name: `${newUnit} ready` })).toBeChecked({ timeout: 7_000 });
+        await expect(page.getByRole("main").getByText("Ready", { exact: true })).toBeVisible();
       },
     },
   ],
@@ -212,6 +289,17 @@ export const documents: Flow = {
       },
     },
     {
+      name: "a license uploaded in another tab shows on this profile within one polling interval",
+      run: async ({ page }) => {
+        const fileName = `license-back-${viewportTag(page)}-${String(Date.now()).slice(-6)}.pdf`;
+        const other = await openInAnotherTab(page);
+        await filePicker(other, "Upload license").setInputFiles({ name: fileName, mimeType: "application/pdf", buffer: tinyPdf });
+        await expect(other.getByRole("list", { name: "Licenses" }).getByText(fileName)).toBeVisible();
+        await other.close();
+        await expect(page.getByRole("list", { name: "Licenses" }).getByText(fileName)).toBeVisible({ timeout: 7_000 });
+      },
+    },
+    {
       name: "the license opens for staff and is refused when signed out",
       run: async ({ page }) => {
         const link = page.getByRole("link", { name: "View license-front.pdf" }).first();
@@ -233,11 +321,14 @@ export const documents: Flow = {
       run: async (context) => {
         const { page } = context;
         const before = await context.number(`select count(*) as value from documents where file_name = 'license-front.pdf'`);
+        const listed = page.getByRole("list", { name: "Licenses" }).getByText("license-front.pdf", { exact: true });
+        const shown = await listed.count();
         await page.getByRole("button", { name: "Delete license-front.pdf" }).first().click();
         const dialog = page.getByRole("alertdialog");
         await expect(dialog).toContainText("This cannot be undone.");
         await dialog.getByRole("button", { name: "Delete file" }).click();
         await expect(page.getByText("license-front.pdf is deleted.")).toBeVisible();
+        await expect(listed).toHaveCount(shown - 1);
         await expect.poll(() => context.number(`select count(*) as value from documents where file_name = 'license-front.pdf'`)).toBe(before - 1);
       },
     },
