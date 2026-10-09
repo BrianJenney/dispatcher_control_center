@@ -10,9 +10,11 @@ import { useFormat } from "@/components/format";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
+import { statusFill } from "@/components/trips/status-badge";
 import { StatusFilter } from "@/components/trips/status-filter";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
+import { scrollGently } from "@/components/trips/trip-focus";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,17 +30,9 @@ import {
   type ScheduleSnapshot,
 } from "@/domain/schedule";
 import { byPickupTime } from "@/domain/trip-row";
-import { isFinal, type TripStatus } from "@/domain/trip-status";
+import { isFinal } from "@/domain/trip-status";
 
 const everyone = "all";
-
-const node: Record<TripStatus, string> = {
-  offer: "bg-status-offer",
-  assigned: "bg-status-assigned",
-  en_route: "bg-status-en-route",
-  completed: "bg-status-completed",
-  cancelled: "bg-status-cancelled",
-};
 
 function scheduleHref(filter: ScheduleFilter): Route {
   const search = scheduleSearch(filter);
@@ -73,8 +67,7 @@ export function ScheduleView({ filter, initialData }: { filter: ScheduleFilter; 
   }
 
   function jumpToNow() {
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    nowMarker.current?.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" });
+    if (nowMarker.current) scrollGently(nowMarker.current);
   }
 
   const nowMarkerItem = (
@@ -183,7 +176,7 @@ export function ScheduleView({ filter, initialData }: { filter: ScheduleFilter; 
                       aria-hidden
                       className={cn(
                         "absolute top-5 -left-[18px] size-3 rounded-full ring-4 ring-background sm:-left-[22px]",
-                        node[trip.status],
+                        statusFill[trip.status],
                       )}
                     />
                     <TripCard trip={trip} compact={isFinal(trip.status)} actions={<TripActions trip={trip} />} />

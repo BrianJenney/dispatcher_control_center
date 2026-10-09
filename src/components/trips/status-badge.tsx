@@ -1,6 +1,14 @@
 import { cn } from "@/components/ui/utils";
 import { statusLabels, type TripStatus } from "@/domain/trip-status";
 
+export const statusFill: Record<TripStatus, string> = {
+  offer: "bg-status-offer",
+  assigned: "bg-status-assigned",
+  en_route: "bg-status-en-route",
+  completed: "bg-status-completed",
+  cancelled: "bg-status-cancelled",
+};
+
 const tone: Record<TripStatus, string> = {
   offer: "bg-status-offer/12 text-status-offer",
   assigned: "bg-status-assigned/12 text-status-assigned",

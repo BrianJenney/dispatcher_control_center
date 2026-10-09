@@ -12,12 +12,16 @@ export function moveToTripCard(step: 1 | -1) {
   cards[stepIndex(current, cards.length, step)]?.focus();
 }
 
+export function scrollGently(element: Element) {
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  element.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" });
+}
+
 export function showTripCard(tripId: string) {
   const card = document.getElementById(tripCardId(tripId));
   if (!card) return;
-  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   card.focus({ preventScroll: true });
-  card.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" });
+  scrollGently(card);
   card.animate([{ boxShadow: "0 0 0 3px var(--gold)" }, { boxShadow: "0 0 0 3px transparent" }], {
     duration: 1800,
     easing: "ease-in",

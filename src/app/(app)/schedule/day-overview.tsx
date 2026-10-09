@@ -3,6 +3,7 @@
 import { useId, useLayoutEffect, useRef } from "react";
 import { useFormat } from "@/components/format";
 import { shortName } from "@/components/initials";
+import { statusFill } from "@/components/trips/status-badge";
 import { showTripCard } from "@/components/trips/trip-focus";
 import { cn } from "@/components/ui/utils";
 import { axisPosition, placeOnAxis, timelineRows, type TimelineAxis } from "@/domain/schedule";
@@ -12,14 +13,6 @@ import { statusLabels, tripStatuses, type TripStatus } from "@/domain/trip-statu
 const hourWidthRem = 3.5;
 const laneHeightRem = 2.25;
 const rowPaddingRem = 0.25;
-
-const swatch: Record<TripStatus, string> = {
-  offer: "bg-status-offer",
-  assigned: "bg-status-assigned",
-  en_route: "bg-status-en-route",
-  completed: "bg-status-completed",
-  cancelled: "bg-status-cancelled",
-};
 
 const barTone: Record<TripStatus, string> = {
   offer: "border-status-offer bg-status-offer/12",
@@ -69,7 +62,7 @@ export function DayOverview({ axis, trips, now }: { axis: TimelineAxis; trips: r
         <ul className="flex flex-wrap gap-x-4 gap-y-1 px-4 pt-2 text-xs text-muted-foreground sm:px-5">
           {tripStatuses.map((status) => (
             <li key={status} className="flex items-center gap-1.5">
-              <span className={cn("size-2 rounded-full", swatch[status])} />
+              <span className={cn("size-2 rounded-full", statusFill[status])} />
               {statusLabels[status]}
             </li>
           ))}
