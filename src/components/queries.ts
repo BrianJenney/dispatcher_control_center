@@ -4,7 +4,7 @@ import { dashboardSnapshot } from "@/domain/dashboard";
 import { healthSnapshot } from "@/domain/health-check";
 import { insightsSnapshot } from "@/domain/insights";
 import { driverSuggestions, jobsSnapshot } from "@/domain/jobs";
-import { driversSnapshot, fleetSnapshot } from "@/domain/people";
+import { driverProfile, driversSnapshot, fleetSnapshot, vehicleProfile } from "@/domain/people";
 import { scheduleSnapshot } from "@/domain/schedule";
 
 export type LiveQueryDefinition<T> = { queryKey: readonly unknown[]; url: string; schema: z.ZodType<T> };
@@ -21,7 +21,9 @@ export const liveQueries = {
   activity: (show: number) => ({ queryKey: [...tripsQueryKey, "activity", show], url: `/api/activity?show=${String(show)}`, schema: activitySnapshot }),
   jobs: (search: string) => ({ queryKey: [...tripsQueryKey, "jobs", search], url: `/api/jobs?${search}`, schema: jobsSnapshot }),
   drivers: { queryKey: driversQueryKey, url: "/api/drivers", schema: driversSnapshot },
+  driver: (driverId: string) => ({ queryKey: [...driversQueryKey, driverId], url: `/api/drivers/${driverId}`, schema: driverProfile }),
   fleet: { queryKey: fleetQueryKey, url: "/api/fleet", schema: fleetSnapshot },
+  vehicle: (vehicleId: string) => ({ queryKey: [...fleetQueryKey, vehicleId], url: `/api/fleet/${vehicleId}`, schema: vehicleProfile }),
   suggestions: (tripId: string) => ({
     queryKey: ["suggestions", tripId],
     url: `/api/trips/${tripId}/suggestions`,

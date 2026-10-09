@@ -2,7 +2,7 @@ import { and, asc, count, eq, gte, lt } from "drizzle-orm";
 import { db } from "@/db/client";
 import { documents, drivers, trips, vehicles } from "@/db/schema";
 import { tripsTodayByDriver } from "@/domain/kpis";
-import type { DriverRow, VehicleRow } from "@/domain/people";
+import type { DriverProfile, DriverRow, VehicleProfile, VehicleRow } from "@/domain/people";
 import { dayRange } from "@/domain/time";
 import { recordId } from "@/domain/result";
 import { uploadIdOf, type DocumentRow } from "@/domain/uploads";
@@ -68,7 +68,7 @@ function toDocumentRows(rows: (typeof documents.$inferSelect)[]): DocumentRow[] 
   }));
 }
 
-export const getDriverProfile = defineQuery("signed-in", async (id: unknown) => {
+export const getDriverProfile = defineQuery("signed-in", async (id: unknown): Promise<DriverProfile | null> => {
   const driverId = recordId(id);
   if (!driverId) return null;
   const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId) });
@@ -88,7 +88,7 @@ export const getDriverProfile = defineQuery("signed-in", async (id: unknown) => 
   };
 });
 
-export const getVehicleProfile = defineQuery("signed-in", async (id: unknown) => {
+export const getVehicleProfile = defineQuery("signed-in", async (id: unknown): Promise<VehicleProfile | null> => {
   const vehicleId = recordId(id);
   if (!vehicleId) return null;
   const vehicle = await db.query.vehicles.findFirst({ where: eq(vehicles.id, vehicleId) });
@@ -97,7 +97,15 @@ export const getVehicleProfile = defineQuery("signed-in", async (id: unknown) =>
     where: eq(documents.vehicleId, vehicleId),
     orderBy: asc(documents.createdAt),
   });
-  return { ...vehicle, documents: toDocumentRows(registrations) };
+  return {
+    id: vehicle.id,
+    model: vehicle.model,
+    unitNumber: vehicle.unitNumber,
+    plate: vehicle.plate,
+    vehicleClass: vehicle.vehicleClass,
+    status: vehicle.status,
+    documents: toDocumentRows(registrations),
+  };
 });
 
 export const getDocumentFile = defineQuery("signed-in", async (id: unknown) => {

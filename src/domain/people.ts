@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { vehicleClasses, vehicleStatuses } from "@/domain/fleet";
+import { documentRow } from "@/domain/uploads";
 
 export const driverInput = z.object({
   name: z.string().trim().min(1, "Enter the driver's name.").max(80, "Keep the name to 80 characters."),
@@ -26,6 +27,12 @@ export const driverRow = z.object({
 export type DriverRow = z.infer<typeof driverRow>;
 
 export const driversSnapshot = z.object({ drivers: z.array(driverRow) });
+
+export const driverProfile = driverRow
+  .pick({ id: true, name: true, phone: true, vehicleClass: true, onDuty: true, photoVersion: true })
+  .extend({ documents: z.array(documentRow) });
+
+export type DriverProfile = z.infer<typeof driverProfile>;
 
 export const vehicleInput = z.object({
   model: z.string().trim().min(1, "Enter the make and model.").max(80, "Keep the model to 80 characters."),
@@ -54,3 +61,9 @@ export const vehicleRow = z.object({
 export type VehicleRow = z.infer<typeof vehicleRow>;
 
 export const fleetSnapshot = z.object({ vehicles: z.array(vehicleRow) });
+
+export const vehicleProfile = vehicleRow
+  .pick({ id: true, model: true, unitNumber: true, plate: true, vehicleClass: true, status: true })
+  .extend({ documents: z.array(documentRow) });
+
+export type VehicleProfile = z.infer<typeof vehicleProfile>;
