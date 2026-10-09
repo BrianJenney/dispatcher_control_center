@@ -24,7 +24,7 @@ export function AddDriverForm() {
   });
   return (
     <DriverFields form={form} values={{ name: "", phone: "", vehicleClass: "luxury_sedan" }} submitLabel="Add driver">
-      <FormSwitch label="On duty" hint="Can take trips right away." name="onDuty" defaultChecked={false} />
+      <FormSwitch label="Start on duty" hint="Can take trips right away." name="onDuty" defaultChecked={false} />
     </DriverFields>
   );
 }
