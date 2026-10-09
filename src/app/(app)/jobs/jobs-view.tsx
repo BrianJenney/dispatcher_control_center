@@ -2,8 +2,7 @@
 
 import { Download, Search } from "lucide-react";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef } from "react";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
@@ -13,6 +12,7 @@ import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
+import { useAddressFilter } from "@/components/use-address-filter";
 import { jobsSearch, jobsSearchId, jobsSearchLabel, tripReferenceIn, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { maxShown, nextShownCount, pageSize } from "@/domain/paging";
 
@@ -35,8 +35,7 @@ function noMatchHint(q: string): string {
 }
 
 export function JobsView({ filter, initialData }: { filter: JobsFilter; initialData: JobsSnapshot }) {
-  const router = useRouter();
-  const [navigating, startNavigation] = useTransition();
+  const { shown, show, pending: navigating } = useAddressFilter(filter, jobsHref);
   const typing = useRef<ReturnType<typeof setTimeout>>(undefined);
   const searchBox = useRef<HTMLInputElement>(null);
   const search = jobsSearch(filter);
@@ -47,12 +46,6 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
     const box = searchBox.current;
     if (box && document.activeElement !== box) box.value = filter.q;
   }, [filter.q]);
-
-  function show(next: JobsFilter) {
-    startNavigation(() => {
-      router.replace(jobsHref(next), { scroll: false });
-    });
-  }
 
   return (
     <div className="space-y-5">
@@ -71,7 +64,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
               const q = event.currentTarget.value;
               clearTimeout(typing.current);
               typing.current = setTimeout(() => {
-                show({ ...filter, q, show: pageSize });
+                show({ ...shown, q, show: pageSize });
               }, 300);
             }}
           />
@@ -85,9 +78,9 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
           </Button>
         </div>
         <StatusFilter
-          value={filter.status}
+          value={shown.status}
           onChange={(status) => {
-            show({ ...filter, status, show: pageSize });
+            show({ ...shown, status, show: pageSize });
           }}
         />
       </div>
@@ -137,7 +130,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
             className="w-full sm:w-auto"
             aria-disabled={navigating}
             onClick={() => {
-              show({ ...filter, show: nextShow });
+              show({ ...shown, show: nextShow });
             }}
           >
             Show more

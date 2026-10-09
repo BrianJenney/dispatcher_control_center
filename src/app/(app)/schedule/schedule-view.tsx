@@ -3,8 +3,7 @@
 import { Clock, Plus } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Fragment, useId, useOptimistic, useRef, useTransition } from "react";
+import { Fragment, useId, useRef } from "react";
 import { DayOverview } from "@/app/(app)/schedule/day-overview";
 import { useFormat } from "@/components/format";
 import { useLiveQuery } from "@/components/live-query";
@@ -19,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/components/ui/utils";
+import { useAddressFilter } from "@/components/use-address-filter";
 import {
   filterTrips,
   isFiltered,
@@ -41,9 +41,7 @@ function scheduleHref(filter: ScheduleFilter): Route {
 
 export function ScheduleView({ filter, initialData }: { filter: ScheduleFilter; initialData: ScheduleSnapshot }) {
   const format = useFormat();
-  const router = useRouter();
-  const [, startNavigation] = useTransition();
-  const [shown, showNow] = useOptimistic(filter);
+  const { shown, show } = useAddressFilter(filter, scheduleHref);
   const { data, isError, refetch } = useLiveQuery(liveQueries.schedule, initialData);
   const driverFilter = useRef<HTMLButtonElement>(null);
   const nowMarker = useRef<HTMLLIElement>(null);
@@ -53,13 +51,6 @@ export function ScheduleView({ filter, initialData }: { filter: ScheduleFilter; 
   const upcoming = upcomingIndex(visible, data.now);
   const filtered = isFiltered(shown);
   const driverValue = data.drivers.some((driver) => driver.id === shown.driver) ? shown.driver : null;
-
-  function show(next: ScheduleFilter) {
-    startNavigation(() => {
-      showNow(next);
-      router.replace(scheduleHref(next), { scroll: false });
-    });
-  }
 
   function clearFilters() {
     driverFilter.current?.focus();
