@@ -27,7 +27,7 @@ export default function JobsPage({ searchParams }: PageProps<"/jobs">) {
           </Button>
         }
       />
-      <Suspense fallback={<LoadingState label="Loading jobs" rows={6} />}>
+      <Suspense fallback={<LoadingState label="Loading jobs" rows={6} shape="card" />}>
         <JobsData searchParams={searchParams} />
       </Suspense>
     </>

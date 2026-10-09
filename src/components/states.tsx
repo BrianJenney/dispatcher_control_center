@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/components/ui/utils";
 
 type StateProps = { title: string; description?: string; action?: ReactNode; pageTitle?: boolean };
 
@@ -94,12 +95,22 @@ export function LiveUpdatesPaused({ what, onRetry }: { what: string; onRetry: ()
   );
 }
 
-export function LoadingState({ label, rows = 3 }: { label: string; rows?: number }) {
+const placeholderHeights = { row: "h-12", compact: "h-20", card: "h-72 lg:h-52" } as const;
+
+export function LoadingState({
+  label,
+  rows = 3,
+  shape = "row",
+}: {
+  label: string;
+  rows?: number;
+  shape?: keyof typeof placeholderHeights;
+}) {
   return (
     <div aria-busy="true" aria-live="polite" className="space-y-3">
       <span className="sr-only">{label}</span>
       {Array.from({ length: rows }, (_, index) => (
-        <Skeleton key={index} className="h-12 w-full rounded-xl" />
+        <Skeleton key={index} className={cn("w-full rounded-xl", placeholderHeights[shape])} />
       ))}
     </div>
   );

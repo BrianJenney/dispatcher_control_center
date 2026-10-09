@@ -16,7 +16,7 @@ export default function SchedulePage({ searchParams }: PageProps<"/schedule">) {
         title="Schedule"
         description="Who is driving when, from first pickup to last drop off. Filter by status or driver to see one chauffeur's day."
       />
-      <Suspense fallback={<LoadingState label="Loading today's schedule" rows={5} />}>
+      <Suspense fallback={<LoadingState label="Loading today's schedule" rows={5} shape="compact" />}>
         <ScheduleData searchParams={searchParams} />
       </Suspense>
     </>
