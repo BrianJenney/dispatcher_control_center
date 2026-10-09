@@ -42,7 +42,7 @@ const signedInPagesCheckTheSession = {
 const outsideSrc = ["error", { patterns: [strayCnPackage] }];
 
 const readsThroughQueries = {
-  regex: "^@/server/(?!queries/|actions/|route$|query$|session$|auth$)",
+  regex: "^@/server/(?!queries/|actions/|jobs/|route$|query$|session$|auth$)",
   message: "Read data through a query in @/server/queries. Each one checks the session first.",
 };
 

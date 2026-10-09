@@ -52,7 +52,7 @@ The database can be rewound to any second in the last 7 days, and a restore take
 
 ## Deploying
 
-Vercel builds with `pnpm db:deploy && pnpm build`. `db:deploy` applies migrations, then seeds the fake demo data only if the database has no drivers yet, so it is safe on every deploy and never touches data that already exists. It also keeps the demo account's password in step with `DEMO_USER_PASSWORD`: change the variable and redeploy, and the old password stops working and everyone signed in with it is signed out. The demo password lives only in that variable and in the submission message; the app never reads it and the sign in page never shows it. Set the variables from `.env.example` on the Vercel project, plus `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` if you want error and trace reporting.
+Vercel builds with `pnpm db:deploy && pnpm build`. `db:deploy` applies migrations, then seeds the fake demo data if the database has no drivers yet. On a database that already has data it rolls the demo day forward instead: trips left open on earlier days are finished or cancelled through the normal status rules (each move is in the activity log), and if today has no trips a fresh day is added in every status. Nothing is deleted, so it is safe on every deploy. A Vercel cron job (`vercel.json`) does the same every morning at 09:05 UTC through `/api/cron/demo-day`, which only runs when the request carries the `CRON_SECRET` bearer token; set `CRON_SECRET` on the Vercel project (16 characters or more) to switch it on. It also keeps the demo account's password in step with `DEMO_USER_PASSWORD`: change the variable and redeploy, and the old password stops working and everyone signed in with it is signed out. The demo password lives only in that variable and in the submission message; the app never reads it and the sign in page never shows it. Set the variables from `.env.example` on the Vercel project, plus `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` if you want error and trace reporting.
 
 ## Running cost
 
@@ -395,7 +395,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 
 **Insights** (`/insights`)
 1. Open Insights. Four tiles cover the last seven days: trips, completion rate, cancellation rate and revenue.
-2. "Needs attention" lists offers due within two hours, offers whose pickup time has passed, and assigned trips not started 15 minutes after pickup. Book an offer for the next hour and it appears within 5 seconds.
+2. "Needs attention" lists offers due within two hours, offers whose pickup time has passed, and assigned trips not started 15 minutes after pickup. Book an offer for the next hour and it appears within 5 seconds. "Open" on any item finds that trip in Jobs by its number, ready to assign or cancel, even when it is from an earlier day.
 3. The charts show trips per day (completed, still open, cancelled), revenue per day (completed trips only), why trips were cancelled, and trips per driver today, so an uneven load is visible at a glance.
 
 **Activity log** (`/activity`, from the "Activity log" button on Insights)

@@ -16,6 +16,10 @@ const envSchema = z.object({
   STORAGE_ACCESS_KEY_ID: z.string().min(1),
   STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
   SENTRY_DSN: optionalUrl,
+  CRON_SECRET: z
+    .union([z.string().min(16), z.literal("")])
+    .optional()
+    .transform((value) => value || undefined),
   VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
   VERCEL_URL: z.string().min(1).optional(),
   VERCEL_BRANCH_URL: z.string().min(1).optional(),

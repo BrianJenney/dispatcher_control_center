@@ -19,6 +19,19 @@ async function insertOfferDueSoon(context: FlowContext, customer: string) {
   );
 }
 
+async function insertMissedOfferYesterday(context: FlowContext, customer: string) {
+  await context.execute(
+    `with created as (
+       insert into trips (customer_name, pickup_address, dropoff_address, pickup_at, passengers, vehicle_class, fare_cents)
+       values ($1, 'Harborview Hotel', 'Regional Airport, Terminal B', now() - interval '1 day', 2, 'luxury_sedan', 15000)
+       returning id)
+     insert into trip_events (trip_id, actor_id, to_status)
+     select created.id, "user".id, 'offer' from created, "user" where "user".email = $2`,
+    [customer, demoUser.email],
+  );
+  return context.number(`select reference as value from trips where customer_name = $1`, [customer]);
+}
+
 function attentionList(page: Page) {
   return page.getByRole("region", { name: "Needs attention" });
 }
@@ -74,12 +87,20 @@ export const insights: Flow = {
       },
     },
     {
-      name: "Open on a flagged trip opens that trip",
-      run: async ({ page }) => {
-        await attentionList(page).getByRole("listitem").filter({ hasText: guests.first }).getByRole("link", { name: /^Open trip/ }).click();
+      name: "opening a missed pickup from yesterday shows that trip ready to assign",
+      run: async (context) => {
+        const { page } = context;
+        const customer = `Missed Guest ${viewportTag(page)} ${String(Date.now())}`;
+        const reference = await insertMissedOfferYesterday(context, customer);
+        await page.goto("/insights");
+        const item = attentionList(page).getByRole("listitem").filter({ hasText: customer });
+        await expect(item).toContainText("Pickup time passed");
+        await item.getByRole("link", { name: `Open trip ${String(reference)}` }).click();
         await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
-        await expect(page.getByRole("heading", { name: /^Trip #\d+$/, level: 1 })).toBeVisible();
-        await expect(page.getByRole("article", { name: new RegExp(guests.first) })).toBeVisible();
+        await expect(page.getByRole("heading", { name: `Trip #${String(reference)}`, level: 1 })).toBeVisible();
+        const card = page.locator("[data-trip-card]").filter({ hasText: customer });
+        await expect(card).toBeVisible();
+        await expect(card.getByRole("button", { name: "Assign driver" })).toBeVisible();
         await expect(page.getByRole("list", { name: "Trip history" })).toContainText("booked");
       },
     },
