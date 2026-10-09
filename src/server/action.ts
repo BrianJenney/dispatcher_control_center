@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { db, type Transaction } from "@/db/client";
 import { DomainError, failure, type ActionResult } from "@/domain/result";
-import { friendlyDatabaseError } from "@/server/database-errors";
+import { friendlyDatabaseError, isDeadlock } from "@/server/database-errors";
 import { currentUser } from "@/server/session";
 import { storage } from "@/server/storage";
 
@@ -18,6 +18,15 @@ export function parseInput<S extends z.ZodType>(schema: S, input: unknown) {
   return { ok: false as const, failure: invalid };
 }
 
+async function commitRetryingDeadlock<R>(work: (tx: Transaction) => Promise<R>): Promise<R> {
+  try {
+    return await db.transaction(work);
+  } catch (error) {
+    if (!isDeadlock(error)) throw error;
+    return db.transaction(work);
+  }
+}
+
 export function defineAction<S extends z.ZodType, R>(
   schema: S,
   run: (input: z.output<S>, context: ActionContext) => Promise<R>,
@@ -30,11 +39,13 @@ export function defineAction<S extends z.ZodType, R>(
     if (!parsed.ok) return parsed.failure;
 
     try {
-      const discarded: string[] = [];
-      const discardAfterCommit = (storageKey: string) => {
-        discarded.push(storageKey);
-      };
-      const data = await db.transaction((tx) => run(parsed.data, { tx, userId: user.id, discardAfterCommit }));
+      const { data, discarded } = await commitRetryingDeadlock(async (tx) => {
+        const keys: string[] = [];
+        const discardAfterCommit = (storageKey: string) => {
+          keys.push(storageKey);
+        };
+        return { data: await run(parsed.data, { tx, userId: user.id, discardAfterCommit }), discarded: keys };
+      });
       await Promise.all(discarded.map((storageKey) => storage.discard(storageKey)));
       return { ok: true, data };
     } catch (error) {
