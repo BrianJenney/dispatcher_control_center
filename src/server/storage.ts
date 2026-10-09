@@ -38,11 +38,9 @@ export const storage = {
       true,
     ),
 
-  downloadUrl: (key: string, served: { contentType: string; disposition: string }) => {
-    const url = objectUrl(key);
-    url.searchParams.set("response-content-type", served.contentType);
-    url.searchParams.set("response-content-disposition", served.disposition);
-    return presign(url, { method: "GET" }, false);
+  read: async (key: string) => {
+    const response = await client.fetch(objectUrl(key));
+    return response.ok ? response.body : null;
   },
 
   describe: async (key: string) => {

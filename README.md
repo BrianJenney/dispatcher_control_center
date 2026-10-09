@@ -44,7 +44,7 @@ Three separate environments, each with its own database and its own files, so a 
 
 Each environment also has its own sign-in secret, so a session from one is useless in another. Previews sign in on their own address, which the app reads from Vercel. A branch per preview needs the Neon integration for Vercel (https://vercel.com/integrations/neon); until it is installed all previews share the one `preview` branch, still isolated from production.
 
-Documents are private. Both buckets have public access switched off and no custom domains, so a file cannot be reached by its address alone. The browser asks the app for a link, the app checks the person is signed in, and the link it returns is signed and expires after 5 minutes: uploads and views both use these short-lived links, and a signed-out request to a document is refused with a 401. Upload limits (PDF or image, 10 MB) are enforced by the app and again by the database.
+Documents are private. Both buckets have public access switched off and no custom domains, so a file cannot be reached by its address alone. Viewing a file always goes through the app: it checks the person is signed in on every request and streams the file itself, so there is no file address to copy and share, and a signed-out request is refused with a 401. None of these files go through a shared CDN cache, because a shared cache would hand a private file to anyone with its address. Driver photos are cached by the viewer's own browser for an hour (each new photo gets a new address, so a change shows at once); licences and registrations are never cached. The app's own scripts, styles and fonts are served from Vercel's CDN. Uploads go straight from the browser to the bucket on a signed link that expires after 5 minutes, handed out only to signed-in users. Upload limits (PDF or image, 10 MB) are enforced by the app and again by the database.
 
 ## Backups and restoring
 
@@ -128,7 +128,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 |---|---|---|
 | Managed hosting, automatic deploys | Done | Vercel deploys every push; production from `main` |
 | Separate environments | Done | Production, preview and local each have their own database and files |
-| Private documents on expiring links | Done, checked by hand on the live site | Private buckets, signed links that expire after 5 minutes |
+| Private documents on expiring links | Done | Private buckets. Every view is streamed by the app after a sign-in check, so no shareable file link exists; uploads use signed links that expire after 5 minutes |
 | Migrations and indexes for 100,000 trips | Done, measured | `docs/load-test.md`: with 100,287 trips, 95% of page loads and polls answered in under 125 ms and the slowest in 394 ms |
 | Backups you can restore | Done | `docs/backup-restore.md`, with a recorded drill |
 | Clear monthly cost estimate | Done | "Running cost" below, and `docs/cost-estimate.md` |
@@ -254,8 +254,9 @@ flowchart LR
     Action --> Writes["Single write path<br/>src/db/trip-writes.ts"]
     Query --> DB[("Neon Postgres")]
     Writes --> DB
-    Browser -- "presigned link, expires in 5 minutes" --> R2[("Cloudflare R2<br/>private bucket")]
-    Action -- "creates the link" --> R2
+    Browser -- "upload on a presigned link, expires in 5 minutes" --> R2[("Cloudflare R2<br/>private bucket")]
+    Action -- "creates the upload link" --> R2
+    Route -- "streams a file to a signed-in viewer" --> R2
 ```
 
 Reads go through a query function, called by the page for first paint and by a route handler for polling. Every query is declared with `defineQuery`, which checks that the session is real (Better Auth verifies it, not just that a cookie is present) before it reads, and sends anyone else to sign in. Next renders a page alongside its layout, so the layout's sign-in check alone could let a page load its data first; checking inside the query closes that gap, and a lint rule fails any query exported without it. The proxy in `src/proxy.ts` is only a quick first filter for visitors with no cookie at all. Writes go through a server action: check the session, validate with zod, call the domain, write in one transaction. Status changes pass through `transitionTrip()` and nowhere else.
@@ -287,9 +288,21 @@ Neon makes a "branch": an instant copy that only stores what changes. It is read
 
 The same property gives local development a safe option: work against a local Postgres, or against a `local-dev` branch of the Neon database, never against production.
 
+**Rules live in the database as well as the code.** The status flow, the no double booking rule and the driver class rule are pure functions in `src/domain` and again Postgres triggers and constraints. The app gives friendly messages; the database guarantees the rule even if the app has a bug.
+
+**One way to do each thing.** Every read is a `defineQuery` that checks the session before it touches the database, every write is a server action that validates with zod and writes in one transaction, and trip status changes only through `transitionTrip()`. Lint rules enforce these paths, so the code stays small enough to change live.
+
+**Polling, not WebSockets.** Screens refresh every 5 seconds with TanStack Query, and the dispatcher's own actions update the screen at once. A handful of dispatchers does not need a socket server, and polling works on Vercel with nothing extra to run or pay for.
+
+**Private files, no shareable links.** Licences and registrations sit in private R2 buckets. The app streams each file to a signed-in user on every view, so a copied address opens nothing on its own. Uploads use signed links that expire after 5 minutes, so large files never pass through the app.
+
+**Money and time.** Fares are integer cents everywhere and only formatted for display. Times are stored as `timestamptz`, and "today" means today in the business's time zone (`APP_TIMEZONE`), not the server's.
+
+**Left out on purpose.** No maps, no vehicle photos and no dispatcher and admin roles in this submission. Each is listed under "What to build next" or in the quote.
+
 ## Known issues
 
-- Uploads and views were checked by hand on the live site against the private production bucket (a driver photo, viewed through a signed link that expires after 5 minutes). Licence and registration uploads use the same code path and are covered by the automated tests.
+- Uploads were checked by hand on the live site against the private production bucket. Licence and registration uploads use the same code path and are covered by the automated tests, as is streaming a file only to a signed-in user.
 - Sentry's slow request alert has to be created in the Sentry screen. The new error and regression alerts are in place.
 - Every preview deployment shares one Neon database branch, `preview`. A fresh branch per pull request needs the Neon integration for Vercel.
 - The 100,000 trip measurement ran with the database on the same machine as the app and one dispatcher at a time; Neon adds a few milliseconds per query, and concurrency was not tested.
@@ -386,7 +399,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 
 1. Drivers, "Profile", Licenses, "Upload". Pick a PDF or image under 10 MB. It shows as Uploaded, with "View" and "Delete".
 2. Pick a file over 10 MB or of another type. The message says which limit it broke.
-3. "View" opens it through a short lived link. Copy that link, wait 5 minutes, and it stops working.
+3. "View" opens it from the app. Copy the address into a private window and you are refused, because you are not signed in.
 4. Open `/api/documents/<any id>` in a private window. You are refused, because you are not signed in.
 5. "Delete" asks for confirmation first.
 6. Repeat for a vehicle's Registrations on the Fleet detail page.
@@ -395,7 +408,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 
 **Insights** (`/insights`)
 1. Open Insights. Four tiles cover the last seven days: trips, completion rate, cancellation rate and revenue.
-2. "Needs attention" lists offers due within two hours, offers whose pickup time has passed, and assigned trips not started 15 minutes after pickup. Book an offer for the next hour and it appears within 5 seconds. "Open" on any item finds that trip in Jobs by its number, ready to assign or cancel, even when it is from an earlier day.
+2. "Needs attention" lists offers due within two hours, offers whose pickup time has passed, and assigned trips not started 15 minutes after pickup. Book an offer for the next hour and it appears within 5 seconds. "Open" on any item goes to that trip's own page, with its actions and history, ready to assign or cancel, even when it is from an earlier day.
 3. The charts show trips per day (completed, still open, cancelled), revenue per day (completed trips only), why trips were cancelled, and trips per driver today, so an uneven load is visible at a glance.
 
 **Activity log** (`/activity`, from the "Activity log" button on Insights)

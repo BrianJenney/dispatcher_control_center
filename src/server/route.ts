@@ -36,13 +36,29 @@ export function uptimeRoute(databaseReachable: () => Promise<boolean>) {
 
 type StoredFile = { key: string; fileName: string; contentType: string | null };
 
-export function fileRoute({ read }: { read: (params: RouteParams) => Promise<StoredFile | null> }) {
+export function fileRoute({
+  read,
+  browserCacheSeconds = 0,
+}: {
+  read: (params: RouteParams) => Promise<StoredFile | null>;
+  browserCacheSeconds?: number;
+}) {
   return async function GET(_request: Request, context: { params: Promise<RouteParams> }) {
     const refused = await signedOut("Sign in to see this file.");
     if (refused) return refused;
     const file = await read(await context.params);
     if (!file) return Response.json({ message: missingRecord.file }, { status: 404 });
-    return Response.redirect(await storage.downloadUrl(file.key, servedFile(file)), 302);
+    const body = await storage.read(file.key);
+    if (!body) return Response.json({ message: missingRecord.file }, { status: 404 });
+    const served = servedFile(file);
+    return new Response(body, {
+      headers: {
+        "Content-Type": served.contentType,
+        "Content-Disposition": served.disposition,
+        "Cache-Control": browserCacheSeconds > 0 ? `private, max-age=${String(browserCacheSeconds)}` : "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
   };
 }
 

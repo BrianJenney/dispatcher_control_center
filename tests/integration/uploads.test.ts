@@ -269,17 +269,14 @@ describe("serving stored files", () => {
     return saved.data.id;
   }
 
-  it("sends staff to an expiring link that opens the PDF as a PDF", async () => {
-    const redirect = await open(getDocument, await savedLicense());
-    expect(redirect.status).toBe(302);
-    const link = new URL(redirect.headers.get("location") ?? "");
-    expect(link.searchParams.get("X-Amz-Expires")).toBe(String(storage.linkLifetimeSeconds));
-    expect(link.searchParams.get("response-content-type")).toBe("application/pdf");
-    expect(link.searchParams.has("X-Amz-Signature")).toBe(true);
-    const file = await fetch(link);
-    expect(file.headers.get("content-type")).toBe("application/pdf");
-    expect(file.headers.get("content-disposition")).toBe(`inline; filename="license.pdf"; filename*=UTF-8''license.pdf`);
-    expect(Buffer.from(await file.arrayBuffer())).toEqual(pdf);
+  it("serves the PDF from the app itself, so no link to the file leaves it", async () => {
+    const response = await open(getDocument, await savedLicense());
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("content-type")).toBe("application/pdf");
+    expect(response.headers.get("content-disposition")).toBe(`inline; filename="license.pdf"; filename*=UTF-8''license.pdf`);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(pdf);
   });
 
   it("refuses a signed out visitor", async () => {
@@ -291,9 +288,9 @@ describe("serving stored files", () => {
   it("serves a driver photo as the image type it was saved as", async () => {
     const driverId = await insertDriver();
     await photo(driverId);
-    const redirect = await open(getDriverPhoto, driverId);
-    const file = await fetch(redirect.headers.get("location") ?? "");
+    const file = await open(getDriverPhoto, driverId);
     expect(file.headers.get("content-type")).toBe("image/png");
     expect(file.headers.get("content-disposition")).toMatch(/^inline; filename="me\.png"/);
+    expect(file.headers.get("cache-control")).toBe("private, max-age=3600");
   });
 });
