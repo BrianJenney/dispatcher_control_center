@@ -1,7 +1,9 @@
+import { timingSafeEqual } from "node:crypto";
 import { connection } from "next/server";
 import { uptimeAnswer } from "@/domain/health-check";
 import { missingRecord } from "@/domain/result";
 import { servedFile } from "@/domain/uploads";
+import { env } from "@/env";
 import { currentUser } from "@/server/session";
 import { storage } from "@/server/storage";
 
@@ -58,5 +60,20 @@ export function downloadRoute({ read }: { read: (searchParams: URLSearchParams) 
         "Cache-Control": "no-store",
       },
     });
+  };
+}
+
+function fromScheduler(request: Request) {
+  if (!env.CRON_SECRET) return false;
+  const expected = Buffer.from(`Bearer ${env.CRON_SECRET}`);
+  const given = Buffer.from(request.headers.get("authorization") ?? "");
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
+
+export function cronRoute<T>(run: () => Promise<T>) {
+  return async function GET(request: Request) {
+    await connection();
+    if (!fromScheduler(request)) return Response.json({ message: "Only the scheduler can run this." }, { status: 401 });
+    return Response.json(await run(), { headers: { "Cache-Control": "no-store" } });
   };
 }
