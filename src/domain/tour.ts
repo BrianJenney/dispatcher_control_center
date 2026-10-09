@@ -14,7 +14,7 @@ export type TourStep = {
 export const tourSteps: readonly TourStep[] = [
   {
     title: "Welcome to Dispatch Lite",
-    body: "A quick tour of what you will do every day. It takes under a minute, and you can skip it at any time.",
+    body: "A one-minute look at your day. Skip it any time.",
   },
   {
     title: "Your four live numbers",
