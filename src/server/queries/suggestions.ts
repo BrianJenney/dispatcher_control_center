@@ -15,7 +15,7 @@ export const getSuggestions = defineQuery("signed-in", async (id: unknown): Prom
   if (!tripId) return null;
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, tripId),
-    columns: { id: true, vehicleClass: true, pickupAt: true, durationMinutes: true },
+    columns: { id: true, driverId: true, vehicleClass: true, pickupAt: true, durationMinutes: true },
   });
   if (!trip) return null;
   const day = dayRange(trip.pickupAt, env.APP_TIMEZONE);
@@ -38,7 +38,13 @@ export const getSuggestions = defineQuery("signed-in", async (id: unknown): Prom
 
   const counts = tripsTodayByDriver(dayTrips, day);
   const suggestions = matchDrivers(
-    { tripId: trip.id, vehicleClass: trip.vehicleClass, pickupAt: trip.pickupAt, durationMinutes: trip.durationMinutes },
+    {
+      tripId: trip.id,
+      driverId: trip.driverId,
+      vehicleClass: trip.vehicleClass,
+      pickupAt: trip.pickupAt,
+      durationMinutes: trip.durationMinutes,
+    },
     inClass.map((driver) => ({
       ...driver,
       tripsToday: counts.get(driver.id) ?? 0,

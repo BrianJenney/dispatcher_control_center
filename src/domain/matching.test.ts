@@ -3,7 +3,7 @@ import { matchDrivers, type DriverCandidate, type OpenTrip } from "@/domain/matc
 
 const at = (time: string) => new Date(`2026-10-07T${time}:00Z`);
 
-const trip: OpenTrip = { tripId: "trip-open", vehicleClass: "luxury_sedan", pickupAt: at("14:00"), durationMinutes: 60 };
+const trip: OpenTrip = { tripId: "trip-open", vehicleClass: "luxury_sedan", pickupAt: at("14:00"), durationMinutes: 60, driverId: null };
 
 function driver(overrides: Partial<DriverCandidate> & Pick<DriverCandidate, "id" | "name">): DriverCandidate {
   return { onDuty: true, vehicleClass: "luxury_sedan", tripsToday: 0, activeTrips: [], ...overrides };
@@ -42,9 +42,15 @@ describe("matchDrivers", () => {
     expect(ids(result)).toEqual(["a", "b"]);
   });
 
-  it("ignores the trip itself when it is being reassigned", () => {
+  it("offers three other drivers when reassigning, never the current one", () => {
     const held = [{ tripId: "trip-open", pickupAt: trip.pickupAt, durationMinutes: 60 }];
-    expect(ids(matchDrivers(trip, [driver({ id: "a", name: "Ava", activeTrips: held })]))).toEqual(["a"]);
+    const result = matchDrivers({ ...trip, driverId: "a" }, [
+      driver({ id: "a", name: "Ava", activeTrips: held }),
+      driver({ id: "b", name: "Ben", tripsToday: 2 }),
+      driver({ id: "c", name: "Cal", tripsToday: 2 }),
+      driver({ id: "d", name: "Dee", tripsToday: 2 }),
+    ]);
+    expect(ids(result)).toEqual(["b", "c", "d"]);
   });
 
   it("ranks fewest trips today first", () => {

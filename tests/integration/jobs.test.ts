@@ -171,6 +171,14 @@ describe("getSuggestions", () => {
     expect(result?.vehicleClass).toBe("group_suv");
   });
 
+  it("never offers the current driver when reassigning", async () => {
+    const assigned = await book({ pickupDate: "2031-07-02", pickupTime: "09:00" });
+    await moveTrip({ tripId: assigned.id, from: "offer", to: "assigned", driverId: groupDrivers[1] });
+    const ids = (await getSuggestions(assigned.id))?.suggestions.map((driver) => driver.id) ?? [];
+    expect(ids).not.toContain(groupDrivers[1]);
+    expect(ids).toHaveLength(3);
+  });
+
   it("returns nothing for a trip that does not exist", async () => {
     expect(await getSuggestions(crypto.randomUUID())).toBeNull();
   });

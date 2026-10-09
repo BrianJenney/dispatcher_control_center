@@ -26,7 +26,7 @@ export function AssignDialog({ trip }: { trip: TripRow }) {
   const reassign = useTripReassign();
   const reassigning = trip.status === "assigned";
   const suggestions = useOnDemandQuery(liveQueries.suggestions(trip.id), open);
-  const choices = (suggestions.data?.suggestions ?? []).filter((driver) => driver.id !== trip.driver?.id);
+  const choices = suggestions.data?.suggestions ?? [];
 
   function choose(driver: { id: string; name: string }) {
     setOpen(false);
