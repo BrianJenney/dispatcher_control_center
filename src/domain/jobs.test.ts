@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { jobsFilter, jobsSearch, tripReferenceIn } from "@/domain/jobs";
+import { jobsFilter, jobsSearch, tripReferenceIn, tripSearch } from "@/domain/jobs";
 import { maxShown, pageSize } from "@/domain/paging";
 
 describe("jobsFilter", () => {
@@ -36,6 +36,13 @@ describe("jobsSearch", () => {
   it("round trips through the URL", () => {
     const filter = { q: "Ashdown", status: "en_route" as const, show: 75 };
     expect(jobsFilter.parse(Object.fromEntries(new URLSearchParams(jobsSearch(filter))))).toEqual(filter);
+  });
+});
+
+describe("tripSearch", () => {
+  it("searches Jobs for exactly one trip number", () => {
+    expect(tripSearch(1229)).toBe("q=%231229");
+    expect(tripReferenceIn(new URLSearchParams(tripSearch(1229)).get("q") ?? "")).toBe(1229);
   });
 });
 

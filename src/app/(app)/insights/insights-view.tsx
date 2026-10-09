@@ -1,15 +1,16 @@
 "use client";
 
 import { AlertTriangle, Ban, CircleDollarSign, Clock, ListChecks, Percent } from "lucide-react";
-import Link from "next/link";
 import { BarList } from "@/components/charts/bar-list";
 import { StackedColumns } from "@/components/charts/stacked-columns";
 import { useFormat } from "@/components/format";
 import { KpiTile } from "@/components/kpi-tile";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
+import { RecordLink } from "@/components/record-link";
 import { LiveUpdatesPaused } from "@/components/states";
 import type { AttentionKind, InsightsSnapshot } from "@/domain/insights";
+import { tripSearch } from "@/domain/jobs";
 
 const attentionCopy: Record<AttentionKind, { label: string; hint: string }> = {
   "needs-driver-soon": { label: "Needs a driver soon", hint: "No driver and pickup within 2 hours" },
@@ -66,12 +67,16 @@ export function InsightsView({ initialData }: { initialData: InsightsSnapshot })
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium">{attentionCopy[item.kind].label}</span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    #{item.reference} {item.customerName} at {format.time(item.pickupAt)} · {attentionCopy[item.kind].hint}
+                    #{item.reference} {item.customerName} at {format.when(item.pickupAt)} · {attentionCopy[item.kind].hint}
                   </span>
                 </span>
-                <Link href="/schedule" className="text-sm font-medium underline-offset-4 hover:underline">
+                <RecordLink
+                  href={`/jobs?${tripSearch(item.reference)}`}
+                  aria-label={`Open trip ${String(item.reference)}`}
+                  className="text-sm font-medium underline-offset-4 hover:underline"
+                >
                   Open
-                </Link>
+                </RecordLink>
               </li>
             ))}
           </ul>

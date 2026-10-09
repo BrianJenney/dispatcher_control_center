@@ -48,6 +48,11 @@ function createFormat(timeZone: string) {
     shortDay: (iso: string) => shortDay.format(new Date(iso)),
     weekday: (iso: string) => weekday.format(new Date(iso)),
     isToday: (iso: string) => isWithin(new Date(iso), dayRange(new Date(), timeZone)),
+    when: (iso: string) => {
+      const at = new Date(iso);
+      const clock = time.format(at);
+      return isWithin(at, dayRange(new Date(), timeZone)) ? clock : `${shortDay.format(at)}, ${clock}`;
+    },
   };
 }
 

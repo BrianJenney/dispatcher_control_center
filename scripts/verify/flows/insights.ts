@@ -19,6 +19,19 @@ async function insertOfferDueSoon(context: FlowContext, customer: string) {
   );
 }
 
+async function insertMissedOfferYesterday(context: FlowContext, customer: string) {
+  await context.execute(
+    `with created as (
+       insert into trips (customer_name, pickup_address, dropoff_address, pickup_at, passengers, vehicle_class, fare_cents)
+       values ($1, 'Harborview Hotel', 'Regional Airport, Terminal B', now() - interval '1 day', 2, 'luxury_sedan', 15000)
+       returning id)
+     insert into trip_events (trip_id, actor_id, to_status)
+     select created.id, "user".id, 'offer' from created, "user" where "user".email = $2`,
+    [customer, demoUser.email],
+  );
+  return context.number(`select reference as value from trips where customer_name = $1`, [customer]);
+}
+
 function attentionList(page: Page) {
   return page.getByRole("region", { name: "Needs attention" });
 }
@@ -71,6 +84,22 @@ export const insights: Flow = {
         guests.second = `Insight Guest Two ${viewportTag(page)} ${String(Date.now())}`;
         await insertOfferDueSoon(context, guests.second);
         await expect(attentionList(page).getByText(guests.second)).toBeVisible({ timeout: 10_000 });
+      },
+    },
+    {
+      name: "opening a missed pickup from yesterday shows that trip ready to assign",
+      run: async (context) => {
+        const { page } = context;
+        const customer = `Missed Guest ${viewportTag(page)} ${String(Date.now())}`;
+        const reference = await insertMissedOfferYesterday(context, customer);
+        await page.goto("/insights");
+        const item = attentionList(page).getByRole("listitem").filter({ hasText: customer });
+        await expect(item).toContainText("Pickup time passed");
+        await item.getByRole("link", { name: `Open trip ${String(reference)}` }).click();
+        await expect(page).toHaveURL(new RegExp(`/jobs\\?q=%23${String(reference)}$`));
+        const card = page.locator("[data-trip-card]").filter({ hasText: customer });
+        await expect(card).toBeVisible();
+        await expect(card.getByRole("button", { name: "Assign driver" })).toBeVisible();
       },
     },
   ],
