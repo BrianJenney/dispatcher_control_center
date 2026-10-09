@@ -7,6 +7,7 @@ import { useEffect, useRef, useTransition } from "react";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
+import { StatusFilter } from "@/components/trips/status-filter";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
 import { jobsSearch, jobsSearchId, jobsSearchLabel, tripReferenceIn, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { maxShown, nextShownCount, pageSize } from "@/domain/paging";
-import { statusLabels, tripStatuses } from "@/domain/trip-status";
-
-const statusTabs = [{ value: null, label: "All" }, ...tripStatuses.map((value) => ({ value, label: statusLabels[value] }))];
 
 function jobsHref(filter: JobsFilter): Route {
   const search = jobsSearch(filter);
@@ -86,24 +84,12 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
             </a>
           </Button>
         </div>
-        <div role="group" aria-label="Filter by status" className="-mx-4 -my-1 flex gap-2 overflow-x-auto px-4 py-1 sm:-mx-1 sm:px-1">
-          {statusTabs.map((tab) => {
-            const selected = filter.status === tab.value;
-            return (
-              <Button
-                key={tab.label}
-                size="sm"
-                variant={selected ? "default" : "outline"}
-                aria-pressed={selected} className="shrink-0 rounded-full"
-                onClick={() => {
-                  show({ ...filter, status: tab.value, show: pageSize });
-                }}
-              >
-                {tab.label}
-              </Button>
-            );
-          })}
-        </div>
+        <StatusFilter
+          value={filter.status}
+          onChange={(status) => {
+            show({ ...filter, status, show: pageSize });
+          }}
+        />
       </div>
       {isError ? (
         <LiveUpdatesPaused what="the jobs list" onRetry={() => void refetch()} />
