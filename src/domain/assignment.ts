@@ -46,6 +46,13 @@ export function reassignTrip(
   if (trip.driverId === request.driverId) throw new DomainError("That driver already has this trip.");
   return {
     trip: { ...trip, driverId: request.driverId },
-    event: { fromStatus: "assigned", toStatus: "assigned", actorId: request.actorId, reason: "Reassigned to another driver" },
+    event: {
+      fromStatus: "assigned",
+      toStatus: "assigned",
+      fromDriverId: trip.driverId,
+      toDriverId: request.driverId,
+      actorId: request.actorId,
+      reason: null,
+    },
   };
 }

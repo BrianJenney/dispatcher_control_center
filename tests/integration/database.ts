@@ -50,11 +50,12 @@ export async function forceStatus(
 ) {
   await db.transaction(async (tx) => {
     await tx.execute(sql`
+      insert into trip_events (trip_id, actor_id, from_status, to_status, from_driver_id, to_driver_id, reason)
+      select id, ${actorId}, ${move.from}::trip_status, ${move.to}::trip_status, driver_id, ${move.driverId}::uuid, ${move.reason ?? null}
+      from trips where id = ${tripId}`);
+    await tx.execute(sql`
       update trips set status = ${move.to}, driver_id = ${move.driverId}, cancel_reason = ${move.reason ?? null}
       where id = ${tripId}`);
-    await tx.execute(sql`
-      insert into trip_events (trip_id, actor_id, from_status, to_status, reason)
-      values (${tripId}, ${actorId}, ${move.from}, ${move.to}, ${move.reason ?? null})`);
   });
 }
 

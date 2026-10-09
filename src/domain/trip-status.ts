@@ -60,6 +60,8 @@ export type TransitionRequest = {
 export type TripEvent = {
   fromStatus: TripStatus;
   toStatus: TripStatus;
+  fromDriverId: string | null;
+  toDriverId: string | null;
   actorId: string;
   reason: string | null;
 };
@@ -84,9 +86,17 @@ export function transitionTrip(trip: TripState, request: TransitionRequest): { t
     );
   }
   const reason = cancelReason(request);
+  const driverId = nextDriver(trip, request);
   return {
-    trip: { status: request.to, driverId: nextDriver(trip, request), cancelReason: reason },
-    event: { fromStatus: trip.status, toStatus: request.to, actorId: request.actorId, reason },
+    trip: { status: request.to, driverId, cancelReason: reason },
+    event: {
+      fromStatus: trip.status,
+      toStatus: request.to,
+      fromDriverId: trip.driverId,
+      toDriverId: driverId,
+      actorId: request.actorId,
+      reason,
+    },
   };
 }
 
