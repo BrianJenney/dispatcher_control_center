@@ -395,7 +395,7 @@ Proves: the status flow is enforced on the server and in the database, and live 
 
 **Insights** (`/insights`)
 1. Open Insights. Four tiles cover the last seven days: trips, completion rate, cancellation rate and revenue.
-2. "Needs attention" lists offers due within two hours, offers whose pickup time has passed, and assigned trips not started 15 minutes after pickup. Book an offer for the next hour and it appears within 5 seconds. "Open" on any item finds that trip in Jobs by its number, ready to assign or cancel, even when it is from an earlier day.
+2. "Needs attention" lists offers due within two hours, offers whose pickup time has passed, and assigned trips not started 15 minutes after pickup. Book an offer for the next hour and it appears within 5 seconds. "Open" on any item goes to that trip's own page, with its actions and history, ready to assign or cancel, even when it is from an earlier day.
 3. The charts show trips per day (completed, still open, cancelled), revenue per day (completed trips only), why trips were cancelled, and trips per driver today, so an uneven load is visible at a glance.
 
 **Activity log** (`/activity`, from the "Activity log" button on Insights)
