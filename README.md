@@ -443,6 +443,7 @@ The same property gives local development a safe option: work against a local Po
 - Sentry's slow request alert has to be created in the Sentry screen. The new error and regression alerts are in place.
 - Every preview deployment shares one Neon database branch, `preview`. A fresh branch per pull request needs the Neon integration for Vercel.
 - The 100,000 trip measurement ran with the database on the same machine as the app and one dispatcher at a time; Neon adds a few milliseconds per query, and concurrency was not tested.
+- Documents are viewed through a signed-in route rather than an expiring link. The brief names expiring links, but a forwarded expiring link opens for anyone until it runs out, which breaks "visible only to logged in users". Streaming through the app closes that gap, at the cost of file views counting as Vercel data transfer. Uploads still use links that expire after 5 minutes.
 - Deleting a document deletes its file for good, because R2 cannot undelete. The database row can be rewound but the file cannot.
 - Pickup and drop off are free text addresses.
 - Photos are sent at the size they were uploaded (up to 10 MB) and scaled down by the browser. They are private, so Vercel's image resizing, which fetches images without the viewer's sign-in, cannot be used as is. Resizing on upload would make lists lighter on a phone.
