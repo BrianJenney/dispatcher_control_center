@@ -8,7 +8,7 @@ import { KpiTile } from "@/components/kpi-tile";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { RecordLink } from "@/components/record-link";
-import { LiveUpdatesPaused } from "@/components/states";
+import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import type { AttentionKind, InsightsSnapshot } from "@/domain/insights";
 
 const attentionCopy: Record<AttentionKind, { label: string; hint: string }> = {
@@ -53,9 +53,10 @@ export function InsightsView({ initialData }: { initialData: InsightsSnapshot })
           Needs attention
         </h2>
         {data.attention.length === 0 ? (
-          <p className="rounded-xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-            Nothing needs attention. Every trip due in the next 2 hours has a driver, and nothing is late to start.
-          </p>
+          <EmptyState
+            title="Nothing needs attention"
+            description="Every trip due in the next 2 hours has a driver, and nothing is late to start."
+          />
         ) : (
           <ul className="divide-y rounded-xl border bg-card">
             {data.attention.map((item) => (
