@@ -23,7 +23,7 @@ export const jobsCreate: Flow = {
       run: async ({ page }) => {
         await page.goto("/");
         await openFromNavigation(page, "Jobs");
-        await page.getByRole("link", { name: "New trip" }).click();
+        await page.getByRole("link", { name: "New trip" }).filter({ visible: true }).click();
         await expect(page.getByRole("heading", { name: "Book a trip" })).toBeVisible();
       },
     },
