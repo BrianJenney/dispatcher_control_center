@@ -66,3 +66,16 @@ export function SidebarUserMenuSkeleton() {
     </div>
   );
 }
+
+export function HeaderUserMenuSkeleton() {
+  return (
+    <div aria-hidden className="flex items-center gap-1.5">
+      <Skeleton className="hidden size-9 shrink-0 rounded-full sm:block" />
+      <div className="flex items-center gap-1">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="size-10 rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}

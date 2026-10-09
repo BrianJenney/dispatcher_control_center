@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/app-shell";
-import { SidebarUserMenuSkeleton, UserMenu } from "@/components/shell/user-menu";
+import { HeaderUserMenuSkeleton, SidebarUserMenuSkeleton, UserMenu } from "@/components/shell/user-menu";
 import { requireUser } from "@/server/query";
 
 export default function SignedInLayout({ children }: LayoutProps<"/">) {
@@ -12,7 +12,7 @@ export default function SignedInLayout({ children }: LayoutProps<"/">) {
         </Suspense>
       }
       headerMenu={
-        <Suspense>
+        <Suspense fallback={<HeaderUserMenuSkeleton />}>
           <SignedInUserMenu tone="dark" />
         </Suspense>
       }
