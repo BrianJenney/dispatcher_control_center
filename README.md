@@ -295,6 +295,9 @@ The same property gives local development a safe option: work against a local Po
 - The 100,000 trip measurement ran with the database on the same machine as the app and one dispatcher at a time; Neon adds a few milliseconds per query, and concurrency was not tested.
 - Deleting a document deletes its file for good, because R2 cannot undelete. The database row can be rewound but the file cannot.
 - Pickup and drop off are free text addresses.
+- There is one kind of account: every signed-in user can do everything. Dispatcher and admin roles are part of the full build quote.
+- An upload link stays valid for its 5 minutes after the file is saved, so a signed-in user could replace their own upload with another file of the same type and size in that window. A write-once upload needs the bucket's CORS rules to allow the `If-None-Match` header first.
+- On a dispatcher's very first visit the guided tour card is the largest thing painted, so that one load scores lower in Lighthouse than every visit after it.
 - Cost figures are estimates from public price lists and depend on a few assumptions, listed in `docs/cost-estimate.md`.
 
 ## What to build next
