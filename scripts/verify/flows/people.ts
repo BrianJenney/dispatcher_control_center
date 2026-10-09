@@ -225,6 +225,20 @@ export const fleet: Flow = {
       },
     },
     {
+      name: "upload a vehicle photo and see it on the fleet list",
+      run: async (context) => {
+        const { page } = context;
+        await filePicker(page, "Upload photo").setInputFiles({ name: "genesis.png", mimeType: "image/png", buffer: onePixelPng });
+        await expect(page.getByRole("img", { name: "Photo of the Genesis G90" })).toBeVisible();
+        await expect.poll(() => context.number(`select count(*) as value from vehicles where unit_number = $1 and photo_key is not null`, [newUnit])).toBe(1);
+        await expect(filePicker(page, "Change photo")).toHaveCount(1);
+        const vehiclePage = page.url();
+        await openFromNavigation(page, "Fleet");
+        await expect(page.getByRole("article", { name: newUnit, exact: true }).getByRole("img", { name: "Photo of the Genesis G90" })).toBeVisible();
+        await page.goto(vehiclePage);
+      },
+    },
+    {
       name: "the Ready switch on the vehicle page flips before the server answers, and the toast follows the save",
       run: async (context) => {
         const { page } = context;
