@@ -17,7 +17,7 @@ import {
 } from "@/db/seed-data";
 import { applyTransitions, insertOffers, type NewTrip } from "@/db/trip-writes";
 import { maxPassengers, type VehicleClass } from "@/domain/fleet";
-import { dayRange, shiftDays, tripWindow, type TimeRange } from "@/domain/time";
+import { dayRange, hourMs, shiftDays, tripWindow, type TimeRange } from "@/domain/time";
 import { transitionTrip, tripStatuses, type TripState, type TripStatus } from "@/domain/trip-status";
 
 export type SeedOptions = {
@@ -36,7 +36,6 @@ type PlannedTrip = {
   cancelAfterSteps: number;
 };
 
-const hourMs = 3_600_000;
 const slotHours = [7, 9, 11, 13, 15, 17, 19, 21] as const;
 const durations = [45, 60, 75, 90] as const;
 const forwardPath: readonly TripStatus[] = ["assigned", "en_route", "completed"];

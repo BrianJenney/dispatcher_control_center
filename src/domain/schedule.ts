@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { tripWindow } from "@/domain/time";
+import { hourMs, tripWindow } from "@/domain/time";
 import { byPickupTime, tripRow, type TripRow } from "@/domain/trip-row";
 import { tripStatuses } from "@/domain/trip-status";
 
@@ -40,7 +40,6 @@ export function filterTrips(rows: readonly TripRow[], filter: ScheduleFilter): T
   );
 }
 
-const hourMs = 3_600_000;
 
 export const minimumAxisHours = 4;
 

@@ -10,12 +10,12 @@ export const metadata: Metadata = { title: "Driver · Dispatch Lite" };
 export default function DriverPage({ params }: PageProps<"/drivers/[id]">) {
   return (
     <Suspense fallback={<LoadingState label="Loading the driver" rows={6} />}>
-      <DriverProfile params={params} />
+      <DriverProfileData params={params} />
     </Suspense>
   );
 }
 
-async function DriverProfile({ params }: Pick<PageProps<"/drivers/[id]">, "params">) {
+async function DriverProfileData({ params }: Pick<PageProps<"/drivers/[id]">, "params">) {
   const driver = await getDriverProfile((await params).id);
   if (!driver) notFound();
   return <DriverProfileView initialData={driver} />;

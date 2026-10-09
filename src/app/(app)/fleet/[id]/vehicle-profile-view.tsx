@@ -9,7 +9,7 @@ import { LiveUpdatesPaused } from "@/components/states";
 import { DocumentsPanel } from "@/components/uploads/documents-panel";
 import type { VehicleProfile } from "@/domain/people";
 
-export function VehicleDetailsView({ initialData }: { initialData: VehicleProfile }) {
+export function VehicleProfileView({ initialData }: { initialData: VehicleProfile }) {
   const { data: vehicle, isError, refetch } = useLiveQuery(liveQueries.vehicle(initialData.id), initialData);
   return (
     <>
