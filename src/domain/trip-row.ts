@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { vehicleClasses } from "@/domain/fleet";
-import { tripStatuses, type TripStatus } from "@/domain/trip-status";
+import { tripStatuses } from "@/domain/trip-status";
 
 export const tripRow = z.object({
   id: z.uuid(),
@@ -24,16 +24,6 @@ export type TripPatch = Pick<TripRow, "id" | "status"> & Partial<Pick<TripRow, "
 
 export function patchTrips(rows: readonly TripRow[], patch: TripPatch): TripRow[] {
   return rows.map((row) => (row.id === patch.id ? { ...row, ...patch } : row));
-}
-
-export type TripFilter = { status: TripStatus | null; driverId: string | null };
-
-export function filterTrips(rows: readonly TripRow[], filter: TripFilter): TripRow[] {
-  return rows.filter(
-    (row) =>
-      (filter.status === null || row.status === filter.status) &&
-      (filter.driverId === null || row.driver?.id === filter.driverId),
-  );
 }
 
 export function byPickupTime(a: TripRow, b: TripRow): number {

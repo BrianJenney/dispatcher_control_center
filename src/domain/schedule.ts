@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { tripWindow } from "@/domain/time";
 import { byPickupTime, tripRow, type TripRow } from "@/domain/trip-row";
+import { tripStatuses } from "@/domain/trip-status";
 
 export const scheduleSnapshot = z.object({
   today: z.object({ start: z.iso.datetime({ offset: true }), end: z.iso.datetime({ offset: true }) }),
@@ -10,6 +11,34 @@ export const scheduleSnapshot = z.object({
 });
 
 export type ScheduleSnapshot = z.infer<typeof scheduleSnapshot>;
+
+export const scheduleFilter = z.object({
+  status: z.enum(tripStatuses).nullable().catch(null),
+  driver: z.uuid().nullable().catch(null),
+});
+
+export type ScheduleFilter = z.output<typeof scheduleFilter>;
+
+export const noScheduleFilter: ScheduleFilter = { status: null, driver: null };
+
+export function scheduleSearch(filter: ScheduleFilter): string {
+  const params = new URLSearchParams();
+  if (filter.status) params.set("status", filter.status);
+  if (filter.driver) params.set("driver", filter.driver);
+  return params.toString();
+}
+
+export function isFiltered(filter: ScheduleFilter): boolean {
+  return filter.status !== null || filter.driver !== null;
+}
+
+export function filterTrips(rows: readonly TripRow[], filter: ScheduleFilter): TripRow[] {
+  return rows.filter(
+    (row) =>
+      (filter.status === null || row.status === filter.status) &&
+      (filter.driver === null || row.driver?.id === filter.driver),
+  );
+}
 
 const hourMs = 3_600_000;
 

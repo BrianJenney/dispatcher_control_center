@@ -60,10 +60,11 @@ export const schedule: Flow = {
       },
     },
     {
-      name: "filter by status",
+      name: "filter by status, kept in the address",
       run: async (context) => {
         const { page } = context;
         await statusButton(page, "Completed").click();
+        await expect(page).toHaveURL(/status=completed/);
         const completed = await fromDatabase.tripsTodayInStatus(context, "completed");
         await expect(cards(page)).toHaveCount(completed);
         await expect(cards(page).filter({ hasNotText: "Completed" })).toHaveCount(0);
@@ -75,8 +76,19 @@ export const schedule: Flow = {
         const driver = await cards(page).first().getByTestId("trip-driver").textContent();
         if (!driver) throw new Error("The first completed trip has no driver.");
         await chooseDriver(page, driver);
+        await expect(page).toHaveURL(/status=completed&driver=[0-9a-f-]{36}/);
         await expect(cards(page).filter({ hasNotText: driver })).toHaveCount(0);
         await expect(cards(page).first()).toBeVisible();
+      },
+    },
+    {
+      name: "the filters survive a refresh",
+      run: async ({ page }) => {
+        const shown = await cards(page).count();
+        await page.reload();
+        await expect(statusButton(page, "Completed")).toHaveAttribute("aria-pressed", "true");
+        await expect(page.getByRole("combobox", { name: "Driver" })).not.toHaveText("All drivers");
+        await expect(cards(page)).toHaveCount(shown);
       },
     },
     {
@@ -84,6 +96,7 @@ export const schedule: Flow = {
       run: async (context) => {
         const { page } = context;
         await page.getByRole("button", { name: "Clear filters" }).click();
+        await expect(page).toHaveURL(/\/schedule$/);
         const total = await fromDatabase.tripsToday(context);
         await expect(cards(page)).toHaveCount(total);
         await expect(page.getByRole("combobox", { name: "Driver" })).toBeFocused();

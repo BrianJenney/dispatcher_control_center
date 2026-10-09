@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   axisPosition,
+  filterTrips,
+  isFiltered,
   minimumAxisHours,
+  noScheduleFilter,
   packLanes,
   placeOnAxis,
+  scheduleFilter,
+  scheduleSearch,
   timelineAxis,
   timelineRows,
   upcomingIndex,
@@ -35,6 +40,52 @@ function trip(id: string, pickupAt: string, overrides: Partial<TripRow> = {}): T
     ...overrides,
   };
 }
+
+const ids = (trips: readonly { id: string }[]) => trips.map((item) => item.id);
+
+describe("scheduleFilter", () => {
+  it("falls back to no filter for anything odd in the URL", () => {
+    expect(scheduleFilter.parse({})).toEqual(noScheduleFilter);
+    expect(scheduleFilter.parse({ status: "flying", driver: "not-an-id" })).toEqual(noScheduleFilter);
+  });
+
+  it("keeps a valid status and driver", () => {
+    expect(scheduleFilter.parse({ status: "en_route", driver: ava.id })).toEqual({ status: "en_route", driver: ava.id });
+  });
+});
+
+describe("scheduleSearch", () => {
+  it("writes nothing when nothing is filtered", () => {
+    expect(scheduleSearch(noScheduleFilter)).toBe("");
+  });
+
+  it("round trips through the URL", () => {
+    const filter = { status: "completed" as const, driver: ben.id };
+    expect(scheduleSearch(filter)).toBe(`status=completed&driver=${ben.id}`);
+    expect(scheduleFilter.parse(Object.fromEntries(new URLSearchParams(scheduleSearch(filter))))).toEqual(filter);
+  });
+});
+
+describe("filterTrips", () => {
+  const rows = [
+    trip("1", "2026-10-09T13:00:00.000Z"),
+    trip("2", "2026-10-09T13:00:00.000Z", { driver: ben }),
+    trip("3", "2026-10-09T13:00:00.000Z", { status: "offer", driver: null }),
+    trip("4", "2026-10-09T13:00:00.000Z", { status: "completed" }),
+  ];
+
+  it("keeps everything without filters", () => {
+    expect(isFiltered(noScheduleFilter)).toBe(false);
+    expect(ids(filterTrips(rows, noScheduleFilter))).toEqual(["1", "2", "3", "4"]);
+  });
+
+  it("filters by status, by driver, or both", () => {
+    expect(ids(filterTrips(rows, { status: "assigned", driver: null }))).toEqual(["1", "2"]);
+    expect(ids(filterTrips(rows, { status: null, driver: ava.id }))).toEqual(["1", "4"]);
+    expect(ids(filterTrips(rows, { status: "completed", driver: ava.id }))).toEqual(["4"]);
+    expect(isFiltered({ status: null, driver: ava.id })).toBe(true);
+  });
+});
 
 describe("timelineAxis", () => {
   it("runs from the hour before the first pickup to the hour after the last drop off", () => {

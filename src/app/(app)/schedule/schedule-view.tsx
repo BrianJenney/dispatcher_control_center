@@ -1,8 +1,10 @@
 "use client";
 
 import { Clock, Plus } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
-import { Fragment, useId, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Fragment, useId, useOptimistic, useRef, useTransition } from "react";
 import { DayOverview } from "@/app/(app)/schedule/day-overview";
 import { useFormat } from "@/components/format";
 import { useLiveQuery } from "@/components/live-query";
@@ -15,8 +17,17 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/components/ui/utils";
-import { timelineAxis, upcomingIndex, type ScheduleSnapshot } from "@/domain/schedule";
-import { byPickupTime, filterTrips, type TripFilter } from "@/domain/trip-row";
+import {
+  filterTrips,
+  isFiltered,
+  noScheduleFilter,
+  scheduleSearch,
+  timelineAxis,
+  upcomingIndex,
+  type ScheduleFilter,
+  type ScheduleSnapshot,
+} from "@/domain/schedule";
+import { byPickupTime } from "@/domain/trip-row";
 import { isFinal, type TripStatus } from "@/domain/trip-status";
 
 const everyone = "all";
@@ -29,11 +40,16 @@ const node: Record<TripStatus, string> = {
   cancelled: "bg-status-cancelled",
 };
 
-const noFilter: TripFilter = { status: null, driverId: null };
+function scheduleHref(filter: ScheduleFilter): Route {
+  const search = scheduleSearch(filter);
+  return search ? `/schedule?${search}` : "/schedule";
+}
 
-export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot }) {
+export function ScheduleView({ filter, initialData }: { filter: ScheduleFilter; initialData: ScheduleSnapshot }) {
   const format = useFormat();
-  const [shown, show] = useState<TripFilter>(noFilter);
+  const router = useRouter();
+  const [, startNavigation] = useTransition();
+  const [shown, showNow] = useOptimistic(filter);
   const { data, isError, refetch } = useLiveQuery(liveQueries.schedule, initialData);
   const driverFilter = useRef<HTMLButtonElement>(null);
   const nowMarker = useRef<HTMLLIElement>(null);
@@ -41,11 +57,19 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
   const sorted = [...data.trips].sort(byPickupTime);
   const visible = filterTrips(sorted, shown);
   const upcoming = upcomingIndex(visible, data.now);
-  const filtered = shown.status !== null || shown.driverId !== null;
+  const filtered = isFiltered(shown);
+  const driverValue = data.drivers.some((driver) => driver.id === shown.driver) ? shown.driver : null;
+
+  function show(next: ScheduleFilter) {
+    startNavigation(() => {
+      showNow(next);
+      router.replace(scheduleHref(next), { scroll: false });
+    });
+  }
 
   function clearFilters() {
     driverFilter.current?.focus();
-    show(noFilter);
+    show(noScheduleFilter);
   }
 
   function jumpToNow() {
@@ -78,9 +102,9 @@ export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot })
           <div className="grid w-full gap-2 sm:w-64">
             <Label htmlFor="schedule-driver">Driver</Label>
             <Select
-              value={shown.driverId ?? everyone}
+              value={driverValue ?? everyone}
               onValueChange={(value) => {
-                show({ ...shown, driverId: value === everyone ? null : value });
+                show({ ...shown, driver: value === everyone ? null : value });
               }}
             >
               <SelectTrigger ref={driverFilter} id="schedule-driver" className="w-full">
