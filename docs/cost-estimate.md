@@ -45,8 +45,8 @@ The big finding: at 200 users the Sentry bill ($97) is bigger than Vercel and Ne
 | Work per poll | `pollingRoute` in `src/server/route.ts`, then a query in `src/server/queries` | Session check, then 1 to 3 SQL queries. Dashboard runs 3 in parallel. Better Auth `cookieCache` (5 minutes) means most polls skip the session query |
 | Database driver | `src/db/client.ts`, `pg` Pool, `max: 5` | Normal Postgres connection through Neon's pooled host |
 | Trace sampling | `src/observability.ts` | `tracesSampleRate = 1`, used on both server and browser. Deliberate for now |
-| Documents | `src/server/storage.ts`, `src/server/route.ts` | Presigned PUT and GET links that last 5 minutes. A file view is a short function call that answers with a redirect to R2, so file bytes never pass through Vercel |
-| Driver photos | `src/components/people/driver-avatar.tsx` | Each photo on the Drivers page is one function call plus one R2 read |
+| Documents | `src/server/storage.ts`, `src/server/route.ts` | Uploads use a presigned PUT link that lasts 5 minutes. Views have no link: `fileRoute` checks the session, then streams the file from R2 through the function with `Cache-Control: private, no-store`. So each view's bytes count toward Vercel's Fast Origin Transfer |
+| Driver and vehicle photos | `src/app/api/drivers/[id]/photo/route.ts`, `src/app/api/vehicles/[id]/photo/route.ts` | Streamed the same way after a session check, cached in the browser for an hour (`private, max-age=3600`, URL versioned on each upload). Each uncached photo is one function call, one R2 read and the photo's bytes in Vercel transfer |
 | Uptime check on `/api/health` | `src/server/queries/health.ts` | Public, runs 1 SQL query (`select 1`) and answers only whether the database is up. Every 15 minutes, so 4 x 24 x 30 = **2,880** calls a month, and it wakes the database |
 | Uptime check on `/login` | `src/app/login/page.tsx`, `src/proxy.ts` | Every 3 minutes, so 20 x 24 x 30 = **14,400** calls a month. It does not wake the database (see below) |
 
@@ -100,6 +100,7 @@ Scenario B, arithmetic:
 - Fast Origin Transfer: 5,795,712 x 24 KB = 139.1 GB. 139.1 x $0.06 = **$8.35**
 - Builds: **$1.68**
 - Usage total: **$19.67**, just inside the $20 credit.
+- File transfer, not in the total above: assume about 30 photos of about 1 MB on screen. If each of the 40 dispatchers loads them once a day, 40 x 22 x 30 MB = 26 GB, so 26 x $0.06 = **$1.58**. That takes usage to $21.25, about $1.25 past the credit. If every photo is reloaded every hour of every shift (the browser cache lasts an hour), 7,040 x 30 MB = 211 GB = **$12.67**, about $12.34 past the credit. Documents are opened one at a time and add cents. A is a few cents either way.
 - CDN requests: 5,795,712 + 220,000 (200 users x 22 days x 50) = 6.02 million. That passes the 1 million included, so the $20 a month tier (10 million requests) is needed. Without it, on demand CDN costs more: 6.02M x $2 per million = $12.03 for requests plus 139.1 GB x $0.15 = $20.86 for transfer, so the tier at $20 is cheaper.
 - Vercel bill: $20 platform fee + $20 CDN tier = **$40**. I assume the credit does not apply to the CDN tier subscription. If it does, B falls to $20 but there is no usage left to cover.
 
@@ -226,7 +227,7 @@ Monitors in use: 2.
 3. **Neon compute that never suspends.** An uptime check on a database route more often than every 5 minutes stops autosuspend from ever firing. At 3 minutes that adds about $9.75 a month in A and B and $12.90 in C. At 15 minutes it does not. Any new monitor, cron job or script that touches the database more often than every 5 minutes would bring this back.
 4. **CDN capacity tier steps on Vercel.** Under 1 million requests is free. Over it, the next tier is $20 (up to 10 million requests), then $100 (up to 50 million). B high (9.4 million requests) is close to the next jump.
 5. **Vercel seats.** Each extra person who deploys is $20 a month. Viewers are free.
-6. **R2 egress is free.** Documents and photos do not move the bill, and downloads go straight from R2, so they also use no Vercel transfer.
+6. **Files pass through the app.** R2 egress is free, but documents and photos are streamed through a Vercel function after a session check, so every view is Vercel transfer at $0.06 per GB. Photos are cached in the browser for an hour. Large photos are what would move this: they are served at upload size, up to 10 MB.
 7. **Neon plan fit.** More than 10 branches costs $1.50 each a month. A 30 day restore window needs the Scale plan at $0.222 per CU hour, about twice the Launch rate.
 8. **Number of dispatchers online at once, not the number of users.** 200 users who log in once a day cost almost nothing. 40 who stare at the dashboard for 8 hours cost the whole bill above.
 
