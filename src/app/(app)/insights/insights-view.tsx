@@ -1,11 +1,11 @@
 "use client";
 
 import { AlertTriangle, Ban, CircleDollarSign, Clock, ListChecks, Percent } from "lucide-react";
-import Link from "next/link";
 import { BarList } from "@/components/charts/bar-list";
 import { StackedColumns } from "@/components/charts/stacked-columns";
 import { useFormat } from "@/components/format";
 import { KpiTile } from "@/components/kpi-tile";
+import { RecordLink } from "@/components/record-link";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { LiveUpdatesPaused } from "@/components/states";
@@ -69,9 +69,13 @@ export function InsightsView({ initialData }: { initialData: InsightsSnapshot })
                     #{item.reference} {item.customerName} at {format.time(item.pickupAt)} · {attentionCopy[item.kind].hint}
                   </span>
                 </span>
-                <Link href="/schedule" className="text-sm font-medium underline-offset-4 hover:underline">
+                <RecordLink
+                  href={`/jobs/${item.tripId}`}
+                  aria-label={`Open trip ${String(item.reference)}`}
+                  className="text-sm font-medium underline-offset-4 hover:underline"
+                >
                   Open
-                </Link>
+                </RecordLink>
               </li>
             ))}
           </ul>

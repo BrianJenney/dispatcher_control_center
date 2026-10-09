@@ -73,5 +73,15 @@ export const insights: Flow = {
         await expect(attentionList(page).getByText(guests.second)).toBeVisible({ timeout: 10_000 });
       },
     },
+    {
+      name: "Open on a flagged trip opens that trip",
+      run: async ({ page }) => {
+        await attentionList(page).getByRole("listitem").filter({ hasText: guests.first }).getByRole("link", { name: /^Open trip/ }).click();
+        await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
+        await expect(page.getByRole("heading", { name: /^Trip #\d+$/, level: 1 })).toBeVisible();
+        await expect(page.getByRole("article", { name: new RegExp(guests.first) })).toBeVisible();
+        await expect(page.getByRole("list", { name: "Trip history" })).toContainText("booked");
+      },
+    },
   ],
 };
