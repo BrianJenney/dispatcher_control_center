@@ -12,6 +12,7 @@ export type ActivityFilter = z.output<typeof activityFilter>;
 const activityBase = z.object({
   id: z.uuid(),
   createdAt: z.iso.datetime({ offset: true }),
+  historyOrder: z.number().int(),
   actorName: z.string(),
   tripId: z.uuid(),
   reference: z.number().int(),
@@ -69,7 +70,7 @@ export function describeActivity(entry: ActivityEntry, format: HistoryFormat): s
 
 function newerFirst(a: ActivityEntry, b: ActivityEntry): number {
   if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1;
-  return a.id < b.id ? 1 : -1;
+  return b.historyOrder - a.historyOrder;
 }
 
 export function activityPage(entries: readonly ActivityEntry[], show: number): ActivitySnapshot {

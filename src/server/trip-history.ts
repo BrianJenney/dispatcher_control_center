@@ -17,6 +17,7 @@ export async function newestMoves(limit: number, tripId?: string): Promise<Activ
     .select({
       id: tripEvents.id,
       createdAt: tripEvents.createdAt,
+      historyOrder: tripEvents.historyOrder,
       actorName: user.name,
       tripId: trips.id,
       reference: trips.reference,
@@ -33,7 +34,7 @@ export async function newestMoves(limit: number, tripId?: string): Promise<Activ
     .leftJoin(fromDriver, eq(tripEvents.fromDriverId, fromDriver.id))
     .leftJoin(toDriver, eq(tripEvents.toDriverId, toDriver.id))
     .where(forTrip(tripEvents.tripId, tripId))
-    .orderBy(desc(tripEvents.createdAt), desc(tripEvents.id))
+    .orderBy(desc(tripEvents.createdAt), desc(tripEvents.historyOrder))
     .limit(limit);
   return rows.map((row) => ({ ...row, kind: "move", createdAt: row.createdAt.toISOString() }));
 }
@@ -43,6 +44,7 @@ export async function newestEdits(limit: number, tripId?: string): Promise<Activ
     .select({
       id: tripEdits.id,
       createdAt: tripEdits.createdAt,
+      historyOrder: tripEdits.historyOrder,
       actorName: user.name,
       tripId: trips.id,
       reference: trips.reference,
@@ -61,12 +63,13 @@ export async function newestEdits(limit: number, tripId?: string): Promise<Activ
     .innerJoin(trips, eq(tripEdits.tripId, trips.id))
     .innerJoin(user, eq(tripEdits.actorId, user.id))
     .where(forTrip(tripEdits.tripId, tripId))
-    .orderBy(desc(tripEdits.createdAt), desc(tripEdits.id))
+    .orderBy(desc(tripEdits.createdAt), desc(tripEdits.historyOrder))
     .limit(limit);
   return rows.map((row) => ({
     kind: "edit",
     id: row.id,
     createdAt: row.createdAt.toISOString(),
+    historyOrder: row.historyOrder,
     actorName: row.actorName,
     tripId: row.tripId,
     reference: row.reference,

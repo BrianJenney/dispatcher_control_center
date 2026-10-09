@@ -6,6 +6,7 @@ import {
   index,
   integer,
   pgEnum,
+  pgSequence,
   pgTable,
   text,
   timestamp,
@@ -24,6 +25,13 @@ import { tripStatuses } from "@/domain/trip-status";
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
 
 const createdAt = () => timestamptz("created_at").defaultNow().notNull();
+
+export const tripHistoryOrder = pgSequence("trip_history_order");
+
+const historyOrder = () =>
+  bigint("history_order", { mode: "number" })
+    .notNull()
+    .default(sql`nextval('trip_history_order')`);
 const updatedAt = () =>
   timestamptz("updated_at")
     .defaultNow()
@@ -218,6 +226,7 @@ export const tripEvents = pgTable(
     toDriverId: uuid("to_driver_id").references(() => drivers.id),
     reason: text("reason"),
     createdAt: createdAt(),
+    historyOrder: historyOrder(),
   },
   (table) => [
     index("trip_events_trip_id_created_at_idx").on(table.tripId, table.createdAt),
@@ -245,6 +254,7 @@ export const tripEdits = pgTable(
     fromClass: vehicleClass("from_class"),
     toClass: vehicleClass("to_class"),
     createdAt: createdAt(),
+    historyOrder: historyOrder(),
   },
   (table) => [
     check(
