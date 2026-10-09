@@ -6,6 +6,7 @@ const format = { money: (cents: number) => `$${(cents / 100).toFixed(2)}`, momen
 
 const base = {
   createdAt: "2026-10-09T15:30:00.000Z",
+  historyOrder: 1,
   actorName: "Dana Reyes",
   tripId: "00000000-0000-4000-8000-000000000001",
   reference: 1042,
@@ -69,7 +70,11 @@ describe("describeActivity", () => {
 
 describe("activityPage", () => {
   const at = (minute: number, id: string) =>
-    move({ createdAt: `2026-10-09T15:${String(minute).padStart(2, "0")}:00.000Z`, id: `00000000-0000-4000-8000-00000000000${id}` });
+    move({
+      createdAt: `2026-10-09T15:${String(minute).padStart(2, "0")}:00.000Z`,
+      id: `00000000-0000-4000-8000-00000000000${id}`,
+      historyOrder: Number(id),
+    });
 
   it("puts the newest entries first across moves and edits", () => {
     const edit: ActivityEntry = { ...base, id: "00000000-0000-4000-8000-0000000000c1", createdAt: "2026-10-09T15:20:00.000Z", kind: "edit", edit: { field: "passengers", from: 1, to: 2 } };
@@ -78,9 +83,13 @@ describe("activityPage", () => {
     expect(page.hasMore).toBe(false);
   });
 
-  it("breaks ties on the same moment by id, newest id first, so the order is stable", () => {
-    const page = activityPage([at(5, "1"), at(5, "3"), at(5, "2")], 25);
-    expect(page.entries.map((entry) => entry.id.at(-1))).toEqual(["3", "2", "1"]);
+  it("breaks ties on the same moment by the order entries were recorded, latest first", () => {
+    const booked = move({ id: "00000000-0000-4000-8000-0000000000f1", historyOrder: 1, toStatus: "offer" });
+    const assigned = move({ id: "00000000-0000-4000-8000-0000000000a2", historyOrder: 2, toStatus: "assigned" });
+    const edited: ActivityEntry = { ...base, id: "00000000-0000-4000-8000-0000000000e3", historyOrder: 3, kind: "edit", edit: { field: "passengers", from: 1, to: 2 } };
+    const started = move({ id: "00000000-0000-4000-8000-0000000000b4", historyOrder: 4, toStatus: "en_route" });
+    const page = activityPage([assigned, started, booked, edited], 25);
+    expect(page.entries.map((entry) => entry.historyOrder)).toEqual([4, 3, 2, 1]);
   });
 
   it("keeps the requested number and says when more remain", () => {

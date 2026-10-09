@@ -5,7 +5,7 @@ import type { Flow, FlowContext } from "./types";
 
 const guest = { name: "", reference: 0 };
 
-const history = `(select trip_id, created_at, id from trip_events union all select trip_id, created_at, id from trip_edits)`;
+const history = `(select trip_id, created_at, history_order from trip_events union all select trip_id, created_at, history_order from trip_edits)`;
 
 function entries(page: Page) {
   return page.getByRole("list", { name: "Activity" }).getByRole("listitem");
@@ -44,7 +44,7 @@ export const activity: Flow = {
         await expect(page.getByRole("heading", { name: "Activity", level: 1 })).toBeVisible();
         const newest = await context.number(
           `select trips.reference as value from ${history} as changes join trips on trips.id = changes.trip_id
-            order by changes.created_at desc, changes.id desc limit 1`,
+            order by changes.created_at desc, changes.history_order desc limit 1`,
         );
         await expect(entries(page).first()).toContainText(`trip #${String(newest)}`);
         await expect(entries(page).first()).toContainText("Demo Dispatcher");

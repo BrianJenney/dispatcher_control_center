@@ -3,10 +3,12 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { z } from "zod";
 import { db } from "@/db/client";
 import { tripEdits, tripEvents, trips } from "@/db/schema";
-import { updateTripDetails } from "@/db/trip-writes";
+import { applyTransitions, updateTripDetails } from "@/db/trip-writes";
 import type { tripInput } from "@/domain/trip-form";
+import { transitionTrip, type TripState, type TripStatus } from "@/domain/trip-status";
 import { createTrip, moveTrip, reassignDriver, updateTrip } from "@/server/actions/trips";
 import { getActivity } from "@/server/queries/activity";
+import { getTripDetail } from "@/server/queries/trip-detail";
 import { demoUserId, expectRejectedBy, forceStatus, insertDriver, insertOffer } from "./database";
 import { signInAsDemoUser } from "./session";
 
@@ -134,6 +136,52 @@ describe("the activity log reads the history in plain words", () => {
       ["Ana Ruiz", "Ben Okafor"],
       [null, "Ana Ruiz"],
       [null, null],
+    ]);
+  });
+});
+
+describe("entries written at the same moment stay in the order they happened", () => {
+  async function runInOneTransaction(tripId: string, driverId: string, path: readonly TripStatus[]) {
+    await db.transaction(async (tx) => {
+      let state: TripState = { status: "offer", driverId: null, cancelReason: null };
+      for (const to of path) {
+        const moved = transitionTrip(state, { to, actorId, driverId });
+        state = moved.trip;
+        await applyTransitions(tx, [{ tripId, ...moved }]);
+      }
+    });
+  }
+
+  it("shows a trip moved several times in one transaction newest first, on the trip and in the log", async () => {
+    const path: readonly TripStatus[] = ["assigned", "en_route", "completed"];
+    const tripIds = await Promise.all([1, 2, 3].map(() => insertOffer(actorId)));
+    for (const tripId of tripIds) await runInOneTransaction(tripId, await insertDriver(), path);
+    const newestFirst = ["completed", "en_route", "assigned", "offer"];
+    const { entries } = await getActivity({ show: 100 });
+    for (const tripId of tripIds) {
+      const detail = await getTripDetail(tripId);
+      expect(detail?.history.map((entry) => (entry.kind === "move" ? entry.toStatus : entry.kind))).toEqual(newestFirst);
+      const logged = entries.filter((entry) => entry.tripId === tripId);
+      expect(logged.map((entry) => (entry.kind === "move" ? entry.toStatus : entry.kind))).toEqual(newestFirst);
+    }
+  });
+
+  it("keeps quick back-to-back moves and edits newest first", async () => {
+    const trip = await book();
+    const [first = ""] = vanDrivers;
+    await updateTrip({ ...form, tripId: trip.id, pickupDate: trip.pickupDate, passengers: "3" });
+    await moveTrip({ tripId: trip.id, from: "offer", to: "assigned", driverId: first });
+    await updateTrip({ ...form, tripId: trip.id, pickupDate: trip.pickupDate, passengers: "3", fare: "195" });
+    await moveTrip({ tripId: trip.id, from: "assigned", to: "en_route" });
+    await moveTrip({ tripId: trip.id, from: "en_route", to: "completed" });
+    const detail = await getTripDetail(trip.id);
+    expect(detail?.history.map((entry) => (entry.kind === "move" ? entry.toStatus : entry.edit.field))).toEqual([
+      "completed",
+      "en_route",
+      "fare_cents",
+      "assigned",
+      "passengers",
+      "offer",
     ]);
   });
 });
