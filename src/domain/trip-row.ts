@@ -22,8 +22,12 @@ export type TripRow = z.infer<typeof tripRow>;
 
 export type TripPatch = Pick<TripRow, "id" | "status"> & Partial<Pick<TripRow, "driver" | "cancelReason">>;
 
+export function patchTrip(row: TripRow, patch: TripPatch): TripRow {
+  return row.id === patch.id ? { ...row, ...patch } : row;
+}
+
 export function patchTrips(rows: readonly TripRow[], patch: TripPatch): TripRow[] {
-  return rows.map((row) => (row.id === patch.id ? { ...row, ...patch } : row));
+  return rows.map((row) => patchTrip(row, patch));
 }
 
 export function byPickupTime(a: TripRow, b: TripRow): number {

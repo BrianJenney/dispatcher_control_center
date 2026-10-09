@@ -10,11 +10,12 @@ import type { InsightsSnapshot } from "@/domain/insights";
 import type { JobsSnapshot } from "@/domain/jobs";
 import type { ActionResult } from "@/domain/result";
 import type { ScheduleSnapshot } from "@/domain/schedule";
-import { patchTrips, type TripPatch, type TripRow } from "@/domain/trip-row";
+import type { TripDetail } from "@/domain/trip-detail";
+import { patchTrip, patchTrips, type TripPatch, type TripRow } from "@/domain/trip-row";
 import { statusLabels, type moveTripInput } from "@/domain/trip-status";
 import { moveTrip, reassignDriver } from "@/server/actions/trips";
 
-type TripsData = DashboardSnapshot | ScheduleSnapshot | JobsSnapshot | InsightsSnapshot | ActivitySnapshot;
+type TripsData = DashboardSnapshot | ScheduleSnapshot | JobsSnapshot | InsightsSnapshot | ActivitySnapshot | TripDetail;
 
 function useTripMutation<V extends { tripId: string; reference: number }>(options: {
   send: (request: V) => Promise<ActionResult<unknown>>;
@@ -24,7 +25,11 @@ function useTripMutation<V extends { tripId: string; reference: number }>(option
   return useOptimisticAction<V, TripsData>({
     queryKey: tripsQueryKey,
     action: options.send,
-    update: (data, request) => ("trips" in data ? { ...data, trips: patchTrips(data.trips, options.patch(request)) } : data),
+    update: (data, request) => {
+      if ("trips" in data) return { ...data, trips: patchTrips(data.trips, options.patch(request)) };
+      if ("trip" in data) return { ...data, trip: patchTrip(data.trip, options.patch(request)) };
+      return data;
+    },
     done: options.done,
     settled: (request) => {
       keepFocusNearTrip(request.tripId);

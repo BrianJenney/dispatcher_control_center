@@ -10,7 +10,6 @@ import { liveQueries } from "@/components/queries";
 import { RecordLink } from "@/components/record-link";
 import { LiveUpdatesPaused } from "@/components/states";
 import type { AttentionKind, InsightsSnapshot } from "@/domain/insights";
-import { tripSearch } from "@/domain/jobs";
 
 const attentionCopy: Record<AttentionKind, { label: string; hint: string }> = {
   "needs-driver-soon": { label: "Needs a driver soon", hint: "No driver and pickup within 2 hours" },
@@ -71,7 +70,7 @@ export function InsightsView({ initialData }: { initialData: InsightsSnapshot })
                   </span>
                 </span>
                 <RecordLink
-                  href={`/jobs?${tripSearch(item.reference)}`}
+                  href={`/jobs/${item.tripId}`}
                   aria-label={`Open trip ${String(item.reference)}`}
                   className="text-sm font-medium underline-offset-4 hover:underline"
                 >

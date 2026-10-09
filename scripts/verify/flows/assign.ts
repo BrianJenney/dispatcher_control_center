@@ -45,8 +45,8 @@ export const assign: Flow = {
         const tag = `${viewportTag(context.page)} ${String(Date.now())}`;
         customers.click = `Assign Guest ${tag}`;
         customers.keyboard = `Keyboard Guest ${tag}`;
-        await insertTodaysOffer(context, { customer: customers.click, hour: 1 });
-        await insertTodaysOffer(context, { customer: customers.keyboard, hour: 3 });
+        await insertTodaysOffer(context, { customer: customers.click, hour: 0 });
+        await insertTodaysOffer(context, { customer: customers.keyboard, hour: 0 });
         await context.page.goto("/");
         await expect(waitingCard(context.page, customers.click)).toBeVisible();
       },

@@ -96,10 +96,12 @@ export const insights: Flow = {
         const item = attentionList(page).getByRole("listitem").filter({ hasText: customer });
         await expect(item).toContainText("Pickup time passed");
         await item.getByRole("link", { name: `Open trip ${String(reference)}` }).click();
-        await expect(page).toHaveURL(new RegExp(`/jobs\\?q=%23${String(reference)}$`));
+        await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
+        await expect(page.getByRole("heading", { name: `Trip #${String(reference)}`, level: 1 })).toBeVisible();
         const card = page.locator("[data-trip-card]").filter({ hasText: customer });
         await expect(card).toBeVisible();
         await expect(card.getByRole("button", { name: "Assign driver" })).toBeVisible();
+        await expect(page.getByRole("list", { name: "Trip history" })).toContainText("booked");
       },
     },
   ],
