@@ -4,7 +4,7 @@ import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { launchApp, stopApp, waitForApp } from "../lib/app-server";
-import { databaseUrlNamed, freshDatabase } from "../lib/database";
+import { databaseUrlNamed, freshDatabase, reseedDemoData } from "../lib/database";
 import { dismissTourOnEveryPage, signInAsDemoUser, withTourDismissed } from "../lib/demo-session";
 import { startLocalStorage } from "../lib/storage-server";
 import { flows, runStep, type Flow } from "./flows";
@@ -231,6 +231,7 @@ async function verifyFlow(
   const runs: ViewportRun[] = [];
   for (const viewport of viewports) {
     console.log(`  ${flowName} at ${viewport} width`);
+    await reseedDemoData(databaseUrl);
     const { cookie, ...run } = await runViewport(browser, baseUrl, session, databaseUrl, flow, viewport, outDir);
     const lighthouse = await runLighthouse({
       url: `${baseUrl}${flow.route}`,

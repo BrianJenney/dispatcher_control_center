@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { Client } from "pg";
 import { createDatabase } from "@/db/client";
 import { runMigrations } from "@/db/migrate";
@@ -47,6 +48,16 @@ export async function freshDatabase(url: string, options: { seed: boolean; loadT
     if (options.seed) {
       await seed(db, seedOptions(options.loadTrips));
     }
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function reseedDemoData(url: string) {
+  const { db, pool } = createDatabase(url);
+  try {
+    await db.execute(sql`truncate trip_edits, trip_events, documents, trips, drivers, vehicles restart identity cascade`);
+    await seed(db, seedOptions());
   } finally {
     await pool.end();
   }
