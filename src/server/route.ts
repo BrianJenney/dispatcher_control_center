@@ -36,7 +36,13 @@ export function uptimeRoute(databaseReachable: () => Promise<boolean>) {
 
 type StoredFile = { key: string; fileName: string; contentType: string | null };
 
-export function fileRoute({ read }: { read: (params: RouteParams) => Promise<StoredFile | null> }) {
+export function fileRoute({
+  read,
+  browserCacheSeconds = 0,
+}: {
+  read: (params: RouteParams) => Promise<StoredFile | null>;
+  browserCacheSeconds?: number;
+}) {
   return async function GET(_request: Request, context: { params: Promise<RouteParams> }) {
     const refused = await signedOut("Sign in to see this file.");
     if (refused) return refused;
@@ -49,7 +55,7 @@ export function fileRoute({ read }: { read: (params: RouteParams) => Promise<Sto
       headers: {
         "Content-Type": served.contentType,
         "Content-Disposition": served.disposition,
-        "Cache-Control": "private, no-store",
+        "Cache-Control": browserCacheSeconds > 0 ? `private, max-age=${String(browserCacheSeconds)}` : "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },
     });

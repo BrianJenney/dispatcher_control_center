@@ -291,5 +291,6 @@ describe("serving stored files", () => {
     const file = await open(getDriverPhoto, driverId);
     expect(file.headers.get("content-type")).toBe("image/png");
     expect(file.headers.get("content-disposition")).toMatch(/^inline; filename="me\.png"/);
+    expect(file.headers.get("cache-control")).toBe("private, max-age=3600");
   });
 });
