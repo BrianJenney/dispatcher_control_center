@@ -42,7 +42,17 @@ export function fileRoute({ read }: { read: (params: RouteParams) => Promise<Sto
     if (refused) return refused;
     const file = await read(await context.params);
     if (!file) return Response.json({ message: missingRecord.file }, { status: 404 });
-    return Response.redirect(await storage.downloadUrl(file.key, servedFile(file)), 302);
+    const body = await storage.read(file.key);
+    if (!body) return Response.json({ message: missingRecord.file }, { status: 404 });
+    const served = servedFile(file);
+    return new Response(body, {
+      headers: {
+        "Content-Type": served.contentType,
+        "Content-Disposition": served.disposition,
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
   };
 }
 
