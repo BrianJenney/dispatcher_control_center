@@ -1,16 +1,32 @@
 import { eq } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
 import { documents } from "@/db/schema";
 import type { UploadPurpose } from "@/domain/uploads";
+import { reportError } from "@/observability";
 import { deleteDocument, prepareUpload, saveUpload } from "@/server/actions/uploads";
 import { storage } from "@/server/storage";
 import { insertDriver } from "./database";
 import { signInAsDemoUser } from "./session";
 
+vi.mock(import("@/observability"), async (original) => ({ ...(await original()), reportError: vi.fn() }));
+
 beforeEach(async () => {
   await signInAsDemoUser();
+  vi.mocked(reportError).mockClear();
 });
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+function storageRefusesDeletes() {
+  const realFetch = globalThis.fetch;
+  vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+    const method = input instanceof Request ? input.method : init?.method;
+    return method === "DELETE" ? Promise.resolve(new Response(null, { status: 503 })) : realFetch(input, init);
+  });
+}
 
 const pdf = Buffer.from("%PDF-1.4 test license");
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
@@ -140,5 +156,26 @@ describe("spoofed content", () => {
     const driverId = await insertDriver();
     const { saved } = await upload({ purpose: "driver_license", ownerId: driverId, fileName: "scan.png", contentType: "image/png", body: png });
     expect(saved.ok).toBe(true);
+  });
+});
+
+describe("storage failures", () => {
+  it("still deletes the document when storage refuses, and reports the leftover file", async () => {
+    const driverId = await insertDriver();
+    const { key } = await license(driverId);
+    const row = await db.query.documents.findFirst({ where: eq(documents.storageKey, key) });
+    storageRefusesDeletes();
+    expect(await deleteDocument({ documentId: row?.id ?? "" })).toEqual({ ok: true, data: { fileName: "license.pdf" } });
+    vi.restoreAllMocks();
+    expect(await db.query.documents.findFirst({ where: eq(documents.storageKey, key) })).toBeUndefined();
+    expect(vi.mocked(reportError)).toHaveBeenCalledWith(new Error(`Storage refused to delete ${key} with status 503.`));
+  });
+
+  it("still gives the plain message for a spoofed file when storage cannot remove it", async () => {
+    const driverId = await insertDriver();
+    const request = await put({ purpose: "driver_license", ownerId: driverId, fileName: "license.pdf", contentType: "application/pdf", body: html });
+    storageRefusesDeletes();
+    expect(await saveUpload(request)).toMatchObject({ ok: false, message: notWhatItSays });
+    expect(vi.mocked(reportError)).toHaveBeenCalledOnce();
   });
 });

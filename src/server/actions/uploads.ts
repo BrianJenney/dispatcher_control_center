@@ -39,7 +39,7 @@ async function checkStoredFile(upload: StoredUpload) {
   if (!stored) throw new DomainError("The upload did not finish. Try again.");
   const problem = await storedFileProblem(upload, stored);
   if (problem) {
-    await storage.remove(upload.key);
+    await storage.discard(upload.key);
     throw new DomainError(problem);
   }
 }
@@ -58,7 +58,7 @@ export const saveUpload = defineAction(savedUpload, async (input, { tx, userId }
   if (input.purpose === "driver_photo") {
     const [previous] = await tx.select({ photoKey: drivers.photoKey }).from(drivers).where(eq(drivers.id, input.ownerId));
     await tx.update(drivers).set({ photoKey: input.key }).where(eq(drivers.id, input.ownerId));
-    if (previous?.photoKey) await storage.remove(previous.photoKey);
+    if (previous?.photoKey) await storage.discard(previous.photoKey);
     return { id: input.ownerId };
   }
 
@@ -85,6 +85,6 @@ export const deleteDocument = defineAction(z.object({ documentId: z.uuid() }), a
     .where(eq(documents.id, input.documentId))
     .returning({ storageKey: documents.storageKey, fileName: documents.fileName });
   if (!removed) throw new DomainError("That document was already deleted.");
-  await storage.remove(removed.storageKey);
+  await storage.discard(removed.storageKey);
   return { fileName: removed.fileName };
 });

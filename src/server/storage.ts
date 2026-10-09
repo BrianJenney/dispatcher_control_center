@@ -1,11 +1,13 @@
 import { AwsClient } from "aws4fetch";
 import { env } from "@/env";
+import { reportError } from "@/observability";
 
 const client = new AwsClient({
   accessKeyId: env.STORAGE_ACCESS_KEY_ID,
   secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY,
   service: "s3",
   region: "auto",
+  retries: 2,
 });
 
 const linkLifetimeSeconds = 5 * 60;
@@ -19,6 +21,11 @@ async function presign(url: URL, init: RequestInit, signHeaders: boolean) {
   url.searchParams.set("X-Amz-Expires", String(linkLifetimeSeconds));
   const signed = await client.sign(new Request(url, init), { aws: { signQuery: true, allHeaders: signHeaders } });
   return signed.url;
+}
+
+async function remove(key: string) {
+  const response = await client.fetch(objectUrl(key), { method: "DELETE" });
+  if (!response.ok) throw new Error(`Storage refused to delete ${key} with status ${response.status}.`);
 }
 
 export const storage = {
@@ -51,7 +58,7 @@ export const storage = {
     return response.ok ? new Uint8Array(await response.arrayBuffer()).subarray(0, count) : new Uint8Array();
   },
 
-  remove: async (key: string) => {
-    await client.fetch(objectUrl(key), { method: "DELETE" });
+  discard: async (key: string) => {
+    await remove(key).catch(reportError);
   },
 };
