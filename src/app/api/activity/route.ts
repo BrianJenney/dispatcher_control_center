@@ -3,6 +3,5 @@ import { getActivity } from "@/server/queries/activity";
 import { pollingRoute } from "@/server/route";
 
 export const GET = pollingRoute({
-  access: "signed-in",
   read: ({ searchParams }) => getActivity(activityFilter.parse(Object.fromEntries(searchParams))),
 });
