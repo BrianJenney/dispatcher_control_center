@@ -248,7 +248,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 |---|---|---|
 | Managed hosting, automatic deploys | Done | Vercel deploys every push; production from `main` |
 | Separate environments | Done | Production, preview and local each have their own database and files |
-| Private documents on expiring links | Done | Private buckets. Every view is streamed by the app after a sign-in check, so no shareable file link exists; uploads use signed links that expire after 5 minutes |
+| Files in proper object storage, with private documents on expiring links | Done, and stricter | Files live in private Cloudflare R2 buckets. Uploads use signed links that expire after 5 minutes. Views go one step further than an expiring link: the app checks the viewer is signed in on every request and streams the file itself, so there is no link to forward at all, not even one that works for a few minutes. A signed-out request gets a 401. See "Private files, no shareable links" under Key decisions |
 | Migrations and indexes for 100,000 trips | Done, measured | "Load test" above: with 100,287 trips, 95% of page loads and polls answered in under 125 ms and the slowest in 394 ms |
 | Backups you can restore | Done | "Backups and restoring" above, with a recorded drill |
 | Clear monthly cost estimate | Done | "Running cost" above |
@@ -431,7 +431,7 @@ The same property gives local development a safe option: work against a local Po
 
 **Polling, not WebSockets.** Screens refresh every 5 seconds with TanStack Query, and the dispatcher's own actions update the screen at once. A handful of dispatchers does not need a socket server, and polling works on Vercel with nothing extra to run or pay for.
 
-**Private files, no shareable links.** Licences, registrations and photos sit in private R2 buckets. The app streams each file to a signed-in user on every view, so a copied address opens nothing on its own. Uploads use signed links that expire after 5 minutes, so large files never pass through the app.
+**Private files, no shareable links.** The brief asks for private documents on expiring links, and for documents to be visible only to logged in users. An expiring link alone does not fully meet the second part: anyone it is forwarded to can open the file until it expires. So licences, registrations and photos sit in private R2 buckets, and the app streams each file to a signed-in user on every view. A copied address opens nothing on its own, and a signed-out request gets a 401. Uploads still use signed links that expire after 5 minutes, so large uploads never pass through the app. The cost is that file views count toward Vercel's data transfer, which "Running cost" includes.
 
 **Money and time.** Fares are integer cents everywhere and only formatted for display. Times are stored as `timestamptz`, and "today" means today in the business's time zone (`APP_TIMEZONE`), not the server's.
 
