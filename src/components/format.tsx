@@ -9,12 +9,11 @@ export function TimeZoneProvider({ timeZone, children }: { timeZone: string; chi
   return <TimeZoneContext value={timeZone}>{children}</TimeZoneContext>;
 }
 
+const wholeDollars = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const dollarsAndCents = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+
 export function formatMoney(cents: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
-  }).format(cents / 100);
+  return (cents % 100 === 0 ? wholeDollars : dollarsAndCents).format(cents / 100);
 }
 
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact" });
@@ -34,9 +33,7 @@ export function formatDuration(minutes: number): string {
   return rest === 0 ? `${String(hours)} hr` : `${String(hours)} hr ${String(rest)} min`;
 }
 
-export function useFormat() {
-  const timeZone = use(TimeZoneContext);
-  if (!timeZone) throw new Error("useFormat needs a TimeZoneProvider above it.");
+function createFormat(timeZone: string) {
   const time = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" });
   const day = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long", month: "long", day: "numeric" });
   const hour = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric" });
@@ -58,4 +55,20 @@ export function useFormat() {
     weekday: (iso: string) => weekday.format(new Date(iso)),
     isToday: (iso: string) => isWithin(new Date(iso), dayRange(new Date(), timeZone)),
   };
+}
+
+const formatsByTimeZone = new Map<string, ReturnType<typeof createFormat>>();
+
+function formatFor(timeZone: string) {
+  const known = formatsByTimeZone.get(timeZone);
+  if (known) return known;
+  const created = createFormat(timeZone);
+  formatsByTimeZone.set(timeZone, created);
+  return created;
+}
+
+export function useFormat() {
+  const timeZone = use(TimeZoneContext);
+  if (!timeZone) throw new Error("useFormat needs a TimeZoneProvider above it.");
+  return formatFor(timeZone);
 }
