@@ -122,7 +122,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
       {data.hasMore ? (
         nextShow === null ? (
           <p className="text-sm text-muted-foreground">
-            Showing the newest {maxShown}. Search by customer or trip number, or pick a status, to find older trips.
+            Showing the newest {maxShown}. Search by customer, address, driver or trip number, or pick a status, to find older trips.
           </p>
         ) : (
           <Button

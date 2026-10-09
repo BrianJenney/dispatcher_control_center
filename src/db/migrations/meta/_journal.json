@@ -57,6 +57,13 @@
       "when": 1791574794190,
       "tag": "0007_vehicle_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791583279259,
+      "tag": "0008_trip_address_search",
+      "breakpoints": true
     }
   ]
 }

@@ -184,6 +184,19 @@ describe("getJobs", () => {
     expect((await getJobs({ q: "%", status: null, show: 25 })).trips.every((trip) => trip.customerName.includes("%"))).toBe(true);
   });
 
+  it("finds a trip by its pickup or drop-off address and by its driver's name", async () => {
+    const tag = crypto.randomUUID().slice(0, 8);
+    const booked = await book({ pickupAddress: `Lantern Quay ${tag}`, dropoffAddress: `Mossgate Pier ${tag}` });
+    const ids = async (q: string) => (await getJobs({ q, status: null, show: 25 })).trips.map((trip) => trip.id);
+    expect(await ids(`lantern quay ${tag}`)).toEqual([booked.id]);
+    expect(await ids(`Mossgate Pier ${tag}`)).toEqual([booked.id]);
+    const driverName = `Searchable Driver ${tag}`;
+    await db.update(drivers).set({ name: driverName }).where(eq(drivers.id, groupDrivers[2] ?? ""));
+    await moveTrip({ tripId: booked.id, from: "offer", to: "assigned", driverId: groupDrivers[2] });
+    expect(await ids(driverName)).toContain(booked.id);
+    await db.update(drivers).set({ name: "Test Driver" }).where(eq(drivers.id, groupDrivers[2] ?? ""));
+  });
+
   it("finds a trip by its number, typed with or without the hash", async () => {
     const booked = await book({ customerName: "Reference Search Guest" });
     const ids = async (q: string, status: "offer" | "completed" | null = null) =>
