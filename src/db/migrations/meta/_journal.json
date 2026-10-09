@@ -50,6 +50,13 @@
       "when": 1791506999184,
       "tag": "0006_trip_change_history",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791574794190,
+      "tag": "0007_vehicle_photos",
+      "breakpoints": true
     }
   ]
 }

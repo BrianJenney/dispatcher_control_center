@@ -11,7 +11,7 @@ import { FilePicker } from "@/components/uploads/file-picker";
 import { ownerQueryKey, useUpload } from "@/components/uploads/use-upload";
 import { Button } from "@/components/ui/button";
 import { documentContentTypes, maxDocumentBytes } from "@/domain/fleet";
-import type { DocumentRow, UploadPurpose } from "@/domain/uploads";
+import type { DocumentPurpose, DocumentRow } from "@/domain/uploads";
 import { deleteDocument } from "@/server/actions/uploads";
 
 export function DocumentsPanel({
@@ -21,7 +21,7 @@ export function DocumentsPanel({
   documents,
 }: {
   title: string;
-  purpose: Exclude<UploadPurpose, "driver_photo">;
+  purpose: DocumentPurpose;
   ownerId: string;
   documents: DocumentRow[];
 }) {

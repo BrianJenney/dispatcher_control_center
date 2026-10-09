@@ -87,8 +87,8 @@ describe("optimistic patches reach both the list and the detail page", () => {
     expect(withDriverOnDuty(profile, second, true)).toBe(profile);
   });
 
-  const vehicle: VehicleRow = { id: first, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "ready", registrations: 0 };
-  const details: VehicleProfile = { id: first, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "ready", documents: [] };
+  const vehicle: VehicleRow = { id: first, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "ready", photoVersion: null, registrations: 0 };
+  const details: VehicleProfile = { id: first, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "ready", photoVersion: null, documents: [] };
 
   it("sends one vehicle to service in the list and leaves the others alone", () => {
     const list = { vehicles: [vehicle, { ...vehicle, id: second }] };

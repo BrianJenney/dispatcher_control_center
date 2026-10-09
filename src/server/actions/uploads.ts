@@ -10,18 +10,31 @@ import {
   keyBelongsTo,
   savedUpload,
   signatureBytes,
+  isPhotoPurpose,
   storageKey,
   uploadMessages,
+  uploadOwners,
   uploadRequest,
+  type PhotoPurpose,
   type UploadPurpose,
 } from "@/domain/uploads";
 import { defineAction } from "@/server/action";
 import { storage } from "@/server/storage";
 
+const ownerTables = { driver: drivers, vehicle: vehicles };
+
 async function ownerExists(tx: Transaction, purpose: UploadPurpose, ownerId: string) {
-  const table = purpose === "vehicle_registration" ? vehicles : drivers;
-  const [owner] = await tx.select({ id: table.id }).from(table).where(eq(table.id, ownerId));
-  if (!owner) throw new DomainError(purpose === "vehicle_registration" ? missingRecord.vehicle : missingRecord.driver);
+  const owner = uploadOwners[purpose];
+  const table = ownerTables[owner];
+  const [found] = await tx.select({ id: table.id }).from(table).where(eq(table.id, ownerId));
+  if (!found) throw new DomainError(missingRecord[owner]);
+}
+
+async function replacePhoto(tx: Transaction, purpose: PhotoPurpose, ownerId: string, key: string) {
+  const table = ownerTables[uploadOwners[purpose]];
+  const [previous] = await tx.select({ photoKey: table.photoKey }).from(table).where(eq(table.id, ownerId)).for("update");
+  await tx.update(table).set({ photoKey: key }).where(eq(table.id, ownerId));
+  return previous?.photoKey && previous.photoKey !== key ? previous.photoKey : null;
 }
 
 type StoredUpload = { key: string; contentType: string; sizeBytes: number };
@@ -55,10 +68,9 @@ export const saveUpload = defineAction(savedUpload, async (input, { tx, userId, 
   await ownerExists(tx, input.purpose, input.ownerId);
   await checkStoredFile(input);
 
-  if (input.purpose === "driver_photo") {
-    const [previous] = await tx.select({ photoKey: drivers.photoKey }).from(drivers).where(eq(drivers.id, input.ownerId)).for("update");
-    await tx.update(drivers).set({ photoKey: input.key }).where(eq(drivers.id, input.ownerId));
-    if (previous?.photoKey && previous.photoKey !== input.key) discardAfterCommit(previous.photoKey);
+  if (isPhotoPurpose(input.purpose)) {
+    const replaced = await replacePhoto(tx, input.purpose, input.ownerId, input.key);
+    if (replaced) discardAfterCommit(replaced);
     return { id: input.ownerId };
   }
 

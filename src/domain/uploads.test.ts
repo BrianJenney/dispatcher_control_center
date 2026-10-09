@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   contentMatches,
   contentTypeOfKey,
+  isPhotoPurpose,
   keyBelongsTo,
   servedFile,
   signatureBytes,
   storageKey,
   uploadIdOf,
+  uploadOwners,
   uploadProblem,
 } from "@/domain/uploads";
 
@@ -33,6 +35,11 @@ describe("uploadProblem", () => {
     expect(uploadProblem("driver_photo", { name: "me.pdf", type: "application/pdf", size: 100 })).toBe(
       "Use a JPEG, PNG or WebP photo.",
     );
+  });
+
+  it("holds a vehicle photo to the same photo types", () => {
+    expect(uploadProblem("vehicle_photo", { name: "car.webp", type: "image/webp", size: 100 })).toBeNull();
+    expect(uploadProblem("vehicle_photo", { name: "car.pdf", type: "application/pdf", size: 100 })).toBe("Use a JPEG, PNG or WebP photo.");
   });
 
   it("refuses an empty file", () => {
@@ -145,6 +152,24 @@ describe("servedFile", () => {
   it("keeps quotes, line breaks and accents out of the plain name and encodes them in the full one", () => {
     const { disposition } = servedFile({ fileName: 'Renée "v2"\r\n(1).pdf', contentType: "application/pdf" });
     expect(disposition).toBe(`inline; filename="Ren_e _v2___(1).pdf"; filename*=UTF-8''Ren%C3%A9e%20%22v2%22%0D%0A%281%29.pdf`);
+  });
+});
+
+describe("photo purposes and owners", () => {
+  it("tells photos from documents", () => {
+    expect(isPhotoPurpose("driver_photo")).toBe(true);
+    expect(isPhotoPurpose("vehicle_photo")).toBe(true);
+    expect(isPhotoPurpose("driver_license")).toBe(false);
+    expect(isPhotoPurpose("vehicle_registration")).toBe(false);
+  });
+
+  it("files each upload under a driver or a vehicle", () => {
+    expect(uploadOwners).toEqual({
+      driver_license: "driver",
+      vehicle_registration: "vehicle",
+      driver_photo: "driver",
+      vehicle_photo: "vehicle",
+    });
   });
 });
 
