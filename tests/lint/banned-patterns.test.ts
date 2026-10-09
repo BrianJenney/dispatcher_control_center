@@ -31,6 +31,16 @@ const banned = [
   { pattern: "a relative parent import", fixture: "server/relative-parent-import.ts", rule: "no-restricted-imports" },
   { pattern: "importing src/db outside src/server", fixture: "app/imports-db.tsx", rule: "no-restricted-imports" },
   { pattern: "reading the demo login in app code", fixture: "app/imports-demo-login.tsx", rule: "no-restricted-imports" },
+  {
+    pattern: "a read that skips the session check",
+    fixture: "server/queries/unguarded-read.ts",
+    rule: "local/queries-check-session",
+  },
+  {
+    pattern: "reading around the queries from a page",
+    fixture: "app/reads-around-queries.tsx",
+    rule: "no-restricted-imports",
+  },
   { pattern: "fetching in useEffect", fixture: "components/fetch-in-effect.tsx", rule: "local/no-fetch-in-effect" },
   { pattern: "useQuery outside live-query.ts", fixture: "components/use-query-directly.tsx", rule: "no-restricted-imports" },
   { pattern: "I/O imports in src/domain", fixture: "domain/imports-next.ts", rule: "no-restricted-imports" },
@@ -47,5 +57,9 @@ describe("banned patterns fail lint", () => {
 
   it("clean domain code passes", async () => {
     expect(await ruleIds("domain/clean.ts")).toEqual([]);
+  });
+
+  it("a query wrapped in defineQuery passes", async () => {
+    expect(await ruleIds("server/queries/guarded-read.ts")).toEqual([]);
   });
 });

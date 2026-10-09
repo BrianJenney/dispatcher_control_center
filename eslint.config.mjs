@@ -31,6 +31,11 @@ function layer(...patterns) {
 
 const outsideSrc = ["error", { patterns: [strayCnPackage] }];
 
+const readsThroughQueries = {
+  regex: "^@/server/(?!queries/|actions/|route$|query$|session$|auth$)",
+  message: "Read data through a query in @/server/queries. Each one checks the session first.",
+};
+
 const noDatabase = {
   group: ["@/db", "@/db/*", "drizzle-orm", "drizzle-orm/*", "pg"],
   message: "Only src/server touches the database. Call a query or an action instead.",
@@ -131,9 +136,13 @@ export default defineConfig([
     },
   },
   {
+    files: ["**/src/server/queries/**"],
+    rules: { "local/queries-check-session": "error" },
+  },
+  {
     files: ["**/src/app/**", "**/src/components/**"],
     rules: {
-      "no-restricted-imports": layer(noDatabase),
+      "no-restricted-imports": layer(noDatabase, readsThroughQueries),
     },
   },
   {
