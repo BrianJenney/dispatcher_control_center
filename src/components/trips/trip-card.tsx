@@ -86,9 +86,9 @@ export function TripCard({
         </div>
       </div>
       <p className="mt-3 flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
-        <span className="text-foreground">{trip.pickupAddress}</span>
+        <span className="text-foreground [overflow-wrap:anywhere]">{trip.pickupAddress}</span>
         <ArrowRight className="size-3.5 shrink-0" aria-label="to" />
-        <span className="text-foreground">{trip.dropoffAddress}</span>
+        <span className="text-foreground [overflow-wrap:anywhere]">{trip.dropoffAddress}</span>
       </p>
       <dl className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <div>
