@@ -2,11 +2,20 @@
 
 import { PencilLine } from "lucide-react";
 import { useFormat } from "@/components/format";
+import { RecordLink } from "@/components/record-link";
 import { StatusBadge } from "@/components/trips/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { describeActivity, type ActivityEntry } from "@/domain/activity";
 
-export function ActivityList({ label, entries }: { label: string; entries: readonly ActivityEntry[] }) {
+export function ActivityList({
+  label,
+  entries,
+  linkToTrip,
+}: {
+  label: string;
+  entries: readonly ActivityEntry[];
+  linkToTrip: boolean;
+}) {
   const format = useFormat();
   const historyFormat = { money: format.money, moment: (iso: string) => `${format.shortDay(iso)}, ${format.time(iso)}` };
   return (
@@ -17,7 +26,17 @@ export function ActivityList({ label, entries }: { label: string; entries: reado
             <p className="text-sm break-words">
               <span className="font-medium">{entry.actorName}</span> {describeActivity(entry, historyFormat)}
             </p>
-            <p className="truncate text-xs text-muted-foreground">{entry.customerName}</p>
+            {linkToTrip ? (
+              <RecordLink
+                href={`/jobs/${entry.tripId}`}
+                aria-label={`Open trip ${String(entry.reference)} for ${entry.customerName}`}
+                className="block truncate text-xs text-muted-foreground underline-offset-4 hover:underline"
+              >
+                #{entry.reference} {entry.customerName}
+              </RecordLink>
+            ) : (
+              <p className="truncate text-xs text-muted-foreground">{entry.customerName}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               <time dateTime={entry.createdAt}>
                 {format.shortDay(entry.createdAt)}, {format.time(entry.createdAt)}

@@ -128,6 +128,14 @@ export const jobsSearch: Flow = {
         await expect(cards).toHaveAttribute("aria-label", new RegExp(`^Trip ${String(reference)} for `));
       },
     },
+    {
+      name: "open a trip and its history from its card",
+      run: async ({ page }) => {
+        await jobsList(page).getByRole("link", { name: /^Open trip \d+ for / }).click();
+        await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
+        await expect(page.getByRole("list", { name: "Trip history" })).toContainText("booked");
+      },
+    },
   ],
 };
 

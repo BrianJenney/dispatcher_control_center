@@ -3,11 +3,24 @@
 import { ArrowRight, Clock, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFormat } from "@/components/format";
+import { RecordLink } from "@/components/record-link";
 import { StatusBadge } from "@/components/trips/status-badge";
 import { tripCardId } from "@/components/trips/trip-focus";
 import { cn } from "@/components/ui/utils";
 import { vehicleClassLabels } from "@/domain/fleet";
 import type { TripRow } from "@/domain/trip-row";
+
+function TripLink({ trip, className }: { trip: TripRow; className: string }) {
+  return (
+    <RecordLink
+      href={`/jobs/${trip.id}`}
+      aria-label={`Open trip ${String(trip.reference)} for ${trip.customerName}`}
+      className={cn("block truncate underline-offset-4 hover:underline", className)}
+    >
+      {trip.customerName}
+    </RecordLink>
+  );
+}
 
 const cardFocus = "scroll-mt-20 outline-none focus-visible:ring-3 focus-visible:ring-ring";
 
@@ -39,7 +52,7 @@ export function TripCard({
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold tabular-nums">{format.timeRange(trip.pickupAt, trip.durationMinutes)}</p>
-            <p className="truncate text-sm font-medium">{trip.customerName}</p>
+            <TripLink trip={trip} className="text-sm font-medium" />
             <p className="truncate text-xs text-muted-foreground">
               <span data-testid="trip-driver">{trip.driver ? trip.driver.name : "No driver yet"}</span> ·{" "}
               {vehicleClassLabels[trip.vehicleClass]} · #{trip.reference}
@@ -65,7 +78,7 @@ export function TripCard({
         <div className="min-w-0">
           {showDate ? <p className="text-xs font-medium text-muted-foreground">{format.shortDay(trip.pickupAt)}</p> : null}
           <p className="text-lg font-semibold tabular-nums">{format.timeRange(trip.pickupAt, trip.durationMinutes)}</p>
-          <p className="truncate text-sm font-medium">{trip.customerName}</p>
+          <TripLink trip={trip} className="text-sm font-medium" />
         </div>
         <div className="flex flex-col items-end gap-1">
           <StatusBadge status={trip.status} />
