@@ -2,14 +2,14 @@ import { execSync, spawnSync } from "node:child_process";
 import { mkdirSync, openSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
-import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { chromium, type Browser, type Page } from "@playwright/test";
 import { launchApp, stopApp, waitForApp } from "../lib/app-server";
 import { databaseUrlNamed, freshDatabase, loadTripCount, reseedDemoData } from "../lib/database";
 import { dismissTourOnEveryPage, signInAsDemoUser, withTourDismissed } from "../lib/demo-session";
 import { startLocalStorage } from "../lib/storage-server";
 import { flows, runStep, type Flow } from "./flows";
 import { flowDatabase } from "./flows/context";
-import { runLighthouse, type ViewportName } from "./lighthouse";
+import { runLighthouse, type BrowserStorage, type ViewportName } from "./lighthouse";
 
 const port = 3200;
 const evidenceRoot = ".verify";
@@ -87,9 +87,8 @@ async function settle(page: Page) {
     .catch(() => undefined);
 }
 
-type Session = Awaited<ReturnType<BrowserContext["storageState"]>>;
 
-async function signedInSession(browser: Browser, baseUrl: string): Promise<Session> {
+async function signedInSession(browser: Browser, baseUrl: string): Promise<BrowserStorage> {
   const context = await browser.newContext();
   await signInAsDemoUser(context.request, baseUrl);
   const session = withTourDismissed(await context.storageState(), baseUrl);
@@ -100,7 +99,7 @@ async function signedInSession(browser: Browser, baseUrl: string): Promise<Sessi
 async function runViewport(
   browser: Browser,
   baseUrl: string,
-  session: Session,
+  session: BrowserStorage,
   databaseUrl: string,
   flow: Flow,
   viewport: ViewportName,
@@ -139,7 +138,7 @@ async function runViewport(
 
   await database.close();
   const axe = await new AxeBuilder({ page }).analyze();
-  const cookie = (await browserContext.cookies()).map((entry) => `${entry.name}=${entry.value}`).join("; ");
+  const storage = await browserContext.storageState();
   await browserContext.close();
 
   return {
@@ -147,7 +146,7 @@ async function runViewport(
     steps,
     console: watched.consoleEntries,
     timings: watched.timings,
-    cookie,
+    storage,
     axe: axe.violations.map((violation) => ({
       id: violation.id,
       impact: violation.impact ?? null,
@@ -223,7 +222,7 @@ function summarize(flowName: string, flow: Flow, runs: ViewportRun[]) {
 async function verifyFlow(
   browser: Browser,
   baseUrl: string,
-  session: Session,
+  session: BrowserStorage,
   databaseUrl: string,
   flowName: string,
   flow: Flow,
@@ -238,11 +237,11 @@ async function verifyFlow(
   for (const viewport of viewports) {
     console.log(`  ${flowName} at ${viewport} width`);
     if (reseedEachWidth) await reseedDemoData(databaseUrl);
-    const { cookie, ...run } = await runViewport(browser, baseUrl, session, databaseUrl, flow, viewport, outDir);
+    const { storage, ...run } = await runViewport(browser, baseUrl, session, databaseUrl, flow, viewport, outDir);
     const lighthouse = await runLighthouse({
       url: `${baseUrl}${flow.route}`,
       chromePath: chromium.executablePath(),
-      cookie,
+      storage,
       viewport,
     }).catch((error: unknown) => {
       console.error(`  Lighthouse failed at ${viewport}: ${error instanceof Error ? error.message : String(error)}`);

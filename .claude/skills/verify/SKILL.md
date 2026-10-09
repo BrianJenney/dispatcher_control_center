@@ -32,7 +32,7 @@ Evidence written per flow:
 - `<NN-step>/phone.png`, `<NN-step>/desktop.png` at each step, taken once animations settle
 - `console.json`: any console errors or warnings
 - `axe.json`: accessibility findings
-- `lighthouse.json`: performance, accessibility, best practices (phone uses the Lighthouse mobile profile), plus `lighthouse-<viewport>.html`
+- `lighthouse.json`: performance, accessibility, best practices (phone uses the Lighthouse mobile profile), plus `lighthouse-<viewport>.html`. Lighthouse runs in its own Chrome seeded with the flow's cookies and local storage, so it measures the same visitor the steps do (signed in, tour already dismissed)
 - `timings.json`: server response times per request
 - `summary.md`: pass or fail per step, in plain words
 - `.verify/server.log`: the app's own output for the run
