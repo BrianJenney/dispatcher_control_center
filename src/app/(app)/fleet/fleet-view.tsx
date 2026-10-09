@@ -1,12 +1,11 @@
 "use client";
 
-import { CarFront } from "lucide-react";
 import { useLiveQuery } from "@/components/live-query";
+import { VehiclePhoto } from "@/components/people/vehicle-photo";
 import { VehicleStatusSwitch } from "@/components/people/vehicle-status-switch";
 import { liveQueries } from "@/components/queries";
 import { RecordLink } from "@/components/record-link";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
-import { cn } from "@/components/ui/utils";
 import { vehicleClassLabels } from "@/domain/fleet";
 import type { VehicleRow } from "@/domain/people";
 
@@ -28,15 +27,7 @@ export function FleetView({ initialData }: { initialData: { vehicles: VehicleRow
             <li key={vehicle.id}>
               <article aria-label={vehicle.unitNumber} className="flex h-full flex-col gap-4 rounded-2xl border bg-card p-4 shadow-xs">
                 <div className="flex items-start gap-3">
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "grid size-12 shrink-0 place-items-center rounded-xl",
-                      vehicle.status === "ready" ? "bg-status-completed/12 text-status-completed" : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    <CarFront className="size-6" />
-                  </span>
+                  <VehiclePhoto vehicle={vehicle} width={72} height={48} />
                   <div className="min-w-0 flex-1">
                     <RecordLink href={`/fleet/${vehicle.id}`} className="block truncate font-semibold hover:underline">
                       {vehicle.model}
