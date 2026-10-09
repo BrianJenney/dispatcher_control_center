@@ -2,8 +2,9 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { trips, tripEvents, user } from "@/db/schema";
 import type { ActivityFilter, ActivitySnapshot } from "@/domain/activity";
+import { defineQuery } from "@/server/query";
 
-export async function getActivity(filter: ActivityFilter): Promise<ActivitySnapshot> {
+export const getActivity = defineQuery("signed-in", async (filter: ActivityFilter): Promise<ActivitySnapshot> => {
   const rows = await db
     .select({
       id: tripEvents.id,
@@ -25,4 +26,4 @@ export async function getActivity(filter: ActivityFilter): Promise<ActivitySnaps
     entries: rows.slice(0, filter.show).map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
     hasMore: rows.length > filter.show,
   };
-}
+});

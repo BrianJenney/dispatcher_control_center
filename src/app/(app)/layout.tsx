@@ -1,7 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import { AppShell } from "@/components/shell/app-shell";
 import { LoadingState } from "@/components/states";
-import { requireUser } from "@/server/session";
+import { requireUser } from "@/server/query";
 
 export default function SignedInLayout({ children }: LayoutProps<"/">) {
   return (

@@ -37,6 +37,11 @@ describe("health check paved path", () => {
     expect((await getHealthSnapshot()).checkCount).toBe(0);
   });
 
+  it("lets the uptime monitor read the snapshot without a session", async () => {
+    signOut();
+    expect((await getHealthSnapshot()).database).toBe("ok");
+  });
+
   it("clears every check", async () => {
     await recordHealthCheck({ label: "One" });
     await recordHealthCheck({ label: "Two" });

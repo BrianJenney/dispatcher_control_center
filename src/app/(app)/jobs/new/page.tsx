@@ -21,5 +21,5 @@ export default function NewTripPage() {
 
 async function NewTripForm() {
   await connection();
-  return <CreateTripForm values={defaultTripValues()} />;
+  return <CreateTripForm values={await defaultTripValues()} />;
 }

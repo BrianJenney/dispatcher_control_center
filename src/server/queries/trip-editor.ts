@@ -6,6 +6,7 @@ import { centsToDollars } from "@/domain/trip-form";
 import { wallTimeOf } from "@/domain/time";
 import type { TripStatus } from "@/domain/trip-status";
 import { env } from "@/env";
+import { defineQuery } from "@/server/query";
 
 export type TripEditorValues = {
   tripId: string;
@@ -22,7 +23,7 @@ export type TripEditorValues = {
   fare: string;
 };
 
-export async function getTripForEditing(id: unknown): Promise<TripEditorValues | null> {
+export const getTripForEditing = defineQuery("signed-in", async (id: unknown): Promise<TripEditorValues | null> => {
   const tripId = recordId(id);
   if (!tripId) return null;
   const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
@@ -42,9 +43,9 @@ export async function getTripForEditing(id: unknown): Promise<TripEditorValues |
     vehicleClass: trip.vehicleClass,
     fare: centsToDollars(trip.fareCents),
   };
-}
+});
 
-export function defaultTripValues(): Omit<TripEditorValues, "tripId" | "reference" | "status"> {
+export const defaultTripValues = defineQuery("signed-in", (): Omit<TripEditorValues, "tripId" | "reference" | "status"> => {
   const inAnHour = new Date(Math.ceil((Date.now() + 60 * 60_000) / (15 * 60_000)) * 15 * 60_000);
   const { date, time } = wallTimeOf(inAnHour, env.APP_TIMEZONE);
   return {
@@ -58,4 +59,4 @@ export function defaultTripValues(): Omit<TripEditorValues, "tripId" | "referenc
     vehicleClass: "luxury_sedan",
     fare: "",
   };
-}
+});

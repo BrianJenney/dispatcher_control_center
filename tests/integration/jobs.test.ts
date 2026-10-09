@@ -8,7 +8,7 @@ import { getJobs } from "@/server/queries/jobs";
 import { getSuggestions } from "@/server/queries/suggestions";
 import { createTrip, moveTrip, reassignDriver, updateTrip } from "@/server/actions/trips";
 import { insertDriver } from "./database";
-import { signInAsDemoUser } from "./session";
+import { signInAsDemoUser, signOut } from "./session";
 
 const form: z.input<typeof tripInput> = {
   customerName: "Integration Guest",
@@ -163,5 +163,11 @@ describe("getJobs", () => {
     expect(page.trips.every((trip) => trip.status === "completed")).toBe(true);
     expect(page.trips.length).toBe(25);
     expect(page.hasMore).toBe(true);
+  });
+
+  it("refuses to read anything without a signed in session", async () => {
+    signOut();
+    await expect(getJobs({ q: "", status: null, show: 25 })).rejects.toThrow("NEXT_REDIRECT");
+    await expect(getSuggestions(crypto.randomUUID())).rejects.toThrow("NEXT_REDIRECT");
   });
 });
