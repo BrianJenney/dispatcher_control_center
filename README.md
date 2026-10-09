@@ -235,7 +235,7 @@ flowchart LR
     Action -- "creates the link" --> R2
 ```
 
-Reads go through a query function, called by the page for first paint and by a route handler for polling. Writes go through a server action: check the session, validate with zod, call the domain, write in one transaction. Status changes pass through `transitionTrip()` and nowhere else.
+Reads go through a query function, called by the page for first paint and by a route handler for polling. Every query is declared with `defineQuery`, which checks that the session is real (Better Auth verifies it, not just that a cookie is present) before it reads, and sends anyone else to sign in. Next renders a page alongside its layout, so the layout's sign-in check alone could let a page load its data first; checking inside the query closes that gap, and a lint rule fails any query exported without it. The proxy in `src/proxy.ts` is only a quick first filter for visitors with no cookie at all. Writes go through a server action: check the session, validate with zod, call the domain, write in one transaction. Status changes pass through `transitionTrip()` and nowhere else.
 
 ## Where to look in the code
 
@@ -243,12 +243,13 @@ Reads go through a query function, called by the page for first paint and by a r
 |---|---|
 | The status rules | `src/domain/trip-status.ts`, then `src/db/migrations` for the database copy |
 | Driver matching | `src/domain/matching.ts` and `src/domain/matching.test.ts` |
+| How a read is guarded | `src/server/query.ts`, then any file in `src/server/queries` |
 | How a write is guarded | `src/server/action.ts`, then `src/server/actions/trips.ts` |
 | The single place status is written | `src/db/trip-writes.ts` |
 | Live polling and optimistic updates | `src/components/live-query.ts`, `src/components/use-optimistic-action.ts` |
 | How private files work | `src/server/storage.ts`, `src/app/api/documents/[id]/route.ts` |
 | Rules the linter enforces | `eslint.config.mjs` and `eslint-rules/` |
-| Proof the rules work | `tests/integration/trip-rules.test.ts`, `e2e/break.spec.ts` |
+| Proof the rules work | `tests/integration/trip-rules.test.ts`, `e2e/break.spec.ts`, `e2e/access.spec.ts` |
 
 ## Key decisions
 
@@ -295,7 +296,7 @@ Before you start, run `pnpm db:reset` so every number below starts from a known 
 4. Enter the demo password from the submission message and press "Sign in". You return to the page you asked for (`/jobs`).
 5. Press the sign out icon (sidebar footer on desktop, top bar on phone). You are back on the sign in page, and `/` sends you there again.
 
-Proves: protected routes, redirects, no account guessing.
+Proves: protected routes, redirects, no account guessing. `e2e/access.spec.ts` also sends a made up session cookie to every page and API route and checks that none of the seeded data comes back.
 
 ### 02 Dashboard
 
