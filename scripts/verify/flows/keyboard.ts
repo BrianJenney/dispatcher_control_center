@@ -147,6 +147,8 @@ export const keyboard: Flow = {
         await expect(waiting).toBeVisible();
         await waiting.focus();
         await page.keyboard.press("Tab");
+        await expect(waiting.getByRole("link", { name: new RegExp(`^Open trip \\d+ for ${customer.name}$`) })).toBeFocused();
+        await page.keyboard.press("Tab");
         await expect(waiting.getByRole("button", { name: "Assign driver" })).toBeFocused();
         await page.keyboard.press("Enter");
         await expect(page.getByRole("list", { name: "Suggested drivers" })).toBeVisible();
