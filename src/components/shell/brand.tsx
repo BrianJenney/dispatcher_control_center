@@ -5,12 +5,12 @@ export function Brand({ tone = "dark", className }: { tone?: "dark" | "light"; c
     <div className={cn("flex items-center gap-3", className)}>
       <span
         aria-hidden
-        className="grid size-9 place-items-center rounded-xl border border-gold/60 bg-gradient-to-br from-gold/25 to-gold/5 text-sm font-semibold tracking-wide text-gold"
+        className="grid size-9 place-items-center rounded-xl border border-gold/60 bg-gradient-to-br from-gold/25 to-gold/5 font-display text-base font-semibold tracking-wide text-gold"
       >
         DL
       </span>
       <span className="leading-tight">
-        <span className={cn("block font-semibold", tone === "light" ? "text-sidebar-foreground" : "text-foreground")}>
+        <span className={cn("block font-display text-lg leading-none font-semibold", tone === "light" ? "text-sidebar-foreground" : "text-foreground")}>
           Dispatch Lite
         </span>
         <span

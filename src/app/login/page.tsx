@@ -23,7 +23,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         <Brand tone="light" className="relative" />
         <div className="relative max-w-md space-y-4">
           <p className="text-xs font-semibold tracking-[0.2em] text-gold uppercase">Dispatch, refined</p>
-          <p className="text-3xl leading-tight font-semibold">Every pickup on time. Every chauffeur in the right car.</p>
+          <p className="font-display text-4xl leading-tight font-semibold">Every pickup on time. Every chauffeur in the right car.</p>
           <p className="text-sidebar-foreground/70">
             See the day at a glance, assign the right driver in a click, and follow each trip to the door.
           </p>
@@ -33,7 +33,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         <div className="w-full max-w-sm space-y-8">
           <Brand className="lg:hidden" />
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">Sign in</h1>
+            <h1 className="font-display text-3xl font-semibold">Sign in</h1>
             <p className="text-sm text-muted-foreground">Welcome back. Sign in to run today&apos;s dispatch.</p>
           </div>
           <div className="min-h-[16rem]">
