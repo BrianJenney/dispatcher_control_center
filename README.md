@@ -22,7 +22,7 @@ Open http://localhost:3000 and sign in as dispatcher@example.com with the passwo
 
 `pnpm db:reset` recreates the local database, applies migrations and seeds a week of fake trips. It refuses to run against anything other than localhost. `pnpm dev` also starts a local S3 compatible store on port 4568 for uploads; files land in `.storage/`.
 
-For a load check, `pnpm db:reset --load` starts over with 100,000 extra historical trips (about two minutes).
+For a load check, `pnpm db:reset --load` starts over with 100,000 extra historical trips (about two minutes), and `pnpm verify <flow> --load` measures a flow against them. Results are in `docs/load-test.md`.
 
 ## Checks
 
@@ -82,7 +82,7 @@ How to read it:
 - **A quiet demo costs about $27 a month.** Almost all of that is the building and the filing cabinet.
 - **The jump at 200 users is almost all the smoke alarm.** It records every refresh of every screen. Telling it to record one refresh in ten, which we would do once real traffic arrives, brings the 200 user bill to about $55.
 - **Files are almost free.** The safe stays free until it holds about 10 GB, which is tens of thousands of documents.
-- **A 100,000 trip history is tiny.** It takes about 130 MB, which costs a few cents a month.
+- **A 100,000 trip history is tiny.** Measured at 195 MB with its full status history, which costs a few cents a month.
 - **Not included:** the one time build fee, a web address of your own (about $12 a year), and any extra seats for people who deploy changes.
 
 These are estimates from the vendors' public price lists on 2026-10-08. Prices change, so check before quoting.
@@ -129,7 +129,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | Managed hosting, automatic deploys | Done | Vercel deploys every push; production from `main` |
 | Separate environments | Done | Production, preview and local each have their own database and files |
 | Private documents on expiring links | Done, checked by hand on the live site | Private buckets, signed links that expire after 5 minutes |
-| Migrations and indexes for 100,000 trips | Indexes and paging in place; not load tested | See "Scale" under Database schema |
+| Migrations and indexes for 100,000 trips | Done, measured | `docs/load-test.md`: every page and poll answers in under 140 ms with 100,287 trips |
 | Backups you can restore | Done | `docs/backup-restore.md`, with a recorded drill |
 | Clear monthly cost estimate | Done | "Running cost" below, and `docs/cost-estimate.md` |
 
@@ -239,7 +239,7 @@ The rules that matter are enforced by the database as well as the app, so they h
 - **History of edits:** editing a trip writes one `trip_edits` row per changed field, with its old and new value in a column of the right type (cents stay integers, times stay `timestamptz`). A check keeps each row to the one pair of columns its field uses, and a deferred trigger refuses any change to a trip's details that has no matching row.
 - **Append only:** `trip_events` and `trip_edits` cannot be updated or deleted from.
 - **Documents:** a licence belongs to a driver and a registration to a vehicle, only PDFs and images, 10 MB at most.
-- **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. This has not been load tested; `pnpm db:reset --load` builds a 100,000 trip database for anyone who wants to measure it.
+- **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. Measured with 100,287 trips: every page and poll answered in under 140 ms, and the 5 second polls in under 20 ms (`docs/load-test.md`).
 
 ## How a request flows
 
@@ -292,7 +292,7 @@ The same property gives local development a safe option: work against a local Po
 - Uploads and views were checked by hand on the live site against the private production bucket (a driver photo, viewed through a signed link that expires after 5 minutes). Licence and registration uploads use the same code path and are covered by the automated tests.
 - Sentry's slow request alert has to be created in the Sentry screen. The new error and regression alerts are in place.
 - Every preview deployment shares one Neon database branch, `preview`. A fresh branch per pull request needs the Neon integration for Vercel.
-- The 100,000 trip claim comes from indexes, paging and bounded queries. It has not been load tested.
+- The 100,000 trip measurement ran with the database on the same machine as the app and one dispatcher at a time; Neon adds a few milliseconds per query, and concurrency was not tested.
 - Deleting a document deletes its file for good, because R2 cannot undelete. The database row can be rewound but the file cannot.
 - Pickup and drop off are free text addresses.
 - Cost figures are estimates from public price lists and depend on a few assumptions, listed in `docs/cost-estimate.md`.
