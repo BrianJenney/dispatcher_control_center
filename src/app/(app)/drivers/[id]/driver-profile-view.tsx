@@ -1,13 +1,14 @@
 "use client";
 
-import { DriverPhotoPanel } from "@/app/(app)/drivers/[id]/driver-photo";
 import { EditDriverForm } from "@/app/(app)/drivers/driver-form";
 import { useLiveQuery } from "@/components/live-query";
 import { PageHeader } from "@/components/page-header";
+import { DriverAvatar } from "@/components/people/driver-avatar";
 import { DutySwitch } from "@/components/people/duty-switch";
 import { liveQueries } from "@/components/queries";
 import { LiveUpdatesPaused } from "@/components/states";
 import { DocumentsPanel } from "@/components/uploads/documents-panel";
+import { PhotoPanel } from "@/components/uploads/photo-panel";
 import type { DriverProfile } from "@/domain/people";
 
 export function DriverProfileView({ initialData }: { initialData: DriverProfile }) {
@@ -19,7 +20,14 @@ export function DriverProfileView({ initialData }: { initialData: DriverProfile 
         {isError ? <LiveUpdatesPaused what="this driver" onRetry={() => void refetch()} /> : null}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-6">
-            <DriverPhotoPanel driver={driver} />
+            <PhotoPanel
+              purpose="driver_photo"
+              ownerId={driver.id}
+              hasPhoto={driver.photoVersion !== null}
+              preview={<DriverAvatar driver={driver} size={72} />}
+              shownHint="This photo shows on the drivers list."
+              missingHint="No photo yet. A clear head and shoulders shot works best."
+            />
             <EditDriverForm driverId={driver.id} values={driver} />
           </div>
           <DocumentsPanel title="Licenses" purpose="driver_license" ownerId={driver.id} documents={driver.documents} />
