@@ -11,7 +11,11 @@ export const metadata: Metadata = { title: "Schedule · Dispatch Lite" };
 export default function SchedulePage({ searchParams }: PageProps<"/schedule">) {
   return (
     <>
-      <PageHeader eyebrow="Today" title="Schedule" description="Who is driving when, from first pickup to last drop off." />
+      <PageHeader
+        eyebrow="Today"
+        title="Schedule"
+        description="Who is driving when, from first pickup to last drop off. Filter by status or driver to see one chauffeur's day."
+      />
       <Suspense fallback={<LoadingState label="Loading today's schedule" rows={5} />}>
         <ScheduleData searchParams={searchParams} />
       </Suspense>
