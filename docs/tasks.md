@@ -55,7 +55,6 @@ Own the pyramid. Many unit tests in `src/domain`, fewer integration tests on ser
 
 ### T10 Infra and alerts
 Vercel project, Neon branch per preview, production from `main`, migrations run on deploy. R2 buckets per environment. Sentry with alerts on new errors and slow requests. Better Stack uptime checks on the live URL and a health endpoint. Backup restore drill using Neon point in time restore, written up with the steps taken. Monthly cost estimate at 20 and 200 users.
-Needs from Brian: accounts and keys for Vercel, Neon, Cloudflare R2, Sentry, Better Stack.
 
 ### T11 Gardener
 See `.claude/agents/gardener.md`. Runs on every merge.
@@ -68,4 +67,4 @@ Starts only after Gate B.
 In this order, since the first two fall out of `trip_events`: activity log, CSV export of trips, seven day volume chart and revenue report, keyboard shortcuts with a help overlay, theme switcher, guided first time tour. Two tab live updates already work through polling; add an e2e test proving it.
 
 ### T12 Submission docs
-README (setup, schema diagram, hosting and storage, backups, running cost, key decisions, known issues, what is next). Time log template and AI disclosure in `docs/time-log.md`, filled from real commit history, never invented. Brian records the video and writes the quote.
+README (setup, schema diagram, hosting and storage, backups, running cost, key decisions, known issues, what is next). Time log template and AI disclosure in `docs/time-log.md`, filled from real commit history, never invented.
