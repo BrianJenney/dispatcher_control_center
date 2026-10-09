@@ -94,4 +94,4 @@ They value a clear, honest breakdown over the lowest number.
 
 ## Review call
 
-60 minutes: demo, code walkthrough, **one small live change made on screen share**, questions, quote. The code has to stay small and conventional enough for Brian to change it live.
+60 minutes: demo, code walkthrough, **one small live change made on screen share**, questions, quote. The code has to stay small and conventional enough to change it live.

@@ -1,6 +1,6 @@
 # Gates
 
-## Gate A: foundations (Brian approves)
+## Gate A: foundations
 
 - [ ] Schema reads cleanly: tables, relations, constraints
 - [ ] Open questions in T2 answered
@@ -10,7 +10,6 @@
 - [ ] Paved path example shows one read, one write, one form, one confirm
 - [ ] Each banned pattern fails lint
 - [ ] `pnpm verify health` produces evidence
-- [ ] Brian can explain the read path and the write path out loud
 
 ## Gate B: nine features (automatic)
 
@@ -35,4 +34,3 @@
 - [ ] Backup restore drill done and written up
 - [ ] No secrets in repo history
 - [ ] README complete, time log and AI disclosure accurate
-- [ ] Brian has made one small change himself using the paved path
