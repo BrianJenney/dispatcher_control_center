@@ -220,3 +220,35 @@ describe("delete ordering", () => {
     expect(await storage.describe(second.key)).not.toBeNull();
   });
 });
+
+describe("saving the same upload twice", () => {
+  async function documentsStoredAt(key: string) {
+    return (await db.select({ id: documents.id }).from(documents).where(eq(documents.storageKey, key))).length;
+  }
+
+  it("records the document once and answers the repeat with the same id", async () => {
+    const driverId = await insertDriver();
+    const { request, saved } = await license(driverId);
+    expect(saved.ok).toBe(true);
+    expect(await saveUpload(request)).toEqual(saved);
+    expect(await documentsStoredAt(request.key)).toBe(1);
+  });
+
+  it("records the document once when both saves arrive together", async () => {
+    const driverId = await insertDriver();
+    const request = await put({ purpose: "driver_license", ownerId: driverId, fileName: "license.pdf", contentType: "application/pdf", body: pdf });
+    const [first, second] = await Promise.all([saveUpload(request), saveUpload(request)]);
+    expect(first.ok).toBe(true);
+    expect(second).toEqual(first);
+    expect(await documentsStoredAt(request.key)).toBe(1);
+  });
+
+  it("keeps a photo that is saved twice", async () => {
+    const driverId = await insertDriver();
+    const { request } = await photo(driverId);
+    expect(await saveUpload(request)).toEqual({ ok: true, data: { id: driverId } });
+    expect(await storage.describe(request.key)).not.toBeNull();
+    const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId), columns: { photoKey: true } });
+    expect(driver?.photoKey).toBe(request.key);
+  });
+});

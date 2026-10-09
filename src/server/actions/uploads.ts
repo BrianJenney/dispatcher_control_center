@@ -58,11 +58,11 @@ export const saveUpload = defineAction(savedUpload, async (input, { tx, userId, 
   if (input.purpose === "driver_photo") {
     const [previous] = await tx.select({ photoKey: drivers.photoKey }).from(drivers).where(eq(drivers.id, input.ownerId)).for("update");
     await tx.update(drivers).set({ photoKey: input.key }).where(eq(drivers.id, input.ownerId));
-    if (previous?.photoKey) discardAfterCommit(previous.photoKey);
+    if (previous?.photoKey && previous.photoKey !== input.key) discardAfterCommit(previous.photoKey);
     return { id: input.ownerId };
   }
 
-  const [saved] = await tx
+  const [inserted] = await tx
     .insert(documents)
     .values({
       kind: input.purpose,
@@ -74,9 +74,11 @@ export const saveUpload = defineAction(savedUpload, async (input, { tx, userId, 
       sizeBytes: input.sizeBytes,
       uploadedBy: userId,
     })
+    .onConflictDoNothing({ target: documents.storageKey })
     .returning({ id: documents.id });
+  const saved = inserted ?? (await tx.query.documents.findFirst({ where: eq(documents.storageKey, input.key), columns: { id: true } }));
   if (!saved) throw new Error("Saving the document returned nothing.");
-  return saved;
+  return { id: saved.id };
 });
 
 export const deleteDocument = defineAction(z.object({ documentId: z.uuid() }), async (input, { tx, discardAfterCommit }) => {
