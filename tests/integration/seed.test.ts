@@ -1,6 +1,8 @@
-import { sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db/client";
+import { drivers, trips } from "@/db/schema";
+import { seedDrivers } from "@/db/seed-data";
 import { env } from "@/env";
 import { dayRange, shiftDays } from "@/domain/time";
 import { tripStatuses } from "@/domain/trip-status";
@@ -52,6 +54,17 @@ describe("seed", () => {
         and trip_window(a.pickup_at, a.duration_minutes) && trip_window(b.pickup_at, b.duration_minutes)
       where a.status in ('assigned', 'en_route') and b.status in ('assigned', 'en_route')`);
     expect(rows.rows[0]?.clashes).toBe(0);
+  });
+
+  it("gives today's trips only to drivers who are on duty", async () => {
+    const offDuty = seedDrivers.filter((driver) => !driver.onDuty).map((driver) => driver.name);
+    const held = await db
+      .select({ id: trips.id })
+      .from(trips)
+      .innerJoin(drivers, eq(drivers.id, trips.driverId))
+      .where(and(inArray(drivers.name, offDuty), gte(trips.pickupAt, today.start), lt(trips.pickupAt, today.end)));
+    expect(offDuty.length).toBeGreaterThan(0);
+    expect(held).toEqual([]);
   });
 
   it("uses fictional contact details only", async () => {

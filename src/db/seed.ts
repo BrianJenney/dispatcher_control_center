@@ -28,7 +28,7 @@ export type SeedOptions = {
   loadTrips?: number;
 };
 
-type SeedDriver = { id: string; vehicleClass: VehicleClass };
+type SeedDriver = { id: string; vehicleClass: VehicleClass; onDuty: boolean };
 
 type PlannedTrip = {
   values: NewTrip & { durationMinutes: number };
@@ -132,7 +132,7 @@ function planRecentTrips(random: Random, seeded: SeedDriver[], now: Date, timeZo
       }
     }
   }
-  return [...plans, ...planDay(random, seeded, today, now)];
+  return [...plans, ...planDay(random, seeded.filter((driver) => driver.onDuty), today, now)];
 }
 
 function planDay(random: Random, seeded: SeedDriver[], day: TimeRange, now: Date): PlannedTrip[] {
@@ -223,7 +223,7 @@ export async function rollDemoDayForward(db: Database, options: { actorId: strin
     return { closed, added: 0 };
   }
   const onDuty = await db
-    .select({ id: drivers.id, vehicleClass: drivers.vehicleClass })
+    .select({ id: drivers.id, vehicleClass: drivers.vehicleClass, onDuty: drivers.onDuty })
     .from(drivers)
     .where(eq(drivers.onDuty, true))
     .orderBy(asc(drivers.name));
@@ -244,7 +244,7 @@ export async function seed(db: Database, options: SeedOptions) {
   const insertedDrivers = await db
     .insert(drivers)
     .values(seedDrivers.map((driver, index) => ({ ...driver, phone: fakePhone(index) })))
-    .returning({ id: drivers.id, vehicleClass: drivers.vehicleClass });
+    .returning({ id: drivers.id, vehicleClass: drivers.vehicleClass, onDuty: drivers.onDuty });
   await db.insert(vehicles).values(
     seedVehicles.map((vehicle, index) => ({
       ...vehicle,
@@ -268,7 +268,7 @@ export async function seed(db: Database, options: SeedOptions) {
           onDuty: false,
         })),
       )
-      .returning({ id: drivers.id, vehicleClass: drivers.vehicleClass });
+      .returning({ id: drivers.id, vehicleClass: drivers.vehicleClass, onDuty: drivers.onDuty });
     await writeTrips(db, planLoadTrips(random, loadDrivers, loadTrips, options.now, options.timeZone), demoUserId, random);
   }
 
