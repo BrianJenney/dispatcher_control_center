@@ -106,7 +106,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | 05 | Status updates | "Start trip" and "Complete trip"; the dashboard updates within 5 seconds |
 | 06 | Drivers | `/drivers`, add and edit with photo, phone, class and an on duty switch |
 | 07 | Fleet | `/fleet`, Ready or In service; changes the Fleet ready tile |
-| 08 | Schedule | `/schedule`, today's trips in time order, filter by driver and status |
+| 08 | Schedule | `/schedule`, today's trips on a timeline in time order, one chart row per driver with a now line, filter by driver and status |
 | 09 | Documents | Driver licences and vehicle registrations, PDF or image up to 10 MB, signed-in only |
 
 **Stretch goals**
@@ -349,8 +349,11 @@ Proves: the status flow is enforced on the server and in the database, and live 
 
 ### 08 Schedule
 
-1. Schedule. Trips still to run are in pickup order, grouped by hour. Finished trips are tucked behind "Show N finished trips".
-2. Filter by status, then also by driver. "Clear filters" returns to the full list.
+1. Schedule. "Day at a glance" draws every trip today as a bar on one row per driver, placed and sized by its pickup and end time, so free time and overlapping bookings show to scale. Trips that still need a driver get the top row. A gold line marks the current time and moves with the clock; on a phone the chart opens scrolled to it.
+2. Below it, the timeline lists the same trips in pickup order, each with its start and end time, duration, customer, status, driver and vehicle class. A "Now" marker sits between trips already picked up and those still to come, and "Jump to now" scrolls to it. Finished trips stay in their place in a smaller card.
+3. Tap a bar on the chart to jump to that trip's card. `j` and `k` step through the cards; Tab reaches each card's buttons.
+4. Start, complete, assign or cancel a trip from its card, as on the dashboard.
+5. Filter by status, then also by driver. The choice is kept in the address, so a refresh or a shared link shows the same view. "Clear filters" returns to the full day.
 
 ### 09 Documents
 
