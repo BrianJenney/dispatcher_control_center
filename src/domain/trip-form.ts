@@ -55,6 +55,14 @@ export const updateTripInput = tripFields.extend({ tripId: z.uuid() }).superRefi
 
 export type TripInput = z.output<typeof tripInput>;
 
+export const pickupGraceMinutes = 15;
+
+export const pastPickupMessage = "That pickup time has already passed. Choose a time from now on.";
+
+export function isPastPickup(pickupAt: Date, now: Date): boolean {
+  return pickupAt.getTime() < now.getTime() - pickupGraceMinutes * 60_000;
+}
+
 export function dollarsToCents(amount: string): number {
   const [whole = "0", fraction = ""] = amount.split(".");
   return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));

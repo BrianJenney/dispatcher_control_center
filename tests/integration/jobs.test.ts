@@ -6,8 +6,11 @@ import { drivers, trips } from "@/db/schema";
 import type { tripInput } from "@/domain/trip-form";
 import { getJobs, getTripsForExport } from "@/server/queries/jobs";
 import { getSuggestions } from "@/server/queries/suggestions";
+import { pastPickupMessage } from "@/domain/trip-form";
+import { wallTimeOf } from "@/domain/time";
+import { env } from "@/env";
 import { createTrip, moveTrip, reassignDriver, updateTrip } from "@/server/actions/trips";
-import { insertDriver } from "./database";
+import { demoUserId, insertDriver, insertOffer } from "./database";
 import { signInAsDemoUser, signOut } from "./session";
 
 const form: z.input<typeof tripInput> = {
@@ -106,6 +109,29 @@ describe("reassignDriver", () => {
       ok: false,
       message: "Only an assigned trip can move to another driver.",
     });
+  });
+});
+
+describe("pickup times in the past", () => {
+  const yesterday = () => wallTimeOf(new Date(Date.now() - 86_400_000), env.APP_TIMEZONE);
+
+  it("refuses to book a trip whose pickup has passed", async () => {
+    const { date, time } = yesterday();
+    expect(await createTrip({ ...form, pickupDate: date, pickupTime: time })).toMatchObject({ ok: false, message: pastPickupMessage });
+  });
+
+  it("refuses to move a trip's pickup into the past", async () => {
+    const created = await book();
+    const { date, time } = yesterday();
+    const result = await updateTrip({ ...form, tripId: created.id, pickupDate: date, pickupTime: time });
+    expect(result).toMatchObject({ ok: false, message: pastPickupMessage });
+  });
+
+  it("still edits a late trip when its pickup time is left alone", async () => {
+    const late = new Date(Math.floor((Date.now() - 2 * 3_600_000) / 60_000) * 60_000);
+    const tripId = await insertOffer(await demoUserId(), late);
+    const { date, time } = wallTimeOf(late, env.APP_TIMEZONE);
+    expect((await updateTrip({ ...form, tripId, pickupDate: date, pickupTime: time, fare: "300" })).ok).toBe(true);
   });
 });
 

@@ -9,7 +9,7 @@ import { assignmentProblem, isEditable, reassignTrip, withArticle } from "@/doma
 import { vehicleClassLabels } from "@/domain/fleet";
 import { DomainError, missingRecord } from "@/domain/result";
 import type { TripDetails } from "@/domain/trip-edits";
-import { dollarsToCents, tripInput, updateTripInput, type TripInput } from "@/domain/trip-form";
+import { dollarsToCents, isPastPickup, pastPickupMessage, tripInput, updateTripInput, type TripInput } from "@/domain/trip-form";
 import { zonedWallTime } from "@/domain/time";
 import { moveTripInput, transitionTrip, tripMessages } from "@/domain/trip-status";
 import { env } from "@/env";
@@ -36,6 +36,7 @@ async function lockedTrip(tx: Transaction, tripId: string) {
       cancelReason: trips.cancelReason,
       vehicleClass: trips.vehicleClass,
       reference: trips.reference,
+      pickupAt: trips.pickupAt,
     })
     .from(trips)
     .where(eq(trips.id, tripId))
@@ -61,7 +62,9 @@ async function assignableDriver(tx: Transaction, trip: { vehicleClass: TripInput
 }
 
 export const createTrip = defineAction(tripInput, async (input, { tx, userId }) => {
-  const [created] = await insertOffers(tx, userId, [{ id: crypto.randomUUID(), ...tripDetails(input) }]);
+  const details = tripDetails(input);
+  if (isPastPickup(details.pickupAt, new Date())) throw new DomainError(pastPickupMessage);
+  const [created] = await insertOffers(tx, userId, [{ id: crypto.randomUUID(), ...details }]);
   if (!created) throw new Error("Creating the trip returned nothing.");
   return created;
 });
@@ -79,7 +82,11 @@ export const updateTrip = defineAction(updateTripInput, async ({ tripId, ...inpu
       );
     }
   }
-  await updateTripDetails(tx, userId, tripId, tripDetails(input));
+  const details = tripDetails(input);
+  if (details.pickupAt.getTime() !== trip.pickupAt.getTime() && isPastPickup(details.pickupAt, new Date())) {
+    throw new DomainError(pastPickupMessage);
+  }
+  await updateTripDetails(tx, userId, tripId, details);
   return { id: tripId, reference: trip.reference, customerName: input.customerName };
 });
 
