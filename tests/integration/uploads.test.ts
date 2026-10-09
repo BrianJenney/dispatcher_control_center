@@ -1,5 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { GET as getDocument } from "@/app/api/documents/[id]/route";
+import { GET as getDriverPhoto } from "@/app/api/drivers/[id]/photo/route";
 import { db } from "@/db/client";
 import { documents, drivers } from "@/db/schema";
 import type { UploadPurpose } from "@/domain/uploads";
@@ -7,9 +9,10 @@ import { reportError } from "@/observability";
 import { deleteDocument, prepareUpload, saveUpload } from "@/server/actions/uploads";
 import { storage } from "@/server/storage";
 import { insertDriver } from "./database";
-import { signInAsDemoUser } from "./session";
+import { signInAsDemoUser, signOut } from "./session";
 
 vi.mock(import("@/observability"), async (original) => ({ ...(await original()), reportError: vi.fn() }));
+vi.mock(import("next/server"), async (original) => ({ ...(await original()), connection: () => Promise.resolve() }));
 
 beforeEach(async () => {
   await signInAsDemoUser();
@@ -250,5 +253,47 @@ describe("saving the same upload twice", () => {
     expect(await storage.describe(request.key)).not.toBeNull();
     const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId), columns: { photoKey: true } });
     expect(driver?.photoKey).toBe(request.key);
+  });
+});
+
+describe("serving stored files", () => {
+  type FileRoute = (request: Request, context: { params: Promise<Record<string, string>> }) => Promise<Response>;
+
+  function open(route: FileRoute, id: string) {
+    return route(new Request("http://localhost/file"), { params: Promise.resolve({ id }) });
+  }
+
+  async function savedLicense() {
+    const { saved } = await license(await insertDriver());
+    if (!saved.ok) throw new Error(saved.message);
+    return saved.data.id;
+  }
+
+  it("sends staff to an expiring link that opens the PDF as a PDF", async () => {
+    const redirect = await open(getDocument, await savedLicense());
+    expect(redirect.status).toBe(302);
+    const link = new URL(redirect.headers.get("location") ?? "");
+    expect(link.searchParams.get("X-Amz-Expires")).toBe(String(storage.linkLifetimeSeconds));
+    expect(link.searchParams.get("response-content-type")).toBe("application/pdf");
+    expect(link.searchParams.has("X-Amz-Signature")).toBe(true);
+    const file = await fetch(link);
+    expect(file.headers.get("content-type")).toBe("application/pdf");
+    expect(file.headers.get("content-disposition")).toBe(`inline; filename="license.pdf"; filename*=UTF-8''license.pdf`);
+    expect(Buffer.from(await file.arrayBuffer())).toEqual(pdf);
+  });
+
+  it("refuses a signed out visitor", async () => {
+    const documentId = await savedLicense();
+    signOut();
+    expect((await open(getDocument, documentId)).status).toBe(401);
+  });
+
+  it("serves a driver photo as the image type it was saved as", async () => {
+    const driverId = await insertDriver();
+    await photo(driverId);
+    const redirect = await open(getDriverPhoto, driverId);
+    const file = await fetch(redirect.headers.get("location") ?? "");
+    expect(file.headers.get("content-type")).toBe("image/png");
+    expect(file.headers.get("content-disposition")).toMatch(/^inline; filename="me\.png"/);
   });
 });

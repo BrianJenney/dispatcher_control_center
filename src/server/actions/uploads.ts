@@ -46,12 +46,12 @@ async function checkStoredFile(upload: StoredUpload) {
 
 export const prepareUpload = defineAction(uploadRequest, async (input, { tx }) => {
   await ownerExists(tx, input.purpose, input.ownerId);
-  const key = storageKey(input.purpose, input.ownerId, crypto.randomUUID(), input.fileName);
+  const key = storageKey(input, crypto.randomUUID());
   return { key, url: await storage.uploadUrl(key, input) };
 });
 
 export const saveUpload = defineAction(savedUpload, async (input, { tx, userId, discardAfterCommit }) => {
-  if (!keyBelongsTo(input.key, input.purpose, input.ownerId)) throw new DomainError("That upload does not belong here.");
+  if (!keyBelongsTo(input.key, input)) throw new DomainError("That upload does not belong here.");
   await ownerExists(tx, input.purpose, input.ownerId);
   await checkStoredFile(input);
 

@@ -38,9 +38,10 @@ export const storage = {
       true,
     ),
 
-  downloadUrl: (key: string, fileName: string) => {
+  downloadUrl: (key: string, served: { contentType: string; disposition: string }) => {
     const url = objectUrl(key);
-    url.searchParams.set("response-content-disposition", `inline; filename="${fileName.replace(/["\\\r\n]/g, "")}"`);
+    url.searchParams.set("response-content-type", served.contentType);
+    url.searchParams.set("response-content-disposition", served.disposition);
     return presign(url, { method: "GET" }, false);
   },
 

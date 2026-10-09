@@ -5,7 +5,7 @@ import { tripsTodayByDriver } from "@/domain/kpis";
 import type { DriverProfile, DriverRow, VehicleProfile, VehicleRow } from "@/domain/people";
 import { dayRange } from "@/domain/time";
 import { recordId } from "@/domain/result";
-import { uploadIdOf, type DocumentRow } from "@/domain/uploads";
+import { contentTypeOfKey, uploadIdOf, type DocumentRow } from "@/domain/uploads";
 import { env } from "@/env";
 import { defineQuery } from "@/server/query";
 
@@ -112,12 +112,13 @@ export const getDocumentFile = defineQuery("signed-in", async (id: unknown) => {
   const documentId = recordId(id);
   if (!documentId) return null;
   const document = await db.query.documents.findFirst({ where: eq(documents.id, documentId) });
-  return document ? { key: document.storageKey, fileName: document.fileName } : null;
+  return document ? { key: document.storageKey, fileName: document.fileName, contentType: document.contentType } : null;
 });
 
 export const getDriverPhoto = defineQuery("signed-in", async (id: unknown) => {
   const driverId = recordId(id);
   if (!driverId) return null;
   const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId), columns: { photoKey: true, name: true } });
-  return driver?.photoKey ? { key: driver.photoKey, fileName: driver.photoKey.split("/").at(-1) ?? driver.name } : null;
+  if (!driver?.photoKey) return null;
+  return { key: driver.photoKey, fileName: driver.photoKey.split("/").at(-1) ?? driver.name, contentType: contentTypeOfKey(driver.photoKey) };
 });

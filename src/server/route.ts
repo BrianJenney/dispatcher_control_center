@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { missingRecord } from "@/domain/result";
+import { servedFile } from "@/domain/uploads";
 import { currentUser } from "@/server/session";
 import { storage } from "@/server/storage";
 
@@ -24,7 +25,7 @@ export function pollingRoute<T>({ access, read }: PollingRoute<T>) {
   };
 }
 
-type StoredFile = { key: string; fileName: string };
+type StoredFile = { key: string; fileName: string; contentType: string | null };
 
 export function fileRoute({ read }: { read: (params: RouteParams) => Promise<StoredFile | null> }) {
   return async function GET(_request: Request, context: { params: Promise<RouteParams> }) {
@@ -32,7 +33,7 @@ export function fileRoute({ read }: { read: (params: RouteParams) => Promise<Sto
     if (!(await currentUser())) return Response.json({ message: "Sign in to see this file." }, { status: 401 });
     const file = await read(await context.params);
     if (!file) return Response.json({ message: missingRecord.file }, { status: 404 });
-    return Response.redirect(await storage.downloadUrl(file.key, file.fileName), 302);
+    return Response.redirect(await storage.downloadUrl(file.key, servedFile(file)), 302);
   };
 }
 
