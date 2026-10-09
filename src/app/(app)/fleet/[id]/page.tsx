@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { VehicleDetailsView } from "@/app/(app)/fleet/[id]/vehicle-details-view";
 import { LoadingState } from "@/components/states";
@@ -17,7 +16,6 @@ export default function VehiclePage({ params }: PageProps<"/fleet/[id]">) {
 }
 
 async function VehicleProfile({ params }: Pick<PageProps<"/fleet/[id]">, "params">) {
-  await connection();
   const vehicle = await getVehicleProfile((await params).id);
   if (!vehicle) notFound();
   return <VehicleDetailsView initialData={vehicle} />;

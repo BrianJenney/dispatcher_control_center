@@ -1,7 +1,6 @@
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { FleetView } from "@/app/(app)/fleet/fleet-view";
 import { PageHeader } from "@/components/page-header";
@@ -35,6 +34,5 @@ export default function FleetPage() {
 }
 
 async function FleetData() {
-  await connection();
   return <FleetView initialData={await getFleet()} />;
 }

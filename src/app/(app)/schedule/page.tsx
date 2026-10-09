@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { ScheduleView } from "@/app/(app)/schedule/schedule-view";
 import { PageHeader } from "@/components/page-header";
@@ -21,7 +20,6 @@ export default function SchedulePage({ searchParams }: PageProps<"/schedule">) {
 }
 
 async function ScheduleData({ searchParams }: Pick<PageProps<"/schedule">, "searchParams">) {
-  await connection();
   const filter = scheduleFilter.parse(await searchParams);
   return <ScheduleView filter={filter} initialData={await getSchedule()} />;
 }

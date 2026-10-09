@@ -4,6 +4,7 @@ import { ShortcutsButton } from "@/components/shortcuts";
 import { ThemeToggle } from "@/components/theme";
 import { TourButton } from "@/components/tour";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/components/ui/utils";
 import { signOut } from "@/server/actions/auth";
 import type { SignedInUser } from "@/server/session";
@@ -42,6 +43,25 @@ export function UserMenu({ user, tone = "dark" }: { user: SignedInUser; tone?: "
             <LogOut className="size-4" aria-hidden />
           </Button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+export function SidebarUserMenuSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <Skeleton className="size-9 shrink-0 rounded-full bg-sidebar-accent" />
+        <div className="flex-1 space-y-1.5">
+          <Skeleton className="h-3.5 w-24 bg-sidebar-accent" />
+          <Skeleton className="h-3 w-32 bg-sidebar-accent" />
+        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="size-10 rounded-lg bg-sidebar-accent" />
+        ))}
       </div>
     </div>
   );

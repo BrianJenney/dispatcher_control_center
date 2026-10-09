@@ -3,10 +3,16 @@ import { Brand } from "@/components/shell/brand";
 import { BottomNav, SidebarNav } from "@/components/shell/nav";
 import { KeyboardShortcuts } from "@/components/shortcuts";
 import { GuidedTour } from "@/components/tour";
-import { UserMenu } from "@/components/shell/user-menu";
-import type { SignedInUser } from "@/server/session";
 
-export function AppShell({ user, children }: { user: SignedInUser | null; children: ReactNode }) {
+export function AppShell({
+  sidebarMenu,
+  headerMenu,
+  children,
+}: {
+  sidebarMenu: ReactNode;
+  headerMenu: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
       <a
@@ -21,25 +27,21 @@ export function AppShell({ user, children }: { user: SignedInUser | null; childr
           <SidebarNav />
         </div>
         <div className="mx-3 shrink-0 border-t border-sidebar-border px-3 pt-4">
-          {user ? <UserMenu user={user} tone="light" /> : <div className="h-9" />}
+          {sidebarMenu}
         </div>
       </aside>
       <div className="flex min-w-0 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/90 px-4 backdrop-blur lg:hidden">
           <Brand />
-          {user ? <UserMenu user={user} /> : null}
+          {headerMenu}
         </header>
         <main id="content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-24 outline-none sm:px-6 lg:px-10 lg:pt-10 lg:pb-12">
           {children}
         </main>
       </div>
       <BottomNav />
-      {user ? (
-        <>
-          <GuidedTour />
-          <KeyboardShortcuts />
-        </>
-      ) : null}
+      <GuidedTour />
+      <KeyboardShortcuts />
     </div>
   );
 }

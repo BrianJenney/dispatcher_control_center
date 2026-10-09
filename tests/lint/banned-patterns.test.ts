@@ -32,6 +32,11 @@ const banned = [
   { pattern: "importing src/db outside src/server", fixture: "app/imports-db.tsx", rule: "no-restricted-imports" },
   { pattern: "reading the demo login in app code", fixture: "app/imports-demo-login.tsx", rule: "no-restricted-imports" },
   {
+    pattern: "reading the demo login in a signed-in page",
+    fixture: "app/(app)/imports-demo-login.tsx",
+    rule: "no-restricted-imports",
+  },
+  {
     pattern: "a read that skips the session check",
     fixture: "server/queries/unguarded-read.ts",
     rule: "local/queries-check-session",
@@ -39,6 +44,11 @@ const banned = [
   {
     pattern: "reading around the queries from a page",
     fixture: "app/reads-around-queries.tsx",
+    rule: "no-restricted-imports",
+  },
+  {
+    pattern: "a signed-in page using connection() instead of a checked query",
+    fixture: "app/(app)/skips-session-check.tsx",
     rule: "no-restricted-imports",
   },
   { pattern: "fetching in useEffect", fixture: "components/fetch-in-effect.tsx", rule: "local/no-fetch-in-effect" },

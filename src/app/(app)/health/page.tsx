@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { HealthPanel } from "@/app/(app)/health/health-panel";
 import { PageHeader } from "@/components/page-header";
@@ -20,6 +19,5 @@ export default function HealthPage() {
 }
 
 async function HealthData() {
-  await connection();
   return <HealthPanel initialData={await getHealthSnapshot()} />;
 }

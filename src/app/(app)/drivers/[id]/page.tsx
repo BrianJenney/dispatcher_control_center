@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { DriverProfileView } from "@/app/(app)/drivers/[id]/driver-profile-view";
 import { LoadingState } from "@/components/states";
@@ -17,7 +16,6 @@ export default function DriverPage({ params }: PageProps<"/drivers/[id]">) {
 }
 
 async function DriverProfile({ params }: Pick<PageProps<"/drivers/[id]">, "params">) {
-  await connection();
   const driver = await getDriverProfile((await params).id);
   if (!driver) notFound();
   return <DriverProfileView initialData={driver} />;

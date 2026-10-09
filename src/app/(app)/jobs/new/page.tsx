@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { CreateTripForm } from "@/app/(app)/jobs/trip-form";
 import { PageHeader } from "@/components/page-header";
@@ -20,6 +19,5 @@ export default function NewTripPage() {
 }
 
 async function NewTripForm() {
-  await connection();
   return <CreateTripForm values={await defaultTripValues()} />;
 }

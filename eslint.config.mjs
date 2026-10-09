@@ -29,6 +29,12 @@ function layer(...patterns) {
   return ["error", { paths: [queriesThroughLiveQuery], patterns: [aliasOnly, strayCnPackage, demoLoginInApp, ...patterns] }];
 }
 
+const signedInPagesCheckTheSession = {
+  name: "next/server",
+  importNames: ["connection"],
+  message: "Load the data through a query from @/server/queries. Queries check the session, which also makes the page dynamic.",
+};
+
 const outsideSrc = ["error", { patterns: [strayCnPackage] }];
 
 const readsThroughQueries = {
@@ -147,9 +153,21 @@ export default defineConfig([
     },
   },
   {
+    files: ["**/src/app/(app)/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [queriesThroughLiveQuery, signedInPagesCheckTheSession],
+          patterns: [aliasOnly, strayCnPackage, demoLoginInApp, noDatabase, readsThroughQueries],
+        },
+      ],
+    },
+  },
+  {
     files: ["**/src/components/live-query.ts"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: [aliasOnly, strayCnPackage, demoLoginInApp, noDatabase] }],
+      "no-restricted-imports": ["error", { patterns: [aliasOnly, strayCnPackage, demoLoginInApp, noDatabase, readsThroughQueries] }],
     },
   },
 ]);
