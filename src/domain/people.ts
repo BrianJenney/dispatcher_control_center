@@ -11,6 +11,13 @@ export const driverInput = z.object({
   vehicleClass: z.enum(vehicleClasses, "Choose the class this driver drives."),
 });
 
+export const newDriverInput = driverInput.extend({
+  onDuty: z
+    .union([z.boolean(), z.literal("on")])
+    .optional()
+    .transform((value) => value === true || value === "on"),
+});
+
 export const updateDriverInput = driverInput.extend({ driverId: z.uuid() });
 
 export const driverRow = z.object({
