@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { keyBelongsTo, storageKey, uploadIdOf, uploadProblem } from "@/domain/uploads";
+import { contentMatches, keyBelongsTo, signatureBytes, storageKey, uploadIdOf, uploadProblem } from "@/domain/uploads";
 
 const megabyte = 1024 * 1024;
 
@@ -28,6 +28,51 @@ describe("uploadProblem", () => {
 
   it("refuses an empty file", () => {
     expect(uploadProblem("driver_photo", { name: "me.png", type: "image/png", size: 0 })).toBe("That file is empty.");
+  });
+});
+
+describe("contentMatches", () => {
+  const bytes = (...values: number[]) => new Uint8Array(values);
+  const text = (value: string) => new TextEncoder().encode(value);
+  const pdf = text("%PDF-1.7\n%");
+  const png = bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d);
+  const jpeg = bytes(0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1);
+  const webp = text("RIFF\u0024\u0000\u0000\u0000WEBPVP8 ");
+  const html = text("<html><script>alert(1)</script>");
+
+  it("reads only as many bytes as the longest signature", () => {
+    expect(signatureBytes).toBe(12);
+  });
+
+  it("accepts each allowed type when the bytes agree", () => {
+    expect(contentMatches("application/pdf", pdf)).toBe(true);
+    expect(contentMatches("image/png", png)).toBe(true);
+    expect(contentMatches("image/jpeg", jpeg)).toBe(true);
+    expect(contentMatches("image/webp", webp)).toBe(true);
+  });
+
+  it("refuses bytes that belong to another type", () => {
+    expect(contentMatches("application/pdf", png)).toBe(false);
+    expect(contentMatches("image/png", jpeg)).toBe(false);
+    expect(contentMatches("image/jpeg", pdf)).toBe(false);
+    expect(contentMatches("image/webp", text("RIFF\u0024\u0000\u0000\u0000WAVEfmt "))).toBe(false);
+  });
+
+  it("refuses markup dressed up as a document or photo", () => {
+    for (const type of ["application/pdf", "image/png", "image/jpeg", "image/webp"]) {
+      expect(contentMatches(type, html)).toBe(false);
+    }
+  });
+
+  it("refuses a file shorter than its signature", () => {
+    expect(contentMatches("image/png", png.subarray(0, 7))).toBe(false);
+    expect(contentMatches("application/pdf", text("%PDF"))).toBe(false);
+  });
+
+  it("refuses a type outside the allowed list even when the bytes are fine", () => {
+    expect(contentMatches("text/html", html)).toBe(false);
+    expect(contentMatches("image/svg+xml", text("<svg xmlns"))).toBe(false);
+    expect(contentMatches("toString", pdf)).toBe(false);
   });
 });
 

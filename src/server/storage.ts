@@ -46,6 +46,11 @@ export const storage = {
     };
   },
 
+  firstBytes: async (key: string, count: number) => {
+    const response = await client.fetch(objectUrl(key), { headers: { range: `bytes=0-${count - 1}` } });
+    return response.ok ? new Uint8Array(await response.arrayBuffer()).subarray(0, count) : new Uint8Array();
+  },
+
   remove: async (key: string) => {
     await client.fetch(objectUrl(key), { method: "DELETE" });
   },

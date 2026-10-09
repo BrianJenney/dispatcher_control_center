@@ -6,6 +6,29 @@ export type UploadPurpose = (typeof uploadPurposes)[number];
 
 export const photoContentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
 
+type FileContentType = (typeof documentContentTypes)[number];
+
+const anyByte = null;
+
+const signatures: Record<FileContentType, readonly (number | null)[]> = {
+  "application/pdf": [0x25, 0x50, 0x44, 0x46, 0x2d],
+  "image/jpeg": [0xff, 0xd8, 0xff],
+  "image/png": [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  "image/webp": [0x52, 0x49, 0x46, 0x46, anyByte, anyByte, anyByte, anyByte, 0x57, 0x45, 0x42, 0x50],
+};
+
+export const signatureBytes = Math.max(...Object.values(signatures).map((signature) => signature.length));
+
+function isFileContentType(contentType: string): contentType is FileContentType {
+  return Object.hasOwn(signatures, contentType);
+}
+
+export function contentMatches(contentType: string, firstBytes: Uint8Array): boolean {
+  if (!isFileContentType(contentType)) return false;
+  const signature = signatures[contentType];
+  return firstBytes.length >= signature.length && signature.every((byte, index) => byte === anyByte || firstBytes[index] === byte);
+}
+
 const allowed: Record<UploadPurpose, readonly string[]> = {
   driver_license: documentContentTypes,
   vehicle_registration: documentContentTypes,
@@ -16,6 +39,7 @@ export const uploadMessages = {
   tooBig: `Files must be ${String(maxDocumentBytes / (1024 * 1024))} MB or smaller.`,
   notADocument: "Upload a PDF or an image (JPEG, PNG or WebP).",
   notAPhoto: "Use a JPEG, PNG or WebP photo.",
+  notWhatItSays: "That file is not the PDF or image it says it is. Upload the original file.",
 };
 
 const wrongType: Record<UploadPurpose, string> = {
