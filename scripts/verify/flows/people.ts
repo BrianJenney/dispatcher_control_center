@@ -282,6 +282,18 @@ export const documents: Flow = {
       },
     },
     {
+      name: "a web page renamed to look like a PDF is refused",
+      run: async ({ page }) => {
+        await filePicker(page, "Upload license").setInputFiles({
+          name: "license-fake.pdf",
+          mimeType: "application/pdf",
+          buffer: Buffer.from("<html><script>document.title = 'owned'</script></html>"),
+        });
+        await expect(page.getByText("That file is not the PDF or image it says it is. Upload the original file.")).toBeVisible();
+        await expect(page.getByRole("list", { name: "Licenses" }).getByText("license-fake.pdf")).toHaveCount(0);
+      },
+    },
+    {
       name: "upload a license",
       run: async ({ page }) => {
         await filePicker(page, "Upload license").setInputFiles({ name: "license-front.pdf", mimeType: "application/pdf", buffer: tinyPdf });
@@ -306,6 +318,8 @@ export const documents: Flow = {
         const href = (await link.getAttribute("href")) ?? "";
         const signedIn = await page.request.get(href);
         expect(signedIn.status()).toBe(200);
+        expect(signedIn.headers()["content-type"]).toBe("application/pdf");
+        expect(signedIn.headers()["content-disposition"]).toMatch(/^inline; filename="license-front\.pdf"/);
         expect((await signedIn.body()).subarray(0, 5).toString()).toBe("%PDF-");
         const anonymous = await apiRequest.newContext({
           baseURL: new URL(page.url()).origin,
