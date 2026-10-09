@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCompactMoney, formatMoney } from "@/components/format";
+import { formatCompactMoney, formatDuration, formatMoney } from "@/components/format";
 
 describe("formatMoney", () => {
   it("shows whole dollars without cents and keeps cents when there are some", () => {
@@ -25,5 +25,17 @@ describe("formatCompactMoney", () => {
     for (const cents of [99950, 999999, 9999900, 99960000, 99_999_999_900]) {
       expect(formatCompactMoney(cents).length).toBeLessThanOrEqual(5);
     }
+  });
+});
+
+describe("formatDuration", () => {
+  it.each([
+    [45, "45 min"],
+    [60, "1 hr"],
+    [75, "1 hr 15 min"],
+    [120, "2 hr"],
+    [0, "0 min"],
+  ])("shows %i minutes as %s", (minutes, label) => {
+    expect(formatDuration(minutes)).toBe(label);
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, use, type ReactNode } from "react";
-import { dayRange, isWithin } from "@/domain/time";
+import { dayRange, isWithin, tripWindow } from "@/domain/time";
 
 const TimeZoneContext = createContext<string | null>(null);
 
@@ -27,6 +27,13 @@ export function formatFileSize(bytes: number): string {
   return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${String(Math.max(1, Math.round(bytes / 1024)))} KB`;
 }
 
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${String(rest)} min`;
+  return rest === 0 ? `${String(hours)} hr` : `${String(hours)} hr ${String(rest)} min`;
+}
+
 export function useFormat() {
   const timeZone = use(TimeZoneContext);
   if (!timeZone) throw new Error("useFormat needs a TimeZoneProvider above it.");
@@ -39,7 +46,12 @@ export function useFormat() {
     money: formatMoney,
     compactMoney: formatCompactMoney,
     fileSize: formatFileSize,
+    duration: formatDuration,
     time: (iso: string) => time.format(new Date(iso)),
+    timeRange: (iso: string, minutes: number) => {
+      const window = tripWindow(new Date(iso), minutes);
+      return `${time.format(window.start)} – ${time.format(window.end)}`;
+    },
     day: (iso: string) => day.format(new Date(iso)),
     hour: (iso: string) => hour.format(new Date(iso)),
     shortDay: (iso: string) => shortDay.format(new Date(iso)),

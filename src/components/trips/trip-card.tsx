@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowRight, Clock, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFormat } from "@/components/format";
 import { StatusBadge } from "@/components/trips/status-badge";
@@ -38,14 +38,15 @@ export function TripCard({
       <article {...cardAttributes(trip)} className={cn("rounded-xl border bg-card px-4 py-3 shadow-xs", cardFocus)}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm">
-              <span className="font-semibold tabular-nums">{format.time(trip.pickupAt)}</span>{" "}
-              <span className="font-medium">{trip.customerName}</span>
-            </p>
+            <p className="text-sm font-semibold tabular-nums">{format.timeRange(trip.pickupAt, trip.durationMinutes)}</p>
+            <p className="truncate text-sm font-medium">{trip.customerName}</p>
             <p className="truncate text-xs text-muted-foreground">
-              <span data-testid="trip-driver">{trip.driver ? trip.driver.name : "No driver yet"}</span> · #{trip.reference}
-              {trip.status === "cancelled" && trip.cancelReason ? <span> · Cancelled: {trip.cancelReason}</span> : null}
+              <span data-testid="trip-driver">{trip.driver ? trip.driver.name : "No driver yet"}</span> ·{" "}
+              {vehicleClassLabels[trip.vehicleClass]} · #{trip.reference}
             </p>
+            {trip.status === "cancelled" && trip.cancelReason ? (
+              <p className="truncate text-xs text-muted-foreground">Cancelled: {trip.cancelReason}</p>
+            ) : null}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
             <StatusBadge status={trip.status} />
@@ -63,7 +64,7 @@ export function TripCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {showDate ? <p className="text-xs font-medium text-muted-foreground">{format.shortDay(trip.pickupAt)}</p> : null}
-          <p className="text-lg font-semibold tabular-nums">{format.time(trip.pickupAt)}</p>
+          <p className="text-lg font-semibold tabular-nums">{format.timeRange(trip.pickupAt, trip.durationMinutes)}</p>
           <p className="truncate text-sm font-medium">{trip.customerName}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -80,6 +81,12 @@ export function TripCard({
         <div>
           <dt className="sr-only">Vehicle class</dt>
           <dd>{vehicleClassLabels[trip.vehicleClass]}</dd>
+        </div>
+        <div className="flex items-center gap-1">
+          <dt>
+            <Clock className="size-3.5" aria-label="Duration" />
+          </dt>
+          <dd className="tabular-nums">{format.duration(trip.durationMinutes)}</dd>
         </div>
         <div className="flex items-center gap-1">
           <dt>
