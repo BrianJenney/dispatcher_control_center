@@ -31,6 +31,10 @@ export function jobsSearch(filter: JobsFilter): string {
   return params.toString();
 }
 
+export function tripSearch(reference: number): string {
+  return jobsSearch({ q: `#${String(reference)}`, status: null, show: pageSize });
+}
+
 export const jobsSnapshot = z.object({ trips: z.array(tripRow), hasMore: z.boolean() });
 
 export type JobsSnapshot = z.infer<typeof jobsSnapshot>;
