@@ -1,119 +1,175 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Clock, Plus } from "lucide-react";
+import Link from "next/link";
+import { Fragment, useId, useRef, useState } from "react";
+import { DayOverview } from "@/app/(app)/schedule/day-overview";
 import { useFormat } from "@/components/format";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
+import { StatusFilter } from "@/components/trips/status-filter";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { groupByHour, type ScheduleSnapshot } from "@/domain/schedule";
+import { cn } from "@/components/ui/utils";
+import { timelineAxis, upcomingIndex, type ScheduleSnapshot } from "@/domain/schedule";
 import { byPickupTime, filterTrips, type TripFilter } from "@/domain/trip-row";
-import { isFinal, statusLabels, tripStatuses } from "@/domain/trip-status";
+import { isFinal, type TripStatus } from "@/domain/trip-status";
 
 const everyone = "all";
 
-function isStatus(value: string): value is (typeof tripStatuses)[number] {
-  return tripStatuses.some((status) => status === value);
-}
+const node: Record<TripStatus, string> = {
+  offer: "bg-status-offer",
+  assigned: "bg-status-assigned",
+  en_route: "bg-status-en-route",
+  completed: "bg-status-completed",
+  cancelled: "bg-status-cancelled",
+};
+
+const noFilter: TripFilter = { status: null, driverId: null };
 
 export function ScheduleView({ initialData }: { initialData: ScheduleSnapshot }) {
   const format = useFormat();
+  const [shown, show] = useState<TripFilter>(noFilter);
   const { data, isError, refetch } = useLiveQuery(liveQueries.schedule, initialData);
-  const [filter, setFilter] = useState<TripFilter>({ status: null, driverId: null });
-  const statusFilter = useRef<HTMLButtonElement>(null);
-  const visible = filterTrips([...data.trips].sort(byPickupTime), filter);
-  const groups = groupByHour(visible, format.hour);
-  const filtered = filter.status !== null || filter.driverId !== null;
+  const driverFilter = useRef<HTMLButtonElement>(null);
+  const nowMarker = useRef<HTMLLIElement>(null);
+  const timelineId = useId();
+  const sorted = [...data.trips].sort(byPickupTime);
+  const visible = filterTrips(sorted, shown);
+  const upcoming = upcomingIndex(visible, data.now);
+  const filtered = shown.status !== null || shown.driverId !== null;
+
+  function clearFilters() {
+    driverFilter.current?.focus();
+    show(noFilter);
+  }
+
+  function jumpToNow() {
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    nowMarker.current?.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" });
+  }
+
+  const nowMarkerItem = (
+    <li ref={nowMarker} className="relative flex items-center gap-3 py-1">
+      <span aria-hidden className="absolute top-1/2 -left-[18px] size-3 -translate-y-1/2 rounded-full bg-gold ring-4 ring-gold/25 sm:-left-[22px]" />
+      <span className="rounded-full bg-gold px-2.5 py-1 text-xs font-semibold text-gold-foreground tabular-nums">
+        Now, {format.time(data.now)}
+      </span>
+      <span aria-hidden className="h-0.5 flex-1 rounded-full bg-gold/70" />
+    </li>
+  );
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(2,minmax(0,14rem))_auto] sm:items-end">
-        <div className="grid gap-2">
-          <Label htmlFor="schedule-status">Status</Label>
-          <Select
-            value={filter.status ?? everyone}
-            onValueChange={(value) => {
-              setFilter((current) => ({ ...current, status: isStatus(value) ? value : null }));
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <StatusFilter
+            value={shown.status}
+            onChange={(status) => {
+              show({ ...shown, status });
             }}
-          >
-            <SelectTrigger ref={statusFilter} id="schedule-status" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={everyone}>All statuses</SelectItem>
-              {tripStatuses.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {statusLabels[status]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="schedule-driver">Driver</Label>
-          <Select
-            value={filter.driverId ?? everyone}
-            onValueChange={(value) => {
-              setFilter((current) => ({ ...current, driverId: value === everyone ? null : value }));
-            }}
-          >
-            <SelectTrigger id="schedule-driver" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={everyone}>All drivers</SelectItem>
-              {data.drivers.map((driver) => (
-                <SelectItem key={driver.id} value={driver.id}>
-                  {driver.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="grid w-full gap-2 sm:w-64">
+            <Label htmlFor="schedule-driver">Driver</Label>
+            <Select
+              value={shown.driverId ?? everyone}
+              onValueChange={(value) => {
+                show({ ...shown, driverId: value === everyone ? null : value });
+              }}
+            >
+              <SelectTrigger ref={driverFilter} id="schedule-driver" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={everyone}>All drivers</SelectItem>
+                {data.drivers.map((driver) => (
+                  <SelectItem key={driver.id} value={driver.id}>
+                    {driver.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {filtered ? (
+            <Button variant="ghost" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          ) : null}
         </div>
-        {filtered ? (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              statusFilter.current?.focus();
-              setFilter({ status: null, driverId: null });
-            }}
-          >
-            Clear filters
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {visible.length} of {data.trips.length} trips on {format.day(data.today.start)}
+        </p>
+        {upcoming > 0 && visible.length > 0 ? (
+          <Button variant="outline" size="sm" onClick={jumpToNow}>
+            <Clock aria-hidden />
+            Jump to now
           </Button>
         ) : null}
       </div>
-      <p className="text-sm text-muted-foreground" aria-live="polite">
-        {visible.length} of {data.trips.length} trips on {format.day(data.today.start)}
-      </p>
-      {isError ? (
-        <LiveUpdatesPaused what="the schedule" onRetry={() => void refetch()} />
-      ) : null}
-      {groups.length === 0 ? (
+      {isError ? <LiveUpdatesPaused what="the schedule" onRetry={() => void refetch()} /> : null}
+      {visible.length === 0 ? (
         filtered ? (
-          <EmptyState title="No trips match these filters" description="Try another status or driver." />
+          <EmptyState
+            title="No trips match these filters"
+            description="Try another status or driver."
+            action={
+              <Button variant="outline" onClick={clearFilters}>
+                Show all trips
+              </Button>
+            }
+          />
         ) : (
-          <EmptyState title="No trips today" description="New bookings for today will appear here." />
+          <EmptyState
+            title="No trips today"
+            description="New bookings for today will appear here as they come in."
+            action={
+              <Button asChild>
+                <Link href="/jobs/new">
+                  <Plus aria-hidden />
+                  New trip
+                </Link>
+              </Button>
+            }
+          />
         )
       ) : (
-        <ol aria-label="Timeline" className="relative space-y-6 border-l border-border pl-5 sm:pl-8">
-          {groups.map((group) => (
-            <li key={group.hour} className="relative">
-              <span aria-hidden className="absolute top-1.5 -left-[1.6rem] size-2.5 rounded-full bg-gold ring-4 ring-background sm:-left-[2.35rem]" />
-              <h2 className="mb-3 text-sm font-semibold text-muted-foreground tabular-nums">{group.hour}</h2>
-              <ul className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                {group.trips.map((trip) => (
-                  <li key={trip.id}>
+        <>
+          <DayOverview axis={timelineAxis(data.today, data.trips, data.now)} trips={visible} now={data.now} />
+          <section aria-labelledby={timelineId} className="space-y-4">
+            <h2 id={timelineId} className="text-lg font-semibold">
+              Timeline
+            </h2>
+            <ol
+              aria-labelledby={timelineId}
+              className="relative space-y-3 pl-6 before:absolute before:top-3 before:bottom-3 before:left-[11px] before:w-0.5 before:rounded-full before:bg-border sm:pl-8 sm:before:left-[15px]"
+            >
+              {visible.map((trip, index) => (
+                <Fragment key={trip.id}>
+                  {index === upcoming ? nowMarkerItem : null}
+                  <li className="relative">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute top-5 -left-[18px] size-3 rounded-full ring-4 ring-background sm:-left-[22px]",
+                        node[trip.status],
+                      )}
+                    />
                     <TripCard trip={trip} compact={isFinal(trip.status)} actions={<TripActions trip={trip} />} />
                   </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ol>
+                </Fragment>
+              ))}
+              {upcoming === visible.length ? nowMarkerItem : null}
+            </ol>
+          </section>
+        </>
       )}
     </div>
   );

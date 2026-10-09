@@ -34,8 +34,10 @@ describe("what the client accepts from polling routes", () => {
   it("checks each snapshot's shape", () => {
     expect(jobsSnapshot.safeParse({ trips: [row], hasMore: false }).success).toBe(true);
     expect(jobsSnapshot.safeParse({ trips: [row] }).success).toBe(false);
-    expect(scheduleSnapshot.safeParse({ today: { start: row.pickupAt, end: row.pickupAt }, trips: [], drivers: [] }).success).toBe(true);
-    expect(scheduleSnapshot.safeParse({ today: {}, trips: [], drivers: [] }).success).toBe(false);
+    const today = { start: row.pickupAt, end: row.pickupAt };
+    expect(scheduleSnapshot.safeParse({ today, now: row.pickupAt, trips: [], drivers: [] }).success).toBe(true);
+    expect(scheduleSnapshot.safeParse({ today, trips: [], drivers: [] }).success).toBe(false);
+    expect(scheduleSnapshot.safeParse({ today: {}, now: row.pickupAt, trips: [], drivers: [] }).success).toBe(false);
     expect(driversSnapshot.safeParse({}).success).toBe(false);
     expect(fleetSnapshot.safeParse({}).success).toBe(false);
     expect(driverSuggestions.safeParse({ vehicleClass: "luxury_sedan", onDutyInClass: 1, suggestions: [{ id, name: "Ava" }] }).success).toBe(false);
