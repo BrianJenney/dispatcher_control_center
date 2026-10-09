@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { jobsSearchLabel } from "@/domain/jobs";
 import { insertTodaysOffer, viewportTag } from "./expected";
 import type { Flow } from "./types";
 
@@ -11,7 +12,7 @@ function shortcutsSwitch(page: Page) {
 }
 
 function searchBox(page: Page) {
-  return page.getByRole("searchbox", { name: "Search by customer" });
+  return page.getByRole("searchbox", { name: jobsSearchLabel });
 }
 
 function jobCards(page: Page) {
