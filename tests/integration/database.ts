@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { expect } from "vitest";
 import { db } from "@/db/client";
-import { drivers } from "@/db/schema";
+import { drivers, vehicles } from "@/db/schema";
 import { demoUser } from "@/env-demo";
 import type { VehicleClass } from "@/domain/fleet";
 import type { TripStatus } from "@/domain/trip-status";
@@ -21,6 +21,16 @@ export async function insertDriver(vehicleClass: VehicleClass = "luxury_sedan") 
     .returning({ id: drivers.id });
   if (!driver) throw new Error("Driver insert returned nothing.");
   return driver.id;
+}
+
+export async function insertVehicle() {
+  const unit = `T-${crypto.randomUUID().slice(0, 8)}`;
+  const [vehicle] = await db
+    .insert(vehicles)
+    .values({ model: "Test Sedan", unitNumber: unit, plate: unit, vehicleClass: "luxury_sedan" })
+    .returning({ id: vehicles.id });
+  if (!vehicle) throw new Error("Vehicle insert returned nothing.");
+  return vehicle.id;
 }
 
 let nextSlot = 0;

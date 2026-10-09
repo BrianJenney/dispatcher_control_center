@@ -2,13 +2,15 @@ import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as getDocument } from "@/app/api/documents/[id]/route";
 import { GET as getDriverPhoto } from "@/app/api/drivers/[id]/photo/route";
+import { GET as getVehiclePhoto } from "@/app/api/vehicles/[id]/photo/route";
 import { db } from "@/db/client";
-import { documents, drivers } from "@/db/schema";
+import { documents, drivers, vehicles } from "@/db/schema";
 import type { UploadPurpose } from "@/domain/uploads";
 import { reportError } from "@/observability";
 import { deleteDocument, prepareUpload, saveUpload } from "@/server/actions/uploads";
+import { getVehicleProfile } from "@/server/queries/people";
 import { storage } from "@/server/storage";
-import { insertDriver } from "./database";
+import { insertDriver, insertVehicle } from "./database";
 import { signInAsDemoUser, signOut } from "./session";
 
 vi.mock(import("@/observability"), async (original) => ({ ...(await original()), reportError: vi.fn() }));
@@ -74,6 +76,15 @@ function photo(ownerId: string, body: Buffer = png) {
   return upload({ purpose: "driver_photo", ownerId, fileName: "me.png", contentType: "image/png", body });
 }
 
+function vehiclePhoto(ownerId: string, body: Buffer = png) {
+  return upload({ purpose: "vehicle_photo", ownerId, fileName: "car.png", contentType: "image/png", body });
+}
+
+async function vehiclePhotoKey(vehicleId: string) {
+  const vehicle = await db.query.vehicles.findFirst({ where: eq(vehicles.id, vehicleId), columns: { photoKey: true } });
+  return vehicle?.photoKey ?? null;
+}
+
 describe("uploads", () => {
   it("stores a license and records it", async () => {
     const driverId = await insertDriver();
@@ -129,6 +140,67 @@ describe("uploads", () => {
     expect(await deleteDocument({ documentId: row?.id ?? "" })).toEqual({ ok: true, data: { fileName: "license.pdf" } });
     expect(await storage.describe(key)).toBeNull();
     expect(await deleteDocument({ documentId: row?.id ?? "" })).toMatchObject({ ok: false, message: "That document was already deleted." });
+  });
+});
+
+describe("vehicle photos", () => {
+  it("puts the photo on the vehicle and shows it on the vehicle page", async () => {
+    const vehicleId = await insertVehicle();
+    const { saved, key } = await vehiclePhoto(vehicleId);
+    expect(saved).toEqual({ ok: true, data: { id: vehicleId } });
+    expect(await vehiclePhotoKey(vehicleId)).toBe(key);
+    expect(await db.query.documents.findFirst({ where: eq(documents.storageKey, key) })).toBeUndefined();
+    expect((await getVehicleProfile(vehicleId))?.photoVersion).toBe(key.split("/")[2]);
+  });
+
+  it("refuses a photo for a vehicle that does not exist", async () => {
+    const result = await prepareUpload({
+      purpose: "vehicle_photo",
+      ownerId: crypto.randomUUID(),
+      fileName: "car.png",
+      contentType: "image/png",
+      sizeBytes: png.length,
+    });
+    expect(result).toMatchObject({ ok: false, message: "That vehicle no longer exists." });
+  });
+
+  it("refuses a PDF as a vehicle photo before signing anything", async () => {
+    const vehicleId = await insertVehicle();
+    const result = await prepareUpload({ purpose: "vehicle_photo", ownerId: vehicleId, fileName: "car.pdf", contentType: "application/pdf", sizeBytes: 10 });
+    expect(result).toMatchObject({ ok: false, fieldErrors: { contentType: ["Use a JPEG, PNG or WebP photo."] } });
+  });
+
+  it("refuses a web page labelled as a vehicle photo and keeps the old photo", async () => {
+    const vehicleId = await insertVehicle();
+    const first = await vehiclePhoto(vehicleId);
+    const { saved, key } = await upload({ purpose: "vehicle_photo", ownerId: vehicleId, fileName: "car.jpg", contentType: "image/jpeg", body: html });
+    expect(saved).toMatchObject({ ok: false, message: notWhatItSays });
+    expect(await storage.describe(key)).toBeNull();
+    expect(await vehiclePhotoKey(vehicleId)).toBe(first.key);
+  });
+
+  it("removes a replaced vehicle photo only after the vehicle points at the new one", async () => {
+    const vehicleId = await insertVehicle();
+    const first = await vehiclePhoto(vehicleId);
+    const second = await put({ purpose: "vehicle_photo", ownerId: vehicleId, fileName: "car.png", contentType: "image/png", body: png });
+    const photoSeenFromOutside: (string | null)[] = [];
+    beforeEachStorageDelete(async () => {
+      photoSeenFromOutside.push(await vehiclePhotoKey(vehicleId));
+    });
+    expect((await saveUpload(second)).ok).toBe(true);
+    expect(photoSeenFromOutside).toEqual([second.key]);
+    vi.restoreAllMocks();
+    expect(await storage.describe(first.key)).toBeNull();
+    expect(await storage.describe(second.key)).not.toBeNull();
+  });
+
+  it("will not file a driver's photo under a vehicle", async () => {
+    const vehicleId = await insertVehicle();
+    const driverId = await insertDriver();
+    const { request, key } = await photo(driverId);
+    const result = await saveUpload({ ...request, purpose: "vehicle_photo", ownerId: vehicleId, key });
+    expect(result).toMatchObject({ ok: false, message: "That upload does not belong here." });
+    expect(await vehiclePhotoKey(vehicleId)).toBeNull();
   });
 });
 
@@ -292,5 +364,28 @@ describe("serving stored files", () => {
     expect(file.headers.get("content-type")).toBe("image/png");
     expect(file.headers.get("content-disposition")).toMatch(/^inline; filename="me\.png"/);
     expect(file.headers.get("cache-control")).toBe("private, max-age=3600");
+  });
+
+  it("serves a vehicle photo from the app, cached only in the viewer's browser", async () => {
+    const vehicleId = await insertVehicle();
+    await vehiclePhoto(vehicleId);
+    const file = await open(getVehiclePhoto, vehicleId);
+    expect(file.status).toBe(200);
+    expect(file.headers.get("location")).toBeNull();
+    expect(file.headers.get("content-type")).toBe("image/png");
+    expect(file.headers.get("content-disposition")).toMatch(/^inline; filename="car\.png"/);
+    expect(file.headers.get("cache-control")).toBe("private, max-age=3600");
+    expect(Buffer.from(await file.arrayBuffer())).toEqual(png);
+  });
+
+  it("refuses a vehicle photo to a signed out visitor", async () => {
+    const vehicleId = await insertVehicle();
+    await vehiclePhoto(vehicleId);
+    signOut();
+    expect((await open(getVehiclePhoto, vehicleId)).status).toBe(401);
+  });
+
+  it("answers not found for a vehicle with no photo", async () => {
+    expect((await open(getVehiclePhoto, await insertVehicle())).status).toBe(404);
   });
 });
