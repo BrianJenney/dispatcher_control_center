@@ -20,11 +20,31 @@ const queriesThroughLiveQuery = {
   message: "Read data with useLiveQuery or useOnDemandQuery and a definition from @/components/queries.",
 };
 
-function layer(...patterns) {
-  return ["error", { paths: [queriesThroughLiveQuery], patterns: [aliasOnly, strayCnPackage, ...patterns] }];
+const demoLoginInApp = {
+  group: ["@/env-demo"],
+  message: "The demo login is for seeding, tests and verify flows only. The app never reads it.",
+};
+
+function restrictImports({ paths = [queriesThroughLiveQuery], patterns = [] }) {
+  return ["error", { paths, patterns: [aliasOnly, strayCnPackage, demoLoginInApp, ...patterns] }];
 }
 
+function layer(...patterns) {
+  return restrictImports({ patterns });
+}
+
+const signedInPagesCheckTheSession = {
+  name: "next/server",
+  importNames: ["connection"],
+  message: "Load the data through a query from @/server/queries. Queries check the session, which also makes the page dynamic.",
+};
+
 const outsideSrc = ["error", { patterns: [strayCnPackage] }];
+
+const readsThroughQueries = {
+  regex: "^@/server/(?!queries/|actions/|route$|query$|session$|auth$)",
+  message: "Read data through a query in @/server/queries. Each one checks the session first.",
+};
 
 const noDatabase = {
   group: ["@/db", "@/db/*", "drizzle-orm", "drizzle-orm/*", "pg"],
@@ -45,6 +65,7 @@ export default defineConfig([
     ".verify/**",
     "playwright-report/**",
     "test-results/**",
+    ".claude/worktrees/**",
   ]),
   {
     linterOptions: { noInlineConfig: true },
@@ -81,7 +102,7 @@ export default defineConfig([
   },
   {
     files: ["**/src/**"],
-    ignores: ["**/src/env.ts", "**/src/env-client.ts"],
+    ignores: ["**/src/env.ts", "**/src/env-client.ts", "**/src/env-demo.ts"],
     rules: {
       "no-restricted-properties": [
         "error",
@@ -126,15 +147,28 @@ export default defineConfig([
     },
   },
   {
+    files: ["**/src/server/queries/**"],
+    rules: { "local/queries-check-session": "error" },
+  },
+  {
     files: ["**/src/app/**", "**/src/components/**"],
     rules: {
-      "no-restricted-imports": layer(noDatabase),
+      "no-restricted-imports": layer(noDatabase, readsThroughQueries),
+    },
+  },
+  {
+    files: ["**/src/app/(app)/**"],
+    rules: {
+      "no-restricted-imports": restrictImports({
+        paths: [queriesThroughLiveQuery, signedInPagesCheckTheSession],
+        patterns: [noDatabase, readsThroughQueries],
+      }),
     },
   },
   {
     files: ["**/src/components/live-query.ts"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: [aliasOnly, strayCnPackage, noDatabase] }],
+      "no-restricted-imports": restrictImports({ paths: [], patterns: [noDatabase, readsThroughQueries] }),
     },
   },
 ]);

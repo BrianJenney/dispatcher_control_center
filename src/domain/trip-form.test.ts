@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centsToDollars, dollarsToCents, tripInput, updateTripInput } from "@/domain/trip-form";
+import { centsToDollars, dollarsToCents, durationLabel, tripInput, updateTripInput } from "@/domain/trip-form";
 
 const valid = {
   customerName: " Arden Ashdown ",
@@ -92,5 +92,19 @@ describe("tripInput details", () => {
   it("needs a trip id to update", () => {
     expect(updateTripInput.safeParse(valid).success).toBe(false);
     expect(updateTripInput.safeParse({ ...valid, tripId: "00000000-0000-4000-8000-000000000001" }).success).toBe(true);
+  });
+});
+
+describe("durationLabel", () => {
+  it.each([
+    [0, "0 min"],
+    [30, "30 min"],
+    [59, "59 min"],
+    [60, "1 hr"],
+    [75, "1 hr 15 min"],
+    [90, "1 hr 30 min"],
+    [120, "2 hr"],
+  ])("reads %i minutes as %s", (minutes, expected) => {
+    expect(durationLabel(minutes)).toBe(expected);
   });
 });

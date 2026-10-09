@@ -1,9 +1,9 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { unreachableMessage } from "@/components/form";
+import { driversQueryKey, fleetQueryKey } from "@/components/queries";
 import { failure, type ActionResult } from "@/domain/result";
 import { uploadProblem, type UploadPurpose } from "@/domain/uploads";
 import { prepareUpload, saveUpload } from "@/server/actions/uploads";
@@ -19,17 +19,21 @@ async function upload(purpose: UploadPurpose, ownerId: string, file: File): Prom
   return saveUpload({ ...request, key: prepared.data.key });
 }
 
+export function ownerQueryKey(purpose: UploadPurpose) {
+  return purpose === "vehicle_registration" ? fleetQueryKey : driversQueryKey;
+}
+
 export function useUpload(purpose: UploadPurpose, ownerId: string) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => upload(purpose, ownerId, file),
-    onSuccess: (result, file) => {
+    onSuccess: async (result, file) => {
       if (!result.ok) {
         toast.error(result.message);
         return;
       }
+      await queryClient.invalidateQueries({ queryKey: ownerQueryKey(purpose) });
       toast.success(`${file.name} is uploaded.`);
-      router.refresh();
     },
     onError: () => {
       toast.error(unreachableMessage);

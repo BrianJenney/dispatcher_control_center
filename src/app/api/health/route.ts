@@ -1,4 +1,4 @@
-import { getHealthSnapshot } from "@/server/queries/health";
-import { pollingRoute } from "@/server/route";
+import { databaseReachable } from "@/server/queries/health";
+import { uptimeRoute } from "@/server/route";
 
-export const GET = pollingRoute({ access: "public", read: getHealthSnapshot });
+export const GET = uptimeRoute(databaseReachable);

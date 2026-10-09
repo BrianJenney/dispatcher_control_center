@@ -4,10 +4,11 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { Transaction } from "@/db/client";
 import { drivers, trips } from "@/db/schema";
-import { applyTransitions, insertOffers, updateTripDetails, type TripDetails } from "@/db/trip-writes";
+import { applyTransitions, insertOffers, updateTripDetails } from "@/db/trip-writes";
 import { assignmentProblem, isEditable, reassignTrip, withArticle } from "@/domain/assignment";
 import { vehicleClassLabels } from "@/domain/fleet";
 import { DomainError, missingRecord } from "@/domain/result";
+import type { TripDetails } from "@/domain/trip-edits";
 import { dollarsToCents, tripInput, updateTripInput, type TripInput } from "@/domain/trip-form";
 import { zonedWallTime } from "@/domain/time";
 import { moveTripInput, transitionTrip, tripMessages } from "@/domain/trip-status";
@@ -65,7 +66,7 @@ export const createTrip = defineAction(tripInput, async (input, { tx, userId }) 
   return created;
 });
 
-export const updateTrip = defineAction(updateTripInput, async ({ tripId, ...input }, { tx }) => {
+export const updateTrip = defineAction(updateTripInput, async ({ tripId, ...input }, { tx, userId }) => {
   const trip = await lockedTrip(tx, tripId);
   if (!isEditable(trip.status)) {
     throw new DomainError("This trip is already under way or finished, so it can no longer be edited.");
@@ -78,7 +79,7 @@ export const updateTrip = defineAction(updateTripInput, async ({ tripId, ...inpu
       );
     }
   }
-  await updateTripDetails(tx, tripId, tripDetails(input));
+  await updateTripDetails(tx, userId, tripId, tripDetails(input));
   return { id: tripId, reference: trip.reference, customerName: input.customerName };
 });
 

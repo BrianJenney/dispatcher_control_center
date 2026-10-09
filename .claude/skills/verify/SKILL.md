@@ -16,11 +16,12 @@ pnpm verify <flow>               Run one flow from the feature map
 pnpm verify --all                Run every flow
 pnpm verify <flow> --phone       Phone width only (375px)
 pnpm verify <flow> --skip-build  Reuse the last production build while iterating
+pnpm verify <flow> --load        Measure against 100,000 extra historical trips
 ```
 
 Each run:
 
-1. Starts a fresh database (`dispatch_verify`) and seeds it
+1. Starts a fresh database (`dispatch_verify`) and seeds it, and reseeds the demo day before each width so phone and desktop start from the same data (with `--load` the 100,000 trip database is seeded once and kept)
 2. Builds the app and boots it with `next start` on port 3200
 3. Logs in as the demo user
 4. Drives the flow with Playwright
@@ -31,7 +32,7 @@ Evidence written per flow:
 - `<NN-step>/phone.png`, `<NN-step>/desktop.png` at each step, taken once animations settle
 - `console.json`: any console errors or warnings
 - `axe.json`: accessibility findings
-- `lighthouse.json`: performance, accessibility, best practices (phone uses the Lighthouse mobile profile), plus `lighthouse-<viewport>.html`
+- `lighthouse.json`: performance, accessibility, best practices (phone uses the Lighthouse mobile profile), plus `lighthouse-<viewport>.html`. Lighthouse runs in its own Chrome seeded with the flow's cookies and local storage, so it measures the same visitor the steps do (signed in, tour already dismissed)
 - `timings.json`: server response times per request
 - `summary.md`: pass or fail per step, in plain words
 - `.verify/server.log`: the app's own output for the run

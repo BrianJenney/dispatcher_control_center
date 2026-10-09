@@ -1,13 +1,14 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
 import { ActionForm, FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
+import { driversQueryKey, tripsQueryKey } from "@/components/queries";
 import { vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { driverInput, updateDriverInput } from "@/domain/people";
 import { createDriver, updateDriver } from "@/server/actions/people";
-
 
 type DriverValues = { name: string; phone: string; vehicleClass: VehicleClass };
 
@@ -25,13 +26,14 @@ export function AddDriverForm() {
 }
 
 export function EditDriverForm({ driverId, values }: { driverId: string; values: DriverValues }) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const form = useActionForm({
     schema: updateDriverInput,
     action: updateDriver,
     onSuccess: (driver) => {
       toast.success(`${driver.name} is updated.`);
-      router.refresh();
+      void queryClient.invalidateQueries({ queryKey: driversQueryKey });
+      void queryClient.invalidateQueries({ queryKey: tripsQueryKey });
     },
   });
   return (

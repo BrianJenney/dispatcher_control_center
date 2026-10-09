@@ -34,9 +34,11 @@ export const status: Flow = {
   startsSignedIn: true,
   steps: [
     {
-      name: "start an assigned trip",
+      name: "start an assigned trip right after looking at Insights",
       run: async ({ page }) => {
-        await page.goto("/schedule");
+        await page.goto("/insights");
+        await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
+        await openFromNavigation(page, "Schedule");
         const trip = await firstAssignedTrip(page);
         movedTripLabel = (await trip.getAttribute("aria-label")) ?? "";
         await trip.getByRole("button", { name: "Start trip" }).click();

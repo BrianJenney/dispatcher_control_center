@@ -11,18 +11,18 @@ pnpm i
 cp .env.example .env
 ```
 
-Set `BETTER_AUTH_SECRET` in `.env` to a random value (`openssl rand -base64 32`) and point `DATABASE_URL` at your Postgres if it is not `postgres:postgres@localhost:5432`. Then:
+Set `BETTER_AUTH_SECRET` in `.env` to a random value (`openssl rand -base64 32`), set `DEMO_USER_PASSWORD` to a password of your choosing, and point `DATABASE_URL` at your Postgres if it is not `postgres:postgres@localhost:5432`. Then:
 
 ```
 pnpm db:reset
 pnpm dev
 ```
 
-Open http://localhost:3000 and choose "Sign in with the demo account" (dispatcher@example.com, password from `DEMO_USER_PASSWORD`).
+Open http://localhost:3000 and sign in as dispatcher@example.com with the password you set in `DEMO_USER_PASSWORD`.
 
 `pnpm db:reset` recreates the local database, applies migrations and seeds a week of fake trips. It refuses to run against anything other than localhost. `pnpm dev` also starts a local S3 compatible store on port 4568 for uploads; files land in `.storage/`.
 
-For a load check, `pnpm db:reset --load` starts over with 100,000 extra historical trips (about two minutes).
+For a load check, `pnpm db:reset --load` starts over with 100,000 extra historical trips (about two minutes), and `pnpm verify <flow> --load` measures a flow against them. Results are in `docs/load-test.md`.
 
 ## Checks
 
@@ -52,7 +52,7 @@ The database can be rewound to any second in the last 7 days, and a restore take
 
 ## Deploying
 
-Vercel builds with `pnpm db:deploy && pnpm build`. `db:deploy` applies migrations, then seeds the fake demo data only if the database has no drivers yet, so it is safe on every deploy and never touches data that already exists. Set the variables from `.env.example` on the Vercel project, plus `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` if you want error and trace reporting.
+Vercel builds with `pnpm db:deploy && pnpm build`. `db:deploy` applies migrations, then seeds the fake demo data only if the database has no drivers yet, so it is safe on every deploy and never touches data that already exists. It also keeps the demo account's password in step with `DEMO_USER_PASSWORD`: change the variable and redeploy, and the old password stops working and everyone signed in with it is signed out. The demo password lives only in that variable and in the submission message; the app never reads it and the sign in page never shows it. Set the variables from `.env.example` on the Vercel project, plus `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` if you want error and trace reporting.
 
 ## Running cost
 
@@ -82,7 +82,7 @@ How to read it:
 - **A quiet demo costs about $27 a month.** Almost all of that is the building and the filing cabinet.
 - **The jump at 200 users is almost all the smoke alarm.** It records every refresh of every screen. Telling it to record one refresh in ten, which we would do once real traffic arrives, brings the 200 user bill to about $55.
 - **Files are almost free.** The safe stays free until it holds about 10 GB, which is tens of thousands of documents.
-- **A 100,000 trip history is tiny.** It takes about 130 MB, which costs a few cents a month.
+- **A 100,000 trip history is tiny.** Measured at 195 MB with its full status history, which costs a few cents a month.
 - **Not included:** the one time build fee, a web address of your own (about $12 a year), and any extra seats for people who deploy changes.
 
 These are estimates from the vendors' public price lists on 2026-10-08. Prices change, so check before quoting.
@@ -101,12 +101,12 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 |---|---|---|
 | 01 | Login | Any page while signed out sends you to sign in; sign out icon in the menu |
 | 02 | Dashboard | `/`, four live tiles that match the database |
-| 03 | Jobs | `/jobs`, create, edit, cancel with a reason, search and status filters |
+| 03 | Jobs | `/jobs`, create, edit, cancel with a reason, search by customer or trip number, status filters |
 | 04 | Assign driver | "Assign driver" on any offer: top 3 matches, two clicks, works by keyboard |
 | 05 | Status updates | "Start trip" and "Complete trip"; the dashboard updates within 5 seconds |
 | 06 | Drivers | `/drivers`, add and edit with photo, phone, class and an on duty switch |
 | 07 | Fleet | `/fleet`, Ready or In service; changes the Fleet ready tile |
-| 08 | Schedule | `/schedule`, today's trips in time order, filter by driver and status |
+| 08 | Schedule | `/schedule`, today's trips on a timeline in time order, one chart row per driver with a now line, filter by driver and status |
 | 09 | Documents | Driver licences and vehicle registrations, PDF or image up to 10 MB, signed-in only |
 
 **Stretch goals**
@@ -118,7 +118,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | Theme switcher | Done | Sun or moon button beside sign out (light and dark) |
 | Guided first time tour | Done | Opens on a first visit and highlights the part of the app each step describes; question mark button reopens it |
 | CSV export of trips | Done | "Export CSV" on Jobs, follows the search and status on screen |
-| Activity log | Done | `/activity`, who changed which trip and when |
+| Activity log | Done | `/activity`, who changed which trip and when, with old and new values for edits and both drivers for reassignments |
 | Automated tests on the matching logic | Done | `src/domain/matching.test.ts`, plus mutation testing on the domain code |
 | Keyboard shortcuts | Done | Press `?` for the list; `g` then a letter jumps between pages |
 
@@ -129,7 +129,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | Managed hosting, automatic deploys | Done | Vercel deploys every push; production from `main` |
 | Separate environments | Done | Production, preview and local each have their own database and files |
 | Private documents on expiring links | Done, checked by hand on the live site | Private buckets, signed links that expire after 5 minutes |
-| Migrations and indexes for 100,000 trips | Indexes and paging in place; not load tested | See "Scale" under Database schema |
+| Migrations and indexes for 100,000 trips | Done, measured | `docs/load-test.md`: with 100,287 trips, 95% of page loads and polls answered in under 125 ms and the slowest in 394 ms |
 | Backups you can restore | Done | `docs/backup-restore.md`, with a recorded drill |
 | Clear monthly cost estimate | Done | "Running cost" below, and `docs/cost-estimate.md` |
 
@@ -153,11 +153,15 @@ erDiagram
     user ||--o{ session : "signs in with"
     user ||--o{ account : "has"
     user ||--o{ trip_events : "performs"
+    user ||--o{ trip_edits : "makes"
     user ||--o{ documents : "uploads"
     drivers ||--o{ trips : "drives"
     drivers ||--o{ documents : "has licence"
     vehicles ||--o{ documents : "has registration"
-    trips ||--o{ trip_events : "records history in"
+    drivers |o--o{ trip_events : "hands over (from_driver_id)"
+    drivers |o--o{ trip_events : "takes on (to_driver_id)"
+    trips ||--o{ trip_events : "records moves in"
+    trips ||--o{ trip_edits : "records edits in"
 
     trips {
         uuid id PK
@@ -194,7 +198,24 @@ erDiagram
         text actor_id FK
         enum from_status
         enum to_status
+        uuid from_driver_id FK "driver before the move"
+        uuid to_driver_id FK "driver after the move"
         text reason
+        timestamptz created_at "append only"
+    }
+    trip_edits {
+        uuid id PK
+        uuid trip_id FK
+        text actor_id FK
+        enum field "which trip detail changed"
+        text from_text "customer and addresses"
+        text to_text
+        int from_integer "duration, passengers, fare in cents"
+        int to_integer
+        timestamptz from_time "pickup time"
+        timestamptz to_time
+        enum from_class "vehicle class"
+        enum to_class
         timestamptz created_at "append only"
     }
     documents {
@@ -214,9 +235,11 @@ The rules that matter are enforced by the database as well as the app, so they h
 - **Driver and status agree:** an offer has no driver, and every later status has one. A cancel needs a reason.
 - **No double booking:** an exclusion constraint rejects two active trips for one driver whose time ranges overlap.
 - **Right class:** triggers keep an assigned or en route trip in its driver's vehicle class. A trip cannot go to a driver of another class, and a driver's class cannot change while they hold such a trip.
-- **History:** every status change writes a `trip_events` row in the same transaction, and that table cannot be edited or deleted from.
+- **History of moves:** every status change, assignment and reassignment writes a `trip_events` row in the same transaction, naming who did it, the status before and after, and the driver before and after. A deferred trigger refuses the commit if the matching row is missing or names the wrong driver.
+- **History of edits:** editing a trip writes one `trip_edits` row per changed field, with its old and new value in a column of the right type (cents stay integers, times stay `timestamptz`). A check keeps each row to the one pair of columns its field uses, and a deferred trigger refuses any change to a trip's details that has no matching row.
+- **Append only:** `trip_events` and `trip_edits` cannot be updated or deleted from.
 - **Documents:** a licence belongs to a driver and a registration to a vehicle, only PDFs and images, 10 MB at most.
-- **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. This has not been load tested; `pnpm db:reset --load` builds a 100,000 trip database for anyone who wants to measure it.
+- **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. Measured with 100,287 trips: 95% of page loads and polls answered in under 125 ms, the slowest request (the first after start-up) in 394 ms, and the dashboard and jobs polls in under 20 ms (`docs/load-test.md`).
 
 ## How a request flows
 
@@ -235,7 +258,7 @@ flowchart LR
     Action -- "creates the link" --> R2
 ```
 
-Reads go through a query function, called by the page for first paint and by a route handler for polling. Writes go through a server action: check the session, validate with zod, call the domain, write in one transaction. Status changes pass through `transitionTrip()` and nowhere else.
+Reads go through a query function, called by the page for first paint and by a route handler for polling. Every query is declared with `defineQuery`, which checks that the session is real (Better Auth verifies it, not just that a cookie is present) before it reads, and sends anyone else to sign in. Next renders a page alongside its layout, so the layout's sign-in check alone could let a page load its data first; checking inside the query closes that gap, and a lint rule fails any query exported without it. The proxy in `src/proxy.ts` is only a quick first filter for visitors with no cookie at all. Writes go through a server action: check the session, validate with zod, call the domain, write in one transaction. Status changes pass through `transitionTrip()` and nowhere else.
 
 ## Where to look in the code
 
@@ -243,12 +266,14 @@ Reads go through a query function, called by the page for first paint and by a r
 |---|---|
 | The status rules | `src/domain/trip-status.ts`, then `src/db/migrations` for the database copy |
 | Driver matching | `src/domain/matching.ts` and `src/domain/matching.test.ts` |
+| How a read is guarded | `src/server/query.ts`, then any file in `src/server/queries` |
 | How a write is guarded | `src/server/action.ts`, then `src/server/actions/trips.ts` |
 | The single place status is written | `src/db/trip-writes.ts` |
+| How the activity log reads history | `src/domain/trip-edits.ts`, `src/domain/activity.ts`, `src/server/queries/activity.ts` |
 | Live polling and optimistic updates | `src/components/live-query.ts`, `src/components/use-optimistic-action.ts` |
 | How private files work | `src/server/storage.ts`, `src/app/api/documents/[id]/route.ts` |
 | Rules the linter enforces | `eslint.config.mjs` and `eslint-rules/` |
-| Proof the rules work | `tests/integration/trip-rules.test.ts`, `e2e/break.spec.ts` |
+| Proof the rules work | `tests/integration/trip-rules.test.ts`, `e2e/break.spec.ts`, `e2e/access.spec.ts` |
 
 ## Key decisions
 
@@ -267,9 +292,12 @@ The same property gives local development a safe option: work against a local Po
 - Uploads and views were checked by hand on the live site against the private production bucket (a driver photo, viewed through a signed link that expires after 5 minutes). Licence and registration uploads use the same code path and are covered by the automated tests.
 - Sentry's slow request alert has to be created in the Sentry screen. The new error and regression alerts are in place.
 - Every preview deployment shares one Neon database branch, `preview`. A fresh branch per pull request needs the Neon integration for Vercel.
-- The 100,000 trip claim comes from indexes, paging and bounded queries. It has not been load tested.
+- The 100,000 trip measurement ran with the database on the same machine as the app and one dispatcher at a time; Neon adds a few milliseconds per query, and concurrency was not tested.
 - Deleting a document deletes its file for good, because R2 cannot undelete. The database row can be rewound but the file cannot.
 - Pickup and drop off are free text addresses.
+- There is one kind of account: every signed-in user can do everything. Dispatcher and admin roles are part of the full build quote.
+- An upload link stays valid for its 5 minutes after the file is saved, so a signed-in user could replace their own upload with another file of the same type and size in that window. A write-once upload needs the bucket's CORS rules to allow the `If-None-Match` header first.
+- On a dispatcher's very first visit the guided tour card is the largest thing painted, so that one load scores lower in Lighthouse than every visit after it.
 - Cost figures are estimates from public price lists and depend on a few assumptions, listed in `docs/cost-estimate.md`.
 
 ## What to build next
@@ -292,10 +320,10 @@ Before you start, run `pnpm db:reset` so every number below starts from a known 
 1. Signed out, open `/jobs`. You land on the sign in page.
 2. Press "Sign in" with both fields empty. Plain language messages appear under each field.
 3. Enter the demo email and a wrong password. You see "That email and password do not match."
-4. Press "Sign in with the demo account". You return to the page you asked for (`/jobs`).
+4. Enter the demo password from the submission message and press "Sign in". You return to the page you asked for (`/jobs`).
 5. Press the sign out icon (sidebar footer on desktop, top bar on phone). You are back on the sign in page, and `/` sends you there again.
 
-Proves: protected routes, redirects, no account guessing.
+Proves: protected routes, redirects, no account guessing. `e2e/access.spec.ts` also sends a made up session cookie to every page and API route and checks that none of the seeded data comes back.
 
 ### 02 Dashboard
 
@@ -311,7 +339,8 @@ Proves: every number comes from the database.
 3. Fill every field and book it. It appears at the top of Jobs as Offer.
 4. "Edit" on that trip, change the fare, save. The new fare shows.
 5. Search by customer name, then use the status buttons. The list narrows. "Show more" loads the next page.
-6. "Cancel trip" on an offer. The dialog asks for a reason, and will not continue without one. Confirm. The trip shows Cancelled with the reason.
+6. Clear the search and type a trip number from any card or toast, as `1234` or `#1234`. Exactly that trip shows, however old it is, and the status buttons still narrow it.
+7. "Cancel trip" on an offer. The dialog asks for a reason, and will not continue without one. Confirm. The trip shows Cancelled with the reason.
 
 Proves: validation, search and filters, a safety step before anything destructive.
 
@@ -343,12 +372,15 @@ Proves: the status flow is enforced on the server and in the database, and live 
 ### 07 Fleet
 
 1. Fleet, "Add vehicle". A duplicate fleet number is explained in plain language.
-2. Flip a vehicle to In service with its switch. Fleet ready on the dashboard drops by one within 5 seconds, and the schedule's vehicle class availability follows.
+2. Flip a vehicle to In service with its switch. Fleet ready on the dashboard drops by one within 5 seconds.
 
 ### 08 Schedule
 
-1. Schedule. Trips still to run are in pickup order, grouped by hour. Finished trips are tucked behind "Show N finished trips".
-2. Filter by status, then also by driver. "Clear filters" returns to the full list.
+1. Schedule. "Day at a glance" draws every trip today as a bar on one row per driver, placed and sized by its pickup and end time, so free time and overlapping bookings show to scale. Trips that still need a driver get the top row. A gold line marks the current time and moves with the clock; on a phone the chart opens scrolled to it.
+2. Below it, the timeline lists the same trips in pickup order, each with its start and end time, duration, customer, status, driver and vehicle class. A "Now" marker sits between trips already picked up and those still to come, and "Jump to now" scrolls to it. Finished trips stay in their place in a smaller card.
+3. Tap a bar on the chart to jump to that trip's card. `j` and `k` step through the cards; Tab reaches each card's buttons.
+4. Start, complete, assign or cancel a trip from its card, as on the dashboard.
+5. Filter by status, then also by driver. The choice is kept in the address, so a refresh or a shared link shows the same view. "Clear filters" returns to the full day.
 
 ### 09 Documents
 
@@ -367,12 +399,15 @@ Proves: the status flow is enforced on the server and in the database, and live 
 3. The charts show trips per day (completed, still open, cancelled), revenue per day (completed trips only), why trips were cancelled, and trips per driver today, so an uneven load is visible at a glance.
 
 **Activity log** (`/activity`, from the "Activity log" button on Insights)
-1. Every booking, assignment, driver change, status move and cancellation is listed newest first, with who did it and the cancel reason.
-2. Book a trip in another tab and the entry appears here within 5 seconds. "Show more" loads older entries.
+1. Every booking, assignment, reassignment, edit, status move and cancellation is listed newest first in plain words, with who did it and when.
+2. Edit a trip's fare from $150 to $199 on Jobs. The newest entry reads "Demo Dispatcher changed the fare on trip #1282 from $150 to $199", marked Edited. Any changed detail reads the same way: customer, addresses, pickup time, duration, passengers, vehicle class.
+3. Assign that trip, then press "Reassign" and pick someone else. The log reads "assigned trip #1282 to Adele Fairbanks", then "reassigned trip #1282 from Adele Fairbanks to Esme Calloway".
+4. Book a trip in another tab and the entry appears here within 5 seconds. "Show more" loads older entries.
+5. The rule being proved: the history is written in the same transaction as the change, and the database refuses a change without it and refuses any edit or delete of the history (`tests/integration/trip-history.test.ts`).
 
 **CSV export** (Jobs, "Export CSV")
 1. Press "Export CSV" with no filters for every trip, newest first.
-2. Choose a status or type a customer name first and the file contains only those trips.
+2. Choose a status or type a customer name or trip number first and the file contains only those trips.
 3. Cells that start with `=`, `+`, `-` or `@` are prefixed with an apostrophe so a spreadsheet cannot run them as formulas.
 
 **Theme switcher** (button beside sign out)
@@ -395,6 +430,8 @@ Proves: the status flow is enforced on the server and in the database, and live 
 1. The "Error and speed monitoring" card says whether Sentry is switched on. It reads On when `SENTRY_DSN` is set and "Not set up" when it is not.
 2. When it is on, "Send a test error and trace" sends one error and one timed trace. They appear in the Sentry project within a minute, which proves the alerts and the dashboard are connected.
 3. Traces are sampled at 100% (`src/observability.ts`). Lower that number once traffic grows.
+4. Better Stack calls `/api/health` every 15 minutes. It is public and says only whether the database answers: 200 with `{"database":"ok"}`, or 503 with `{"database":"unreachable"}`, so the monitor alerts on the status code. Whether Sentry is on and the check history are only on this page, behind sign in (`/api/health/details`).
+5. In the browser, Sentry only loads when `NEXT_PUBLIC_SENTRY_DSN` is set, and then only after the page has loaded and gone idle (`src/instrumentation-client.ts`), so it never slows the first paint. Errors thrown before that are held and sent once it starts.
 
 ### Trying to break it
 

@@ -62,7 +62,7 @@ describe("reassignTrip", () => {
   it("moves an assigned trip to another driver and records it", () => {
     expect(reassignTrip(assigned, { driverId: "d2", actorId: "u1" })).toEqual({
       trip: { status: "assigned", driverId: "d2", cancelReason: null },
-      event: { fromStatus: "assigned", toStatus: "assigned", actorId: "u1", reason: "Reassigned to another driver" },
+      event: { fromStatus: "assigned", toStatus: "assigned", fromDriverId: "d1", toDriverId: "d2", actorId: "u1", reason: null },
     });
   });
 

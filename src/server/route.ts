@@ -1,5 +1,7 @@
 import { connection } from "next/server";
+import { uptimeAnswer } from "@/domain/health-check";
 import { missingRecord } from "@/domain/result";
+import { servedFile } from "@/domain/uploads";
 import { currentUser } from "@/server/session";
 import { storage } from "@/server/storage";
 
@@ -7,32 +9,38 @@ type RouteParams = Record<string, string | string[] | undefined>;
 
 type RouteInput = { searchParams: URLSearchParams; params: RouteParams };
 
-type PollingRoute<T> = {
-  access: "signed-in" | "public";
-  read: (input: RouteInput) => Promise<T | null>;
-};
+async function signedOut(message: string) {
+  await connection();
+  return (await currentUser()) ? null : Response.json({ message }, { status: 401 });
+}
 
-export function pollingRoute<T>({ access, read }: PollingRoute<T>) {
+export function pollingRoute<T>({ read }: { read: (input: RouteInput) => Promise<T | null> }) {
   return async function GET(request: Request, context: { params: Promise<RouteParams> }) {
-    await connection();
-    if (access === "signed-in" && !(await currentUser())) {
-      return Response.json({ message: "Sign in to see this." }, { status: 401 });
-    }
+    const refused = await signedOut("Sign in to see this.");
+    if (refused) return refused;
     const data = await read({ searchParams: new URL(request.url).searchParams, params: await context.params });
     if (data === null) return Response.json({ message: "Not found." }, { status: 404 });
     return Response.json(data, { headers: { "Cache-Control": "no-store" } });
   };
 }
 
-type StoredFile = { key: string; fileName: string };
+export function uptimeRoute(databaseReachable: () => Promise<boolean>) {
+  return async function GET() {
+    await connection();
+    const answer = uptimeAnswer(await databaseReachable());
+    return Response.json(answer.body, { status: answer.status, headers: { "Cache-Control": "no-store" } });
+  };
+}
+
+type StoredFile = { key: string; fileName: string; contentType: string | null };
 
 export function fileRoute({ read }: { read: (params: RouteParams) => Promise<StoredFile | null> }) {
   return async function GET(_request: Request, context: { params: Promise<RouteParams> }) {
-    await connection();
-    if (!(await currentUser())) return Response.json({ message: "Sign in to see this file." }, { status: 401 });
+    const refused = await signedOut("Sign in to see this file.");
+    if (refused) return refused;
     const file = await read(await context.params);
     if (!file) return Response.json({ message: missingRecord.file }, { status: 404 });
-    return Response.redirect(await storage.downloadUrl(file.key, file.fileName), 302);
+    return Response.redirect(await storage.downloadUrl(file.key, servedFile(file)), 302);
   };
 }
 
@@ -40,8 +48,8 @@ type Download = { fileName: string; contentType: string; body: string };
 
 export function downloadRoute({ read }: { read: (searchParams: URLSearchParams) => Promise<Download> }) {
   return async function GET(request: Request) {
-    await connection();
-    if (!(await currentUser())) return Response.json({ message: "Sign in to download this." }, { status: 401 });
+    const refused = await signedOut("Sign in to download this.");
+    if (refused) return refused;
     const file = await read(new URL(request.url).searchParams);
     return new Response(file.body, {
       headers: {

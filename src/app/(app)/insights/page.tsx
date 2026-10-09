@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import Link from "next/link";
 import { Suspense } from "react";
 import { InsightsView } from "@/app/(app)/insights/insights-view";
@@ -31,6 +30,5 @@ export default function InsightsPage() {
 }
 
 async function InsightsData() {
-  await connection();
   return <InsightsView initialData={await getInsights()} />;
 }

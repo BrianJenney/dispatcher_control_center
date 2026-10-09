@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { ActivityView } from "@/app/(app)/activity/activity-view";
 import { PageHeader } from "@/components/page-header";
@@ -21,7 +20,6 @@ export default function ActivityPage({ searchParams }: PageProps<"/activity">) {
 }
 
 async function ActivityData({ searchParams }: Pick<PageProps<"/activity">, "searchParams">) {
-  await connection();
   const filter = activityFilter.parse(await searchParams);
   return <ActivityView key={filter.show} filter={filter} initialData={await getActivity(filter)} />;
 }

@@ -46,11 +46,12 @@ src/app/        Routes. Server Components load data, client components poll.
 src/components/ ui/ (shadcn primitives) and feature components.
 ```
 
-- **Reads:** a function in `src/server/queries`, called by a Server Component for first paint and by a route handler for polling.
+- **Reads:** a function in `src/server/queries`, declared with `defineQuery` so it checks the session before it reads, called by a Server Component for first paint and by a route handler for polling. Pages never check the session themselves. Read helpers that several queries share live in `src/server/` (for example `trip-rows.ts`), are called only from inside a `defineQuery`, and are never imported by app code (lint enforces this).
 - **Writes:** a server action in `src/server/actions`. Validate input with a zod schema, check the session, call the domain, write in one transaction.
 - **Trip status:** changes only through `transitionTrip()`. Nothing else writes `trips.status`.
 - **Forms:** one form helper, zod schema shared between client and server, error messages in plain language.
 - **Screens:** every list and tile has designed empty, loading and error states. Use the shared components.
+- **Links to one record** (a trip, driver or vehicle) use `RecordLink`, which warms the page on hover, focus or touch instead of prefetching every row on screen.
 - **Destructive actions:** always behind the shared confirm dialog.
 - **Money:** integer cents everywhere. Format only at the edge.
 - **Time:** stored as `timestamptz`. "Today" means today in `APP_TIMEZONE`.

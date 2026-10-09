@@ -4,8 +4,16 @@ import { vehicleClasses } from "@/domain/fleet";
 import { tripRow } from "@/domain/trip-row";
 import { tripStatuses } from "@/domain/trip-status";
 
-
 export const jobsSearchId = "jobs-search";
+
+export const jobsSearchLabel = "Search by customer or trip number";
+
+const largestTripReference = 2_147_483_647;
+
+export function tripReferenceIn(q: string): number | null {
+  const reference = Number(/^#?\s*(\d+)$/.exec(q.trim())?.[1]);
+  return reference >= 1 && reference <= largestTripReference ? reference : null;
+}
 
 export const jobsFilter = z.object({
   q: z.string().trim().max(80).catch(""),

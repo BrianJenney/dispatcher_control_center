@@ -1,11 +1,13 @@
 import { AwsClient } from "aws4fetch";
 import { env } from "@/env";
+import { reportError } from "@/observability";
 
 const client = new AwsClient({
   accessKeyId: env.STORAGE_ACCESS_KEY_ID,
   secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY,
   service: "s3",
   region: "auto",
+  retries: 2,
 });
 
 const linkLifetimeSeconds = 5 * 60;
@@ -21,6 +23,11 @@ async function presign(url: URL, init: RequestInit, signHeaders: boolean) {
   return signed.url;
 }
 
+async function remove(key: string) {
+  const response = await client.fetch(objectUrl(key), { method: "DELETE" });
+  if (!response.ok) throw new Error(`Storage refused to delete ${key} with status ${response.status}.`);
+}
+
 export const storage = {
   linkLifetimeSeconds,
 
@@ -31,9 +38,10 @@ export const storage = {
       true,
     ),
 
-  downloadUrl: (key: string, fileName: string) => {
+  downloadUrl: (key: string, served: { contentType: string; disposition: string }) => {
     const url = objectUrl(key);
-    url.searchParams.set("response-content-disposition", `inline; filename="${fileName.replace(/["\\\r\n]/g, "")}"`);
+    url.searchParams.set("response-content-type", served.contentType);
+    url.searchParams.set("response-content-disposition", served.disposition);
     return presign(url, { method: "GET" }, false);
   },
 
@@ -46,7 +54,12 @@ export const storage = {
     };
   },
 
-  remove: async (key: string) => {
-    await client.fetch(objectUrl(key), { method: "DELETE" });
+  firstBytes: async (key: string, count: number) => {
+    const response = await client.fetch(objectUrl(key), { headers: { range: `bytes=0-${count - 1}` } });
+    return response.ok ? new Uint8Array(await response.arrayBuffer()).subarray(0, count) : new Uint8Array();
+  },
+
+  discard: async (key: string) => {
+    await remove(key).catch(reportError);
   },
 };

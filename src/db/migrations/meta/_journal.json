@@ -43,6 +43,13 @@
       "when": 1791499132073,
       "tag": "0005_driver_class_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791506999184,
+      "tag": "0006_trip_change_history",
+      "breakpoints": true
     }
   ]
 }

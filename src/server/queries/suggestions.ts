@@ -8,8 +8,9 @@ import { matchDrivers } from "@/domain/matching";
 import { dayRange } from "@/domain/time";
 import { activeStatuses } from "@/domain/trip-status";
 import { env } from "@/env";
+import { defineQuery } from "@/server/query";
 
-export async function getSuggestions(id: unknown): Promise<DriverSuggestions | null> {
+export const getSuggestions = defineQuery("signed-in", async (id: unknown): Promise<DriverSuggestions | null> => {
   const tripId = recordId(id);
   if (!tripId) return null;
   const trip = await db.query.trips.findFirst({
@@ -49,4 +50,4 @@ export async function getSuggestions(id: unknown): Promise<DriverSuggestions | n
     onDutyInClass: inClass.filter((driver) => driver.onDuty).length,
     suggestions: suggestions.map((driver) => ({ id: driver.id, name: driver.name, tripsToday: driver.tripsToday })),
   };
-}
+});

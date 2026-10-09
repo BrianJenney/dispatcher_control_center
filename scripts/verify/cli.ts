@@ -2,14 +2,14 @@ import { execSync, spawnSync } from "node:child_process";
 import { mkdirSync, openSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
-import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { chromium, type Browser, type Page } from "@playwright/test";
 import { launchApp, stopApp, waitForApp } from "../lib/app-server";
-import { databaseUrlNamed, freshDatabase } from "../lib/database";
+import { databaseUrlNamed, freshDatabase, loadTripCount, reseedDemoData } from "../lib/database";
 import { dismissTourOnEveryPage, signInAsDemoUser, withTourDismissed } from "../lib/demo-session";
 import { startLocalStorage } from "../lib/storage-server";
 import { flows, runStep, type Flow } from "./flows";
 import { flowDatabase } from "./flows/context";
-import { runLighthouse, type ViewportName } from "./lighthouse";
+import { runLighthouse, type BrowserStorage, type ViewportName } from "./lighthouse";
 
 const port = 3200;
 const evidenceRoot = ".verify";
@@ -38,13 +38,18 @@ function parseArgs(argv: string[]) {
   const selected = argv.includes("--all") ? Object.keys(flows) : names;
   const unknown = selected.filter((name) => !(name in flows));
   if (selected.length === 0 || unknown.length > 0) {
-    console.error(`Usage: pnpm verify <flow> [--phone] [--all] [--skip-build]`);
+    console.error(`Usage: pnpm verify <flow> [--phone] [--all] [--skip-build] [--load]`);
     console.error(`Known flows: ${Object.keys(flows).join(", ")}`);
     if (unknown.length > 0) console.error(`Unknown: ${unknown.join(", ")}`);
     process.exit(2);
   }
   const viewports: ViewportName[] = argv.includes("--phone") ? ["phone"] : ["phone", "desktop"];
-  return { flowNames: selected, viewports, skipBuild: argv.includes("--skip-build") };
+  return {
+    flowNames: selected,
+    viewports,
+    skipBuild: argv.includes("--skip-build"),
+    loadTrips: argv.includes("--load") ? loadTripCount : 0,
+  };
 }
 
 function slug(text: string) {
@@ -82,9 +87,8 @@ async function settle(page: Page) {
     .catch(() => undefined);
 }
 
-type Session = Awaited<ReturnType<BrowserContext["storageState"]>>;
 
-async function signedInSession(browser: Browser, baseUrl: string): Promise<Session> {
+async function signedInSession(browser: Browser, baseUrl: string): Promise<BrowserStorage> {
   const context = await browser.newContext();
   await signInAsDemoUser(context.request, baseUrl);
   const session = withTourDismissed(await context.storageState(), baseUrl);
@@ -95,7 +99,7 @@ async function signedInSession(browser: Browser, baseUrl: string): Promise<Sessi
 async function runViewport(
   browser: Browser,
   baseUrl: string,
-  session: Session,
+  session: BrowserStorage,
   databaseUrl: string,
   flow: Flow,
   viewport: ViewportName,
@@ -134,7 +138,7 @@ async function runViewport(
 
   await database.close();
   const axe = await new AxeBuilder({ page }).analyze();
-  const cookie = (await browserContext.cookies()).map((entry) => `${entry.name}=${entry.value}`).join("; ");
+  const storage = await browserContext.storageState();
   await browserContext.close();
 
   return {
@@ -142,7 +146,7 @@ async function runViewport(
     steps,
     console: watched.consoleEntries,
     timings: watched.timings,
-    cookie,
+    storage,
     axe: axe.violations.map((violation) => ({
       id: violation.id,
       impact: violation.impact ?? null,
@@ -218,11 +222,12 @@ function summarize(flowName: string, flow: Flow, runs: ViewportRun[]) {
 async function verifyFlow(
   browser: Browser,
   baseUrl: string,
-  session: Session,
+  session: BrowserStorage,
   databaseUrl: string,
   flowName: string,
   flow: Flow,
   viewports: ViewportName[],
+  reseedEachWidth: boolean,
 ) {
   const outDir = path.join(evidenceRoot, flowName);
   rmSync(outDir, { recursive: true, force: true });
@@ -231,11 +236,12 @@ async function verifyFlow(
   const runs: ViewportRun[] = [];
   for (const viewport of viewports) {
     console.log(`  ${flowName} at ${viewport} width`);
-    const { cookie, ...run } = await runViewport(browser, baseUrl, session, databaseUrl, flow, viewport, outDir);
+    if (reseedEachWidth) await reseedDemoData(databaseUrl);
+    const { storage, ...run } = await runViewport(browser, baseUrl, session, databaseUrl, flow, viewport, outDir);
     const lighthouse = await runLighthouse({
       url: `${baseUrl}${flow.route}`,
       chromePath: chromium.executablePath(),
-      cookie,
+      storage,
       viewport,
     }).catch((error: unknown) => {
       console.error(`  Lighthouse failed at ${viewport}: ${error instanceof Error ? error.message : String(error)}`);
@@ -261,8 +267,8 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const databaseUrl = databaseUrlNamed("dispatch_verify");
 
-  console.log("Recreating and seeding the verify database");
-  await freshDatabase(databaseUrl, { seed: true });
+  console.log(`Recreating and seeding the verify database${args.loadTrips > 0 ? ` with ${String(args.loadTrips)} extra historical trips` : ""}`);
+  await freshDatabase(databaseUrl, { seed: true, loadTrips: args.loadTrips });
 
   if (!args.skipBuild) {
     console.log("Building the app");
@@ -282,7 +288,7 @@ async function main() {
     for (const flowName of args.flowNames) {
       const flow = flows[flowName];
       if (!flow) continue;
-      const summary = await verifyFlow(browser, baseUrl, session, databaseUrl, flowName, flow, args.viewports);
+      const summary = await verifyFlow(browser, baseUrl, session, databaseUrl, flowName, flow, args.viewports, args.loadTrips === 0);
       allPassed &&= summary.passed;
       console.log(`\n${summary.markdown}`);
       console.log(`Evidence written to ${path.join(evidenceRoot, flowName)}/`);

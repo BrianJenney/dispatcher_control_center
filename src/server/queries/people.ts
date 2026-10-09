@@ -2,11 +2,12 @@ import { and, asc, count, eq, gte, lt } from "drizzle-orm";
 import { db } from "@/db/client";
 import { documents, drivers, trips, vehicles } from "@/db/schema";
 import { tripsTodayByDriver } from "@/domain/kpis";
-import type { DriverRow, VehicleRow } from "@/domain/people";
+import type { DriverProfile, DriverRow, VehicleProfile, VehicleRow } from "@/domain/people";
 import { dayRange } from "@/domain/time";
 import { recordId } from "@/domain/result";
-import { uploadIdOf, type DocumentRow } from "@/domain/uploads";
+import { contentTypeOfKey, uploadIdOf, type DocumentRow } from "@/domain/uploads";
 import { env } from "@/env";
+import { defineQuery } from "@/server/query";
 
 async function documentCounts(kind: "driver_license" | "vehicle_registration") {
   const owner = kind === "driver_license" ? documents.driverId : documents.vehicleId;
@@ -14,7 +15,7 @@ async function documentCounts(kind: "driver_license" | "vehicle_registration") {
   return new Map(rows.flatMap((row) => (row.ownerId ? [[row.ownerId, row.total] as const] : [])));
 }
 
-export async function getDrivers(): Promise<{ drivers: DriverRow[] }> {
+export const getDrivers = defineQuery("signed-in", async (): Promise<{ drivers: DriverRow[] }> => {
   const today = dayRange(new Date(), env.APP_TIMEZONE);
   const [driverRows, todaysTrips, licenses] = await Promise.all([
     db.select().from(drivers).orderBy(asc(drivers.name)),
@@ -37,9 +38,9 @@ export async function getDrivers(): Promise<{ drivers: DriverRow[] }> {
       licenses: licenses.get(driver.id) ?? 0,
     })),
   };
-}
+});
 
-export async function getFleet(): Promise<{ vehicles: VehicleRow[] }> {
+export const getFleet = defineQuery("signed-in", async (): Promise<{ vehicles: VehicleRow[] }> => {
   const [vehicleRows, registrations] = await Promise.all([
     db.select().from(vehicles).orderBy(asc(vehicles.unitNumber)),
     documentCounts("vehicle_registration"),
@@ -55,7 +56,7 @@ export async function getFleet(): Promise<{ vehicles: VehicleRow[] }> {
       registrations: registrations.get(vehicle.id) ?? 0,
     })),
   };
-}
+});
 
 function toDocumentRows(rows: (typeof documents.$inferSelect)[]): DocumentRow[] {
   return rows.map((row) => ({
@@ -67,7 +68,7 @@ function toDocumentRows(rows: (typeof documents.$inferSelect)[]): DocumentRow[] 
   }));
 }
 
-export async function getDriverProfile(id: unknown) {
+export const getDriverProfile = defineQuery("signed-in", async (id: unknown): Promise<DriverProfile | null> => {
   const driverId = recordId(id);
   if (!driverId) return null;
   const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId) });
@@ -85,9 +86,9 @@ export async function getDriverProfile(id: unknown) {
     photoVersion: uploadIdOf(driver.photoKey),
     documents: toDocumentRows(licenses),
   };
-}
+});
 
-export async function getVehicleProfile(id: unknown) {
+export const getVehicleProfile = defineQuery("signed-in", async (id: unknown): Promise<VehicleProfile | null> => {
   const vehicleId = recordId(id);
   if (!vehicleId) return null;
   const vehicle = await db.query.vehicles.findFirst({ where: eq(vehicles.id, vehicleId) });
@@ -96,19 +97,28 @@ export async function getVehicleProfile(id: unknown) {
     where: eq(documents.vehicleId, vehicleId),
     orderBy: asc(documents.createdAt),
   });
-  return { ...vehicle, documents: toDocumentRows(registrations) };
-}
+  return {
+    id: vehicle.id,
+    model: vehicle.model,
+    unitNumber: vehicle.unitNumber,
+    plate: vehicle.plate,
+    vehicleClass: vehicle.vehicleClass,
+    status: vehicle.status,
+    documents: toDocumentRows(registrations),
+  };
+});
 
-export async function getDocumentFile(id: unknown) {
+export const getDocumentFile = defineQuery("signed-in", async (id: unknown) => {
   const documentId = recordId(id);
   if (!documentId) return null;
   const document = await db.query.documents.findFirst({ where: eq(documents.id, documentId) });
-  return document ? { key: document.storageKey, fileName: document.fileName } : null;
-}
+  return document ? { key: document.storageKey, fileName: document.fileName, contentType: document.contentType } : null;
+});
 
-export async function getDriverPhoto(id: unknown) {
+export const getDriverPhoto = defineQuery("signed-in", async (id: unknown) => {
   const driverId = recordId(id);
   if (!driverId) return null;
   const driver = await db.query.drivers.findFirst({ where: eq(drivers.id, driverId), columns: { photoKey: true, name: true } });
-  return driver?.photoKey ? { key: driver.photoKey, fileName: driver.photoKey.split("/").at(-1) ?? driver.name } : null;
-}
+  if (!driver?.photoKey) return null;
+  return { key: driver.photoKey, fileName: driver.photoKey.split("/").at(-1) ?? driver.name, contentType: contentTypeOfKey(driver.photoKey) };
+});

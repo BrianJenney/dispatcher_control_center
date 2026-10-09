@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { jobsSearchLabel } from "@/domain/jobs";
 import { insertTodaysOffer, openFromNavigation, viewportTag } from "./expected";
 import type { Flow } from "./types";
 
@@ -7,7 +8,7 @@ function jobsList(page: Page) {
 }
 
 async function searchFor(page: Page, text: string) {
-  await page.getByRole("searchbox", { name: "Search by customer" }).fill(text);
+  await page.getByRole("searchbox", { name: jobsSearchLabel }).fill(text);
   await expect(page).toHaveURL(new RegExp(`q=${encodeURIComponent(text).replace(/%20/g, "\\+")}`));
 }
 
@@ -114,6 +115,17 @@ export const jobsSearch: Flow = {
         await expect(jobsList(page).getByRole("article")).toHaveCount(25);
         await page.getByRole("button", { name: "Show more" }).click();
         await expect(jobsList(page).getByRole("article")).toHaveCount(50);
+      },
+    },
+    {
+      name: "find an old trip by its number",
+      run: async (context) => {
+        const { page } = context;
+        const reference = await context.number(`select reference as value from trips order by pickup_at asc limit 1`);
+        await searchFor(page, `#${String(reference)}`);
+        const cards = jobsList(page).getByRole("article");
+        await expect(cards).toHaveCount(1);
+        await expect(cards).toHaveAttribute("aria-label", new RegExp(`^Trip ${String(reference)} for `));
       },
     },
   ],

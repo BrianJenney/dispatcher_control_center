@@ -1,12 +1,16 @@
+import { sql } from "drizzle-orm";
 import { Client } from "pg";
 import { createDatabase } from "@/db/client";
 import { runMigrations } from "@/db/migrate";
 import { seed } from "@/db/seed";
+import { demoUser } from "@/env-demo";
 import { env } from "@/env";
+
+export const loadTripCount = 100_000;
 
 export function seedOptions(loadTrips = 0) {
   return {
-    demoUser: { email: env.DEMO_USER_EMAIL, password: env.DEMO_USER_PASSWORD },
+    demoUser,
     now: new Date(),
     timeZone: env.APP_TIMEZONE,
     loadTrips,
@@ -46,6 +50,16 @@ export async function freshDatabase(url: string, options: { seed: boolean; loadT
     if (options.seed) {
       await seed(db, seedOptions(options.loadTrips));
     }
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function reseedDemoData(url: string) {
+  const { db, pool } = createDatabase(url);
+  try {
+    await db.execute(sql`truncate trip_edits, trip_events, documents, trips, drivers, vehicles restart identity cascade`);
+    await seed(db, seedOptions());
   } finally {
     await pool.end();
   }

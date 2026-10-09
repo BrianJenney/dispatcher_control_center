@@ -60,7 +60,7 @@ describe("transitionTrip", () => {
   it("assigns a driver and records who did it", () => {
     expect(transitionTrip(tripIn("offer"), { to: "assigned", actorId: "user-1", driverId: "driver-9" })).toEqual({
       trip: { status: "assigned", driverId: "driver-9", cancelReason: null },
-      event: { fromStatus: "offer", toStatus: "assigned", actorId: "user-1", reason: null },
+      event: { fromStatus: "offer", toStatus: "assigned", fromDriverId: null, toDriverId: "driver-9", actorId: "user-1", reason: null },
     });
   });
 
@@ -73,6 +73,7 @@ describe("transitionTrip", () => {
   it("keeps the driver through en route and completed", () => {
     const enRoute = transitionTrip(tripIn("assigned"), { to: "en_route", actorId: "user-1", driverId: "other" });
     expect(enRoute.trip.driverId).toBe("driver-1");
+    expect(enRoute.event).toMatchObject({ fromDriverId: "driver-1", toDriverId: "driver-1" });
     const completed = transitionTrip(enRoute.trip, { to: "completed", actorId: "user-1" });
     expect(completed.trip).toEqual({ status: "completed", driverId: "driver-1", cancelReason: null });
   });
@@ -82,7 +83,14 @@ describe("transitionTrip", () => {
     expect(result.trip.status).toBe("cancelled");
     expect(result.trip.cancelReason).toBe("No show");
     expect(result.trip.driverId).toBe(tripIn(from).driverId);
-    expect(result.event).toEqual({ fromStatus: from, toStatus: "cancelled", actorId: "user-1", reason: "No show" });
+    expect(result.event).toEqual({
+      fromStatus: from,
+      toStatus: "cancelled",
+      fromDriverId: tripIn(from).driverId,
+      toDriverId: tripIn(from).driverId,
+      actorId: "user-1",
+      reason: "No show",
+    });
   });
 
   it.each([undefined, "", "   "])("refuses to cancel with reason %j", (reason) => {

@@ -5,24 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useOptimisticAction } from "@/components/use-optimistic-action";
 import { vehicleStatusLabels, type VehicleStatus } from "@/domain/fleet";
-import type { VehicleRow } from "@/domain/people";
+import { withVehicleStatus, type VehicleData } from "@/domain/people";
 import { setVehicleStatus } from "@/server/actions/people";
 
 type StatusRequest = { vehicleId: string; unitNumber: string; status: VehicleStatus };
 
-export function VehicleStatusSwitch({
-  vehicle,
-  onChanged,
-}: {
-  vehicle: { id: string; unitNumber: string; status: VehicleStatus };
-  onChanged?: () => void;
-}) {
-  const change = useOptimisticAction<StatusRequest, { vehicles: VehicleRow[] }>({
+export function VehicleStatusSwitch({ vehicle }: { vehicle: { id: string; unitNumber: string; status: VehicleStatus } }) {
+  const change = useOptimisticAction<StatusRequest, VehicleData>({
     queryKey: fleetQueryKey,
     action: (request) => setVehicleStatus({ vehicleId: request.vehicleId, status: request.status }),
-    update: (data, request) => ({
-      vehicles: data.vehicles.map((item) => (item.id === request.vehicleId ? { ...item, status: request.status } : item)),
-    }),
+    update: (data, request) => withVehicleStatus(data, request.vehicleId, request.status),
     done: (request) => `${request.unitNumber} is ${vehicleStatusLabels[request.status].toLowerCase()}.`,
     alsoRefresh: [tripsQueryKey],
   });
@@ -36,10 +28,7 @@ export function VehicleStatusSwitch({
         aria-label={`${vehicle.unitNumber} ready`}
         onCheckedChange={(ready) => {
           if (change.isPending) return;
-          change.mutate(
-            { vehicleId: vehicle.id, unitNumber: vehicle.unitNumber, status: ready ? "ready" : "in_service" },
-            { onSettled: onChanged },
-          );
+          change.mutate({ vehicleId: vehicle.id, unitNumber: vehicle.unitNumber, status: ready ? "ready" : "in_service" });
         }}
       />
       <Label htmlFor={id} className="text-sm font-normal text-muted-foreground">

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { mostSeatsInAnyClass, vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { jobsSearch } from "@/domain/jobs";
 import { pageSize } from "@/domain/paging";
-import { durationOptions, tripInput, updateTripInput } from "@/domain/trip-form";
+import { durationLabel, durationOptions, tripInput, updateTripInput } from "@/domain/trip-form";
 import { createTrip, updateTrip } from "@/server/actions/trips";
 
 export type TripFormValues = {
@@ -25,7 +25,7 @@ export type TripFormValues = {
 
 const durationLabels = durationOptions.map((minutes) => ({
   value: String(minutes),
-  label: minutes < 60 ? `${String(minutes)} minutes` : `${String(minutes / 60)} ${minutes === 60 ? "hour" : "hours"}`,
+  label: durationLabel(minutes),
 }));
 
 type Saved = { id: string; reference: number; customerName: string };

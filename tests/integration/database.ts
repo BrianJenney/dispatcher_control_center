@@ -2,13 +2,13 @@ import { sql } from "drizzle-orm";
 import { expect } from "vitest";
 import { db } from "@/db/client";
 import { drivers } from "@/db/schema";
-import { env } from "@/env";
+import { demoUser } from "@/env-demo";
 import type { VehicleClass } from "@/domain/fleet";
 import type { TripStatus } from "@/domain/trip-status";
 import { violatedConstraint } from "@/server/database-errors";
 
 export async function demoUserId() {
-  const rows = await db.execute<{ id: string }>(sql`select id from "user" where email = ${env.DEMO_USER_EMAIL}`);
+  const rows = await db.execute<{ id: string }>(sql`select id from "user" where email = ${demoUser.email}`);
   const id = rows.rows[0]?.id;
   if (!id) throw new Error("The seed did not create the demo user.");
   return id;
@@ -50,11 +50,12 @@ export async function forceStatus(
 ) {
   await db.transaction(async (tx) => {
     await tx.execute(sql`
+      insert into trip_events (trip_id, actor_id, from_status, to_status, from_driver_id, to_driver_id, reason)
+      select id, ${actorId}, ${move.from}::trip_status, ${move.to}::trip_status, driver_id, ${move.driverId}::uuid, ${move.reason ?? null}
+      from trips where id = ${tripId}`);
+    await tx.execute(sql`
       update trips set status = ${move.to}, driver_id = ${move.driverId}, cancel_reason = ${move.reason ?? null}
       where id = ${tripId}`);
-    await tx.execute(sql`
-      insert into trip_events (trip_id, actor_id, from_status, to_status, reason)
-      values (${tripId}, ${actorId}, ${move.from}, ${move.to}, ${move.reason ?? null})`);
   });
 }
 

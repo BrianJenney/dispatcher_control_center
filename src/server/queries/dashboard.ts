@@ -4,9 +4,10 @@ import { drivers, trips, vehicles } from "@/db/schema";
 import type { DashboardSnapshot } from "@/domain/dashboard";
 import { dayRange } from "@/domain/time";
 import { env } from "@/env";
-import { tripRows } from "@/server/queries/trips";
+import { defineQuery } from "@/server/query";
+import { tripRows } from "@/server/trip-rows";
 
-export async function getDashboard(): Promise<DashboardSnapshot> {
+export const getDashboard = defineQuery("signed-in", async (): Promise<DashboardSnapshot> => {
   const today = dayRange(new Date(), env.APP_TIMEZONE);
   const [rows, driverRows, vehicleRows] = await Promise.all([
     tripRows(or(eq(trips.status, "en_route"), and(gte(trips.pickupAt, today.start), lt(trips.pickupAt, today.end)))),
@@ -19,4 +20,4 @@ export async function getDashboard(): Promise<DashboardSnapshot> {
     drivers: driverRows,
     vehicles: vehicleRows,
   };
-}
+});

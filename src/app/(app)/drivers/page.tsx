@@ -1,7 +1,6 @@
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { DriversView } from "@/app/(app)/drivers/drivers-view";
 import { PageHeader } from "@/components/page-header";
@@ -35,6 +34,5 @@ export default function DriversPage() {
 }
 
 async function DriversData() {
-  await connection();
   return <DriversView initialData={await getDrivers()} />;
 }

@@ -1,4 +1,4 @@
 import { getSchedule } from "@/server/queries/schedule";
 import { pollingRoute } from "@/server/route";
 
-export const GET = pollingRoute({ access: "signed-in", read: getSchedule });
+export const GET = pollingRoute({ read: getSchedule });

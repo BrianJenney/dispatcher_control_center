@@ -1,7 +1,6 @@
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { JobsView } from "@/app/(app)/jobs/jobs-view";
 import { PageHeader } from "@/components/page-header";
@@ -36,7 +35,6 @@ export default function JobsPage({ searchParams }: PageProps<"/jobs">) {
 }
 
 async function JobsData({ searchParams }: Pick<PageProps<"/jobs">, "searchParams">) {
-  await connection();
   const filter = jobsFilter.parse(await searchParams);
   return <JobsView filter={filter} initialData={await getJobs(filter)} />;
 }

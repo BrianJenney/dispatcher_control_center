@@ -2,11 +2,11 @@ import { eq } from "drizzle-orm";
 import { vi } from "vitest";
 import { db } from "@/db/client";
 import { user } from "@/db/schema";
-import { env } from "@/env";
+import { demoUser } from "@/env-demo";
 import { currentUser } from "@/server/session";
 
 export async function signInAsDemoUser() {
-  const demo = await db.query.user.findFirst({ where: eq(user.email, env.DEMO_USER_EMAIL) });
+  const demo = await db.query.user.findFirst({ where: eq(user.email, demoUser.email) });
   if (!demo) throw new Error("The seed did not create the demo user.");
   vi.mocked(currentUser).mockResolvedValue(demo);
   return demo;

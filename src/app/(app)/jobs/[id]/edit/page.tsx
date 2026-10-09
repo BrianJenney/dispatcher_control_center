@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { EditTripForm } from "@/app/(app)/jobs/trip-form";
 import { PageHeader } from "@/components/page-header";
@@ -21,7 +20,6 @@ export default function EditTripPage({ params }: PageProps<"/jobs/[id]/edit">) {
 }
 
 async function EditTrip({ params }: Pick<PageProps<"/jobs/[id]/edit">, "params">) {
-  await connection();
   const trip = await getTripForEditing((await params).id);
   if (!trip) notFound();
   return (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { driverSuggestions, jobsSnapshot } from "@/domain/jobs";
-import { driversSnapshot, fleetSnapshot } from "@/domain/people";
+import { driverProfile, driversSnapshot, fleetSnapshot, vehicleProfile } from "@/domain/people";
 import { scheduleSnapshot } from "@/domain/schedule";
 import { tripRow } from "@/domain/trip-row";
 
@@ -34,8 +34,10 @@ describe("what the client accepts from polling routes", () => {
   it("checks each snapshot's shape", () => {
     expect(jobsSnapshot.safeParse({ trips: [row], hasMore: false }).success).toBe(true);
     expect(jobsSnapshot.safeParse({ trips: [row] }).success).toBe(false);
-    expect(scheduleSnapshot.safeParse({ today: { start: row.pickupAt, end: row.pickupAt }, trips: [], drivers: [] }).success).toBe(true);
-    expect(scheduleSnapshot.safeParse({ today: {}, trips: [], drivers: [] }).success).toBe(false);
+    const today = { start: row.pickupAt, end: row.pickupAt };
+    expect(scheduleSnapshot.safeParse({ today, now: row.pickupAt, trips: [], drivers: [] }).success).toBe(true);
+    expect(scheduleSnapshot.safeParse({ today, trips: [], drivers: [] }).success).toBe(false);
+    expect(scheduleSnapshot.safeParse({ today: {}, now: row.pickupAt, trips: [], drivers: [] }).success).toBe(false);
     expect(driversSnapshot.safeParse({}).success).toBe(false);
     expect(fleetSnapshot.safeParse({}).success).toBe(false);
     expect(driverSuggestions.safeParse({ vehicleClass: "luxury_sedan", onDutyInClass: 1, suggestions: [{ id, name: "Ava" }] }).success).toBe(false);
@@ -48,5 +50,15 @@ describe("what the client accepts from polling routes", () => {
     const vehicle = { id, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "ready", registrations: 0 };
     expect(fleetSnapshot.parse({ vehicles: [vehicle] }).vehicles).toHaveLength(1);
     expect(fleetSnapshot.safeParse({ vehicles: [{ ...vehicle, id: "x" }] }).success).toBe(false);
+  });
+
+  it("checks the driver and vehicle detail pages", () => {
+    const document = { id, fileName: "license.pdf", contentType: "application/pdf", sizeBytes: 10, uploadedAt: row.pickupAt };
+    const driver = { id, name: "Ava", phone: "1", vehicleClass: "luxury_sedan", onDuty: true, photoVersion: null, documents: [document] };
+    expect(driverProfile.parse(driver)).toEqual(driver);
+    expect(driverProfile.safeParse({ ...driver, documents: [{ ...document, uploadedAt: "today" }] }).success).toBe(false);
+    const vehicle = { id, model: "BMW", unitNumber: "DL-1", plate: "A", vehicleClass: "luxury_sedan", status: "in_service", documents: [] };
+    expect(vehicleProfile.parse(vehicle)).toEqual(vehicle);
+    expect(vehicleProfile.safeParse({ ...vehicle, status: "parked" }).success).toBe(false);
   });
 });

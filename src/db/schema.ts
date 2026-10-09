@@ -18,6 +18,7 @@ import {
   vehicleClasses,
   vehicleStatuses,
 } from "@/domain/fleet";
+import { integerDetailFields, textDetailFields, tripDetailFields } from "@/domain/trip-edits";
 import { tripStatuses } from "@/domain/trip-status";
 
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -118,6 +119,9 @@ export const tripStatus = pgEnum("trip_status", tripStatuses);
 export const vehicleClass = pgEnum("vehicle_class", vehicleClasses);
 export const vehicleStatus = pgEnum("vehicle_status", vehicleStatuses);
 export const documentKind = pgEnum("document_kind", documentKinds);
+export const tripDetailField = pgEnum("trip_detail_field", tripDetailFields);
+
+const sqlList = (values: readonly string[]) => sql.raw(values.map((value) => `'${value}'`).join(", "));
 
 export const drivers = pgTable(
   "drivers",
@@ -207,12 +211,51 @@ export const tripEvents = pgTable(
       .references(() => user.id),
     fromStatus: tripStatus("from_status"),
     toStatus: tripStatus("to_status").notNull(),
+    fromDriverId: uuid("from_driver_id").references(() => drivers.id),
+    toDriverId: uuid("to_driver_id").references(() => drivers.id),
     reason: text("reason"),
     createdAt: createdAt(),
   },
   (table) => [
     index("trip_events_trip_id_created_at_idx").on(table.tripId, table.createdAt),
     index("trip_events_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const tripEdits = pgTable(
+  "trip_edits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id),
+    actorId: text("actor_id")
+      .notNull()
+      .references(() => user.id),
+    field: tripDetailField("field").notNull(),
+    fromText: text("from_text"),
+    toText: text("to_text"),
+    fromInteger: integer("from_integer"),
+    toInteger: integer("to_integer"),
+    fromTime: timestamptz("from_time"),
+    toTime: timestamptz("to_time"),
+    fromClass: vehicleClass("from_class"),
+    toClass: vehicleClass("to_class"),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    check(
+      "trip_edits_values_match_field",
+      sql`num_nonnulls(${table.fromText}, ${table.toText}, ${table.fromInteger}, ${table.toInteger}, ${table.fromTime}, ${table.toTime}, ${table.fromClass}, ${table.toClass}) = 2
+        and (case
+          when ${table.field} in (${sqlList(textDetailFields)}) then ${table.fromText} <> ${table.toText}
+          when ${table.field} in (${sqlList(integerDetailFields)}) then ${table.fromInteger} <> ${table.toInteger}
+          when ${table.field} = 'pickup_at' then ${table.fromTime} <> ${table.toTime}
+          when ${table.field} = 'vehicle_class' then ${table.fromClass} <> ${table.toClass}
+        end) is true`,
+    ),
+    index("trip_edits_trip_id_created_at_idx").on(table.tripId, table.createdAt),
+    index("trip_edits_created_at_idx").on(table.createdAt),
   ],
 );
 
@@ -242,7 +285,7 @@ export const documents = pgTable(
     ),
     check(
       "documents_content_type_allowed",
-      sql`${table.contentType} in (${sql.raw(documentContentTypes.map((type) => `'${type}'`).join(", "))})`,
+      sql`${table.contentType} in (${sqlList(documentContentTypes)})`,
     ),
     check("documents_size_limit", sql`${table.sizeBytes} between 1 and ${sql.raw(String(maxDocumentBytes))}`),
     index("documents_driver_id_idx").on(table.driverId),
@@ -270,6 +313,8 @@ export const healthCheckRelations = relations(healthChecks, ({ one }) => ({
 export const driverRelations = relations(drivers, ({ many }) => ({
   trips: many(trips),
   documents: many(documents),
+  eventsHandedOver: many(tripEvents, { relationName: "fromDriver" }),
+  eventsTakenOn: many(tripEvents, { relationName: "toDriver" }),
 }));
 
 export const vehicleRelations = relations(vehicles, ({ many }) => ({
@@ -279,11 +324,19 @@ export const vehicleRelations = relations(vehicles, ({ many }) => ({
 export const tripRelations = relations(trips, ({ one, many }) => ({
   driver: one(drivers, { fields: [trips.driverId], references: [drivers.id] }),
   events: many(tripEvents),
+  edits: many(tripEdits),
 }));
 
 export const tripEventRelations = relations(tripEvents, ({ one }) => ({
   trip: one(trips, { fields: [tripEvents.tripId], references: [trips.id] }),
   actor: one(user, { fields: [tripEvents.actorId], references: [user.id] }),
+  fromDriver: one(drivers, { fields: [tripEvents.fromDriverId], references: [drivers.id], relationName: "fromDriver" }),
+  toDriver: one(drivers, { fields: [tripEvents.toDriverId], references: [drivers.id], relationName: "toDriver" }),
+}));
+
+export const tripEditRelations = relations(tripEdits, ({ one }) => ({
+  trip: one(trips, { fields: [tripEdits.tripId], references: [trips.id] }),
+  actor: one(user, { fields: [tripEdits.actorId], references: [user.id] }),
 }));
 
 export const documentRelations = relations(documents, ({ one }) => ({

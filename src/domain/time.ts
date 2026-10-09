@@ -1,6 +1,7 @@
 export type TimeRange = { start: Date; end: Date };
 
-const minuteMs = 60_000;
+export const minuteMs = 60_000;
+export const hourMs = 60 * minuteMs;
 
 type ZonedDate = { year: number; month: number; day: number; hour: number; minute: number; second: number };
 

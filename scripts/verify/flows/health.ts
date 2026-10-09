@@ -15,6 +15,14 @@ export const health: Flow = {
       },
     },
     {
+      name: "the public uptime check says only that the database is up",
+      run: async ({ page }) => {
+        const response = await page.request.get("/api/health");
+        expect(response.status()).toBe(200);
+        expect(await response.json()).toEqual({ database: "ok" });
+      },
+    },
+    {
       name: "monitoring says plainly whether it is switched on",
       run: async ({ page }) => {
         const on = Boolean(env.SENTRY_DSN);

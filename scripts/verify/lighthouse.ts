@@ -1,7 +1,13 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { chromium, type BrowserContext } from "@playwright/test";
 import { launch } from "chrome-launcher";
 import lighthouse, { desktopConfig } from "lighthouse";
 
 export type ViewportName = "phone" | "desktop";
+
+export type BrowserStorage = Awaited<ReturnType<BrowserContext["storageState"]>>;
 
 const categories = ["performance", "accessibility", "best-practices"] as const;
 const metrics = [
@@ -12,10 +18,37 @@ const metrics = [
   "speed-index",
 ] as const;
 
-export async function runLighthouse(options: { url: string; chromePath: string; cookie: string; viewport: ViewportName }) {
+async function profileWithStorage(chromePath: string, storage: BrowserStorage) {
+  const userDataDir = mkdtempSync(path.join(tmpdir(), "verify-lighthouse-"));
+  const context = await chromium.launchPersistentContext(userDataDir, { executablePath: chromePath, headless: true });
+  try {
+    await context.addCookies(storage.cookies);
+    const page = await context.newPage();
+    for (const { origin, localStorage } of storage.origins) {
+      await page.route(`${origin}/`, (route) => route.fulfill({ contentType: "text/html", body: "" }));
+      await page.goto(`${origin}/`);
+      await page.evaluate((entries) => {
+        for (const entry of entries) window.localStorage.setItem(entry.name, entry.value);
+      }, localStorage);
+      await page.unrouteAll();
+    }
+  } finally {
+    await context.close();
+  }
+  return userDataDir;
+}
+
+export async function runLighthouse(options: {
+  url: string;
+  chromePath: string;
+  storage: BrowserStorage;
+  viewport: ViewportName;
+}) {
+  const userDataDir = await profileWithStorage(options.chromePath, options.storage);
   const chrome = await launch({
     chromePath: options.chromePath,
     chromeFlags: ["--headless=new", "--no-sandbox", "--disable-gpu"],
+    userDataDir,
   });
   try {
     const result = await lighthouse(
@@ -25,7 +58,6 @@ export async function runLighthouse(options: { url: string; chromePath: string; 
         output: "html",
         logLevel: "error",
         onlyCategories: [...categories],
-        extraHeaders: { Cookie: options.cookie },
       },
       options.viewport === "desktop" ? desktopConfig : undefined,
     );
@@ -41,5 +73,6 @@ export async function runLighthouse(options: { url: string; chromePath: string; 
     return { scores, metrics: measured, html };
   } finally {
     chrome.kill();
+    rmSync(userDataDir, { recursive: true, force: true });
   }
 }

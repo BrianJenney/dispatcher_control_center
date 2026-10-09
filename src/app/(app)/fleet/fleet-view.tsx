@@ -1,10 +1,10 @@
 "use client";
 
 import { CarFront } from "lucide-react";
-import Link from "next/link";
 import { useLiveQuery } from "@/components/live-query";
 import { VehicleStatusSwitch } from "@/components/people/vehicle-status-switch";
 import { liveQueries } from "@/components/queries";
+import { RecordLink } from "@/components/record-link";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { cn } from "@/components/ui/utils";
 import { vehicleClassLabels } from "@/domain/fleet";
@@ -38,9 +38,9 @@ export function FleetView({ initialData }: { initialData: { vehicles: VehicleRow
                     <CarFront className="size-6" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <Link href={`/fleet/${vehicle.id}`} className="block truncate font-semibold hover:underline">
+                    <RecordLink href={`/fleet/${vehicle.id}`} className="block truncate font-semibold hover:underline">
                       {vehicle.model}
-                    </Link>
+                    </RecordLink>
                     <p className="text-xs text-muted-foreground">
                       {vehicleClassLabels[vehicle.vehicleClass]} · {vehicle.unitNumber}
                     </p>
@@ -58,9 +58,9 @@ export function FleetView({ initialData }: { initialData: { vehicles: VehicleRow
                 </dl>
                 <div className="mt-auto flex items-center justify-between border-t pt-3">
                   <VehicleStatusSwitch vehicle={vehicle} />
-                  <Link href={`/fleet/${vehicle.id}`} className="text-sm font-medium text-primary hover:underline">
+                  <RecordLink href={`/fleet/${vehicle.id}`} className="text-sm font-medium text-primary hover:underline">
                     Details
-                  </Link>
+                  </RecordLink>
                 </div>
               </article>
             </li>

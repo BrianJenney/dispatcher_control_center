@@ -1,13 +1,14 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { ActionForm, FormError, FormField, FormSelect, SubmitButton, useActionForm, type ActionFormState } from "@/components/form";
+import { fleetQueryKey } from "@/components/queries";
 import { vehicleClassOptions, type VehicleClass } from "@/domain/fleet";
 import { updateVehicleInput, vehicleInput } from "@/domain/people";
 import { createVehicle, updateVehicle } from "@/server/actions/people";
-
 
 type VehicleValues = { model: string; unitNumber: string; plate: string; vehicleClass: VehicleClass };
 
@@ -27,13 +28,13 @@ export function AddVehicleForm() {
 }
 
 export function EditVehicleForm({ vehicleId, values }: { vehicleId: string; values: VehicleValues }) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const form = useActionForm({
     schema: updateVehicleInput,
     action: updateVehicle,
     onSuccess: (vehicle) => {
       toast.success(`${vehicle.unitNumber} is updated.`);
-      router.refresh();
+      void queryClient.invalidateQueries({ queryKey: fleetQueryKey });
     },
   });
   return (

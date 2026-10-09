@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { vehicleClasses, vehicleStatuses } from "@/domain/fleet";
+import { vehicleClasses, vehicleStatuses, type VehicleStatus } from "@/domain/fleet";
+import { documentRow } from "@/domain/uploads";
 
 export const driverInput = z.object({
   name: z.string().trim().min(1, "Enter the driver's name.").max(80, "Keep the name to 80 characters."),
@@ -26,6 +27,23 @@ export const driverRow = z.object({
 export type DriverRow = z.infer<typeof driverRow>;
 
 export const driversSnapshot = z.object({ drivers: z.array(driverRow) });
+
+export type DriversSnapshot = z.infer<typeof driversSnapshot>;
+
+export const driverProfile = driverRow
+  .pick({ id: true, name: true, phone: true, vehicleClass: true, onDuty: true, photoVersion: true })
+  .extend({ documents: z.array(documentRow) });
+
+export type DriverProfile = z.infer<typeof driverProfile>;
+
+export type DriverData = DriversSnapshot | DriverProfile;
+
+export function withDriverOnDuty(data: DriverData, driverId: string, onDuty: boolean): DriverData {
+  if ("drivers" in data) {
+    return { ...data, drivers: data.drivers.map((driver) => (driver.id === driverId ? { ...driver, onDuty } : driver)) };
+  }
+  return data.id === driverId ? { ...data, onDuty } : data;
+}
 
 export const vehicleInput = z.object({
   model: z.string().trim().min(1, "Enter the make and model.").max(80, "Keep the model to 80 characters."),
@@ -54,3 +72,20 @@ export const vehicleRow = z.object({
 export type VehicleRow = z.infer<typeof vehicleRow>;
 
 export const fleetSnapshot = z.object({ vehicles: z.array(vehicleRow) });
+
+export type FleetSnapshot = z.infer<typeof fleetSnapshot>;
+
+export const vehicleProfile = vehicleRow
+  .pick({ id: true, model: true, unitNumber: true, plate: true, vehicleClass: true, status: true })
+  .extend({ documents: z.array(documentRow) });
+
+export type VehicleProfile = z.infer<typeof vehicleProfile>;
+
+export type VehicleData = FleetSnapshot | VehicleProfile;
+
+export function withVehicleStatus(data: VehicleData, vehicleId: string, status: VehicleStatus): VehicleData {
+  if ("vehicles" in data) {
+    return { ...data, vehicles: data.vehicles.map((vehicle) => (vehicle.id === vehicleId ? { ...vehicle, status } : vehicle)) };
+  }
+  return data.id === vehicleId ? { ...data, status } : data;
+}

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { revenueCents, tripsTodayByDriver } from "@/domain/kpis";
-import { dayRange, isWithin, shiftDays, type TimeRange } from "@/domain/time";
+import { dayRange, isWithin, minuteMs, shiftDays, type TimeRange } from "@/domain/time";
 import type { TripRow } from "@/domain/trip-row";
 import { isFinal } from "@/domain/trip-status";
 
@@ -9,7 +9,6 @@ export const soonMinutes = 120;
 export const lateMinutes = 15;
 export const reasonLimit = 5;
 
-const minuteMs = 60_000;
 
 export const attentionKinds = ["needs-driver-soon", "missed-pickup", "late-to-start"] as const;
 export type AttentionKind = (typeof attentionKinds)[number];

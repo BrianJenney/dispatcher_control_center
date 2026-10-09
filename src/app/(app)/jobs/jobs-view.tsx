@@ -2,21 +2,19 @@
 
 import { Download, Search } from "lucide-react";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef } from "react";
 import { useLiveQuery } from "@/components/live-query";
 import { liveQueries } from "@/components/queries";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
+import { StatusFilter } from "@/components/trips/status-filter";
 import { TripActions } from "@/components/trips/trip-actions";
 import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/utils";
-import { jobsSearch, jobsSearchId, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
+import { useAddressFilter } from "@/components/use-address-filter";
+import { jobsSearch, jobsSearchId, jobsSearchLabel, tripReferenceIn, type JobsFilter, type JobsSnapshot } from "@/domain/jobs";
 import { maxShown, nextShownCount, pageSize } from "@/domain/paging";
-import { statusLabels, tripStatuses } from "@/domain/trip-status";
-
-const statusTabs = [{ value: null, label: "All" }, ...tripStatuses.map((value) => ({ value, label: statusLabels[value] }))];
 
 function jobsHref(filter: JobsFilter): Route {
   const search = jobsSearch(filter);
@@ -31,9 +29,13 @@ function exportHref(filter: JobsFilter): string {
   return search ? `/api/jobs/export?${search}` : "/api/jobs/export";
 }
 
+function noMatchHint(q: string): string {
+  const check = tripReferenceIn(q) === null ? "the spelling" : "the trip number";
+  return `Nothing found for "${q}". Check ${check} or try another status.`;
+}
+
 export function JobsView({ filter, initialData }: { filter: JobsFilter; initialData: JobsSnapshot }) {
-  const router = useRouter();
-  const [navigating, startNavigation] = useTransition();
+  const { shown, show, pending: navigating } = useAddressFilter(filter, jobsHref);
   const typing = useRef<ReturnType<typeof setTimeout>>(undefined);
   const searchBox = useRef<HTMLInputElement>(null);
   const search = jobsSearch(filter);
@@ -45,12 +47,6 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
     if (box && document.activeElement !== box) box.value = filter.q;
   }, [filter.q]);
 
-  function show(next: JobsFilter) {
-    startNavigation(() => {
-      router.replace(jobsHref(next), { scroll: false });
-    });
-  }
-
   return (
     <div className="space-y-5">
       <div className="space-y-3">
@@ -60,15 +56,15 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
             ref={searchBox}
             id={jobsSearchId}
             type="search"
-            aria-label="Search by customer"
-            placeholder="Search by customer"
+            aria-label={jobsSearchLabel}
+            placeholder={jobsSearchLabel}
             defaultValue={filter.q}
             className="pl-9"
             onChange={(event) => {
               const q = event.currentTarget.value;
               clearTimeout(typing.current);
               typing.current = setTimeout(() => {
-                show({ ...filter, q, show: pageSize });
+                show({ ...shown, q, show: pageSize });
               }, 300);
             }}
           />
@@ -81,24 +77,12 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
             </a>
           </Button>
         </div>
-        <div role="group" aria-label="Filter by status" className="-mx-4 -my-1 flex gap-2 overflow-x-auto px-4 py-1 sm:-mx-1 sm:px-1">
-          {statusTabs.map((tab) => {
-            const selected = filter.status === tab.value;
-            return (
-              <Button
-                key={tab.label}
-                size="sm"
-                variant={selected ? "default" : "outline"}
-                aria-pressed={selected} className="shrink-0 rounded-full"
-                onClick={() => {
-                  show({ ...filter, status: tab.value, show: pageSize });
-                }}
-              >
-                {tab.label}
-              </Button>
-            );
-          })}
-        </div>
+        <StatusFilter
+          value={shown.status}
+          onChange={(status) => {
+            show({ ...shown, status, show: pageSize });
+          }}
+        />
       </div>
       {isError ? (
         <LiveUpdatesPaused what="the jobs list" onRetry={() => void refetch()} />
@@ -108,7 +92,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
           filter.q || filter.status ? (
             <EmptyState
               title="No trips match"
-              description={filter.q ? `Nothing found for "${filter.q}". Check the spelling or try another status.` : "No trips have this status yet."}
+              description={filter.q ? noMatchHint(filter.q) : "No trips have this status yet."}
               action={
                 <Button
                   variant="outline"
@@ -138,7 +122,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
       {data.hasMore ? (
         nextShow === null ? (
           <p className="text-sm text-muted-foreground">
-            Showing the newest {maxShown}. Search by customer or pick a status to find older trips.
+            Showing the newest {maxShown}. Search by customer or trip number, or pick a status, to find older trips.
           </p>
         ) : (
           <Button
@@ -146,7 +130,7 @@ export function JobsView({ filter, initialData }: { filter: JobsFilter; initialD
             className="w-full sm:w-auto"
             aria-disabled={navigating}
             onClick={() => {
-              show({ ...filter, show: nextShow });
+              show({ ...shown, show: nextShow });
             }}
           >
             Show more

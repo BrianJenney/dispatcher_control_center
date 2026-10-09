@@ -1,23 +1,27 @@
-import { Suspense, type ReactNode } from "react";
+import { Suspense } from "react";
 import { AppShell } from "@/components/shell/app-shell";
-import { LoadingState } from "@/components/states";
-import { requireUser } from "@/server/session";
+import { HeaderUserMenuSkeleton, SidebarUserMenuSkeleton, UserMenu } from "@/components/shell/user-menu";
+import { requireUser } from "@/server/query";
 
 export default function SignedInLayout({ children }: LayoutProps<"/">) {
   return (
-    <Suspense
-      fallback={
-        <AppShell user={null}>
-          <LoadingState label="Loading your workspace" rows={4} />
-        </AppShell>
+    <AppShell
+      sidebarMenu={
+        <Suspense fallback={<SidebarUserMenuSkeleton />}>
+          <SignedInUserMenu tone="light" />
+        </Suspense>
+      }
+      headerMenu={
+        <Suspense fallback={<HeaderUserMenuSkeleton />}>
+          <SignedInUserMenu tone="dark" />
+        </Suspense>
       }
     >
-      <SignedIn>{children}</SignedIn>
-    </Suspense>
+      {children}
+    </AppShell>
   );
 }
 
-async function SignedIn({ children }: { children: ReactNode }) {
-  const user = await requireUser();
-  return <AppShell user={user}>{children}</AppShell>;
+async function SignedInUserMenu({ tone }: { tone: "dark" | "light" }) {
+  return <UserMenu user={await requireUser()} tone={tone} />;
 }

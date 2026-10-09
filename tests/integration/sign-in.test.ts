@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { signInMessages } from "@/domain/auth";
+import { demoUser } from "@/env-demo";
 import { env } from "@/env";
 import { signIn } from "@/server/actions/auth";
 
@@ -14,8 +15,8 @@ function arriveFrom(address: string) {
   request.headers = new Headers({ origin: env.BETTER_AUTH_URL, "x-forwarded-for": address });
 }
 
-const wrongPassword = { email: env.DEMO_USER_EMAIL, password: `${env.DEMO_USER_PASSWORD}-wrong` };
-const demoAccount = { email: env.DEMO_USER_EMAIL, password: env.DEMO_USER_PASSWORD };
+const wrongPassword = { email: demoUser.email, password: `${demoUser.password}-wrong` };
+const demoAccount = { email: demoUser.email, password: demoUser.password };
 
 async function attempts(count: number) {
   const results = [];

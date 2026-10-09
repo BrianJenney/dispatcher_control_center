@@ -1,11 +1,11 @@
 "use client";
 
 import { Phone } from "lucide-react";
-import Link from "next/link";
 import { useLiveQuery } from "@/components/live-query";
 import { DriverAvatar } from "@/components/people/driver-avatar";
 import { DutySwitch } from "@/components/people/duty-switch";
 import { liveQueries } from "@/components/queries";
+import { RecordLink } from "@/components/record-link";
 import { EmptyState, LiveUpdatesPaused } from "@/components/states";
 import { vehicleClassLabels } from "@/domain/fleet";
 import type { DriverRow } from "@/domain/people";
@@ -30,9 +30,9 @@ export function DriversView({ initialData }: { initialData: { drivers: DriverRow
                 <div className="flex items-center gap-3">
                   <DriverAvatar driver={driver} />
                   <div className="min-w-0 flex-1">
-                    <Link href={`/drivers/${driver.id}`} className="block truncate font-semibold hover:underline">
+                    <RecordLink href={`/drivers/${driver.id}`} className="block truncate font-semibold hover:underline">
                       {driver.name}
-                    </Link>
+                    </RecordLink>
                     <p className="text-xs text-muted-foreground">{vehicleClassLabels[driver.vehicleClass]}</p>
                   </div>
                 </div>
@@ -59,9 +59,9 @@ export function DriversView({ initialData }: { initialData: { drivers: DriverRow
                 </dl>
                 <div className="mt-auto flex items-center justify-between border-t pt-3">
                   <DutySwitch driver={driver} />
-                  <Link href={`/drivers/${driver.id}`} className="text-sm font-medium text-primary hover:underline">
+                  <RecordLink href={`/drivers/${driver.id}`} className="text-sm font-medium text-primary hover:underline">
                     Profile
-                  </Link>
+                  </RecordLink>
                 </div>
               </article>
             </li>
