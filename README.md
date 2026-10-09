@@ -20,6 +20,18 @@ pnpm dev
 
 Open http://localhost:3000 and sign in as dispatcher@example.com with the password you set in `DEMO_USER_PASSWORD`.
 
+| Variable | What it is | Local value |
+|---|---|---|
+| `DATABASE_URL` | Postgres connection string | Your local Postgres |
+| `BETTER_AUTH_SECRET` | Signs sign-in sessions. Different in every environment | `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | The app's own address | `http://localhost:3000` |
+| `APP_TIMEZONE` | The business's time zone, which decides what "today" means | `America/New_York` |
+| `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` | The demo account the seed creates and keeps in step | Your choice |
+| `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | S3 compatible file storage | Leave the defaults for the local store |
+| `CRON_SECRET` | Lets the daily demo-day job run (16 characters or more) | Leave empty |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | Error and trace reporting, optional | Leave empty |
+| `NEXT_PUBLIC_VERCEL_ENV` | Set by Vercel | Leave empty |
+
 `pnpm db:reset` recreates the local database, applies migrations and seeds a week of fake trips. It refuses to run against anything other than localhost. `pnpm dev` also starts a local S3 compatible store on port 4568 for uploads; files land in `.storage/`.
 
 For a load check, `pnpm db:reset --load` starts over with 100,000 extra historical trips (about two minutes), and `pnpm verify <flow> --load` measures a flow against them. Results are in `docs/load-test.md`.
@@ -30,7 +42,23 @@ For a load check, `pnpm db:reset --load` starts over with 100,000 extra historic
 pnpm lint && pnpm typecheck && pnpm test && pnpm e2e
 ```
 
-Integration tests use a separate `dispatch_test` database and e2e tests use `dispatch_e2e`. Both are recreated on every run.
+Integration tests use a separate `dispatch_test` database and e2e tests use `dispatch_e2e`. Both are recreated on every run. The e2e tests need Playwright's Chromium once: `pnpm exec playwright install chromium`.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint and typecheck, unit, integration and end to end tests on every push to every branch, so each pull request shows its result. Mutation testing on `src/domain` takes about half an hour, so it runs only when started by hand from the Actions tab.
+
+## Where everything is hosted and stored
+
+| What | Where | Notes |
+|---|---|---|
+| Code and history | GitHub, `BrianJenney/dispatcher_control_center` | Pull request per change |
+| Checks | GitHub Actions | See "Checks" above |
+| The app | Vercel, project `dispatch-lite` | Production at https://dispatch-lite-ruby.vercel.app from `main`, a preview per branch |
+| Database | Neon Postgres, project `dispatch-lite` | Branches `main` (production), `preview` and `local-dev` |
+| Files: licences, registrations, driver and vehicle photos | Cloudflare R2, buckets `dispatch-lite-production` and `dispatch-lite-preview` | Private; served only through the app |
+| Secrets and settings | Vercel environment variables, per environment | Nothing secret is in the repo; names are in `.env.example` |
+| Errors and slow requests | Sentry | New error and regression alerts |
+| Uptime | Better Stack | Checks `/login` every 3 minutes and `/api/health` every 15 minutes |
+| Scheduled job | Vercel Cron, `vercel.json` | Rolls the demo day forward at 09:05 UTC |
 
 ## Environments and storage
 
@@ -73,7 +101,7 @@ Think of running the app like running a small office. Five services keep it goin
 |---|---|---|---|
 | Vercel | The building the app lives in, and the staff who serve every page | $20 | $40 |
 | Neon | The filing cabinet that holds every trip, driver and booking, with a rewind button | about $10 | about $15 |
-| Cloudflare R2 | A locked safe for licences and registrations | $0 | $0 |
+| Cloudflare R2 | A locked safe for licences, registrations and photos | $0 | $0 |
 | Sentry | A smoke alarm that tells us when something breaks and how slow pages are | $0 | about $97 |
 | Better Stack | A doorbell check every few minutes that the site is open | $0 | $0 |
 | **Monthly total** | | **about $30** | **about $152** |
@@ -81,7 +109,7 @@ Think of running the app like running a small office. Five services keep it goin
 How to read it:
 - **A quiet demo costs about $27 a month.** Almost all of that is the building and the filing cabinet.
 - **The jump at 200 users is almost all the smoke alarm.** It records every refresh of every screen. Telling it to record one refresh in ten, which we would do once real traffic arrives, brings the 200 user bill to about $55.
-- **Files are almost free.** The safe stays free until it holds about 10 GB, which is tens of thousands of documents.
+- **Files are almost free.** The safe stays free until it holds about 10 GB, which is tens of thousands of documents. Because files are now handed out by the app rather than straight from the safe, each view also counts toward Vercel's data transfer: about $1.60 a month at 200 users if each dispatcher loads every photo once a day, and up to about $13 if every photo is reloaded every hour of a shift. Details in `docs/cost-estimate.md`.
 - **A 100,000 trip history is tiny.** Measured at 195 MB with its full status history, which costs a few cents a month.
 - **Not included:** the one time build fee, a web address of your own (about $12 a year), and any extra seats for people who deploy changes.
 
@@ -119,7 +147,7 @@ Live app: https://dispatch-lite-ruby.vercel.app (demo login in the submission me
 | Guided first time tour | Done | Opens on a first visit and highlights the part of the app each step describes; question mark button reopens it |
 | CSV export of trips | Done | "Export CSV" on Jobs, follows the search and status on screen |
 | Activity log | Done | `/activity`, who changed which trip and when, with old and new values for edits and both drivers for reassignments |
-| Automated tests on the matching logic | Done | `src/domain/matching.test.ts`, plus mutation testing on the domain code |
+| Automated tests on the matching logic | Done | `src/domain/matching.test.ts`, plus mutation testing on the domain code (run by hand from GitHub Actions) |
 | Keyboard shortcuts | Done | Press `?` for the list; `g` then a letter jumps between pages |
 
 **Infrastructure and storage**
@@ -155,6 +183,7 @@ erDiagram
     user ||--o{ trip_events : "performs"
     user ||--o{ trip_edits : "makes"
     user ||--o{ documents : "uploads"
+    user ||--o{ health_checks : "records"
     drivers ||--o{ trips : "drives"
     drivers ||--o{ documents : "has licence"
     vehicles ||--o{ documents : "has registration"
@@ -167,6 +196,8 @@ erDiagram
         uuid id PK
         int reference UK "starts at 1001"
         text customer_name
+        text pickup_address
+        text dropoff_address
         timestamptz pickup_at
         int duration_minutes "15 to 720"
         int passengers "1 to 14"
@@ -175,6 +206,8 @@ erDiagram
         enum status "offer to completed, or cancelled"
         uuid driver_id FK "null while an offer"
         text cancel_reason "required when cancelled"
+        timestamptz created_at
+        timestamptz updated_at
     }
     drivers {
         uuid id PK
@@ -225,10 +258,21 @@ erDiagram
         uuid driver_id FK
         uuid vehicle_id FK
         text storage_key UK
+        text file_name
         int size_bytes "1 byte to 10 MB"
         text content_type "PDF or image only"
+        text uploaded_by FK
+        timestamptz created_at
+    }
+    health_checks {
+        uuid id PK
+        text label "1 to 60 characters"
+        text recorded_by FK
+        timestamptz created_at
     }
 ```
+
+`user`, `session`, `account`, `verification` and `rate_limit` are Better Auth's own tables: accounts, sign-in sessions, password hashes and the login throttle. `health_checks` records the test signals sent from the monitoring page. Migrations are plain SQL in `src/db/migrations`, applied in order on every deploy.
 
 The rules that matter are enforced by the database as well as the app, so they hold even if the app has a bug:
 
@@ -295,7 +339,7 @@ The same property gives local development a safe option: work against a local Po
 
 **Polling, not WebSockets.** Screens refresh every 5 seconds with TanStack Query, and the dispatcher's own actions update the screen at once. A handful of dispatchers does not need a socket server, and polling works on Vercel with nothing extra to run or pay for.
 
-**Private files, no shareable links.** Licences and registrations sit in private R2 buckets. The app streams each file to a signed-in user on every view, so a copied address opens nothing on its own. Uploads use signed links that expire after 5 minutes, so large files never pass through the app.
+**Private files, no shareable links.** Licences, registrations and photos sit in private R2 buckets. The app streams each file to a signed-in user on every view, so a copied address opens nothing on its own. Uploads use signed links that expire after 5 minutes, so large files never pass through the app.
 
 **Money and time.** Fares are integer cents everywhere and only formatted for display. Times are stored as `timestamptz`, and "today" means today in the business's time zone (`APP_TIMEZONE`), not the server's.
 
@@ -309,6 +353,7 @@ The same property gives local development a safe option: work against a local Po
 - The 100,000 trip measurement ran with the database on the same machine as the app and one dispatcher at a time; Neon adds a few milliseconds per query, and concurrency was not tested.
 - Deleting a document deletes its file for good, because R2 cannot undelete. The database row can be rewound but the file cannot.
 - Pickup and drop off are free text addresses.
+- Photos are sent at the size they were uploaded (up to 10 MB) and scaled down by the browser. They are private, so Vercel's image resizing, which fetches images without the viewer's sign-in, cannot be used as is. Resizing on upload would make lists lighter on a phone.
 - There is one kind of account: every signed-in user can do everything. Dispatcher and admin roles are part of the full build quote.
 - An upload link stays valid for its 5 minutes after the file is saved, so a signed-in user could replace their own upload with another file of the same type and size in that window. A write-once upload needs the bucket's CORS rules to allow the `If-None-Match` header first.
 - On a dispatcher's very first visit the guided tour card is the largest thing painted, so that one load scores lower in Lighthouse than every visit after it.
