@@ -2,6 +2,7 @@
 
 import { createContext, use, type ReactNode } from "react";
 import { dayRange, isWithin, tripWindow } from "@/domain/time";
+import { durationLabel } from "@/domain/trip-form";
 
 const TimeZoneContext = createContext<string | null>(null);
 
@@ -26,13 +27,6 @@ export function formatFileSize(bytes: number): string {
   return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${String(Math.max(1, Math.round(bytes / 1024)))} KB`;
 }
 
-export function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (hours === 0) return `${String(rest)} min`;
-  return rest === 0 ? `${String(hours)} hr` : `${String(hours)} hr ${String(rest)} min`;
-}
-
 function createFormat(timeZone: string) {
   const time = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" });
   const day = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long", month: "long", day: "numeric" });
@@ -43,7 +37,7 @@ function createFormat(timeZone: string) {
     money: formatMoney,
     compactMoney: formatCompactMoney,
     fileSize: formatFileSize,
-    duration: formatDuration,
+    duration: durationLabel,
     time: (iso: string) => time.format(new Date(iso)),
     timeRange: (iso: string, minutes: number) => {
       const window = tripWindow(new Date(iso), minutes);

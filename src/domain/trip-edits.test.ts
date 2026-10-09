@@ -84,7 +84,7 @@ describe("describeTripEdit", () => {
   it.each<[TripEdit, string]>([
     [{ field: "fare_cents", from: 18_000, to: 21_000 }, "changed the fare on trip #1042 from $180.00 to $210.00"],
     [{ field: "passengers", from: 2, to: 3 }, "changed the passenger count on trip #1042 from 2 to 3"],
-    [{ field: "duration_minutes", from: 45, to: 90 }, "changed the duration on trip #1042 from 45 minutes to 1.5 hours"],
+    [{ field: "duration_minutes", from: 45, to: 90 }, "changed the duration on trip #1042 from 45 min to 1 hr 30 min"],
     [
       { field: "vehicle_class", from: "luxury_sedan", to: "executive_suv" },
       "changed the vehicle class on trip #1042 from Luxury sedan to Executive SUV",
