@@ -328,6 +328,7 @@ erDiagram
         uuid to_driver_id FK "driver after the move"
         text reason
         timestamptz created_at "append only"
+        bigint history_order "real order of history"
     }
     trip_edits {
         uuid id PK
@@ -343,6 +344,7 @@ erDiagram
         enum from_class "vehicle class"
         enum to_class
         timestamptz created_at "append only"
+        bigint history_order "real order of history"
     }
     documents {
         uuid id PK
@@ -375,6 +377,7 @@ The rules that matter are enforced by the database as well as the app, so they h
 - **History of moves:** every status change, assignment and reassignment writes a `trip_events` row in the same transaction, naming who did it, the status before and after, and the driver before and after. A deferred trigger refuses the commit if the matching row is missing or names the wrong driver.
 - **History of edits:** editing a trip writes one `trip_edits` row per changed field, with its old and new value in a column of the right type (cents stay integers, times stay `timestamptz`). A check keeps each row to the one pair of columns its field uses, and a deferred trigger refuses any change to a trip's details that has no matching row.
 - **Append only:** `trip_events` and `trip_edits` cannot be updated or deleted from.
+- **History order:** both history tables take `history_order` from one shared sequence, so moves and edits written in the same moment still show in the order they really happened.
 - **Documents:** a licence belongs to a driver and a registration to a vehicle, only PDFs and images, 10 MB at most.
 - **Scale:** indexes on status and pickup time, driver and pickup time, and a trigram index on customer name are in place for 100,000 trips. Lists are paged and the polling queries only read recent days. Measured with 100,287 trips: 95% of page loads and polls answered in under 125 ms, the slowest request (the first after start-up) in 394 ms, and the dashboard and jobs polls in under 20 ms (see "Load test").
 
@@ -493,12 +496,12 @@ How a user reaches each feature and what working means. `pnpm lint` fails if a p
 
 Hands-on hours are the developer's time directing, reviewing, testing, deploying and setting up services. Time the coding agent spent working on its own is not counted. The estimates come from the commit history and the timestamps of the developer's messages to the agent, so they are approximate. Times are UTC.
 
-| Day | Hands-on hours | Commits | What the developer did |
-|---|---|---|---|
-| Wed, Oct 7 | about 4 | 73, from 16:10 to 23:41 | Read the brief, set the scope, rules and technology choices, created the Vercel, Neon, Cloudflare, Sentry and Better Stack accounts and tokens, answered the design questions, and reviewed the first working build |
-| Thu, Oct 8 | about 3 | 40, from 00:02 to 23:56 | Reviewed the app on a phone (about 16:00 to 16:20), set up the preview environment, then a longer desktop review from about 21:10 to 22:40: what was required against what was built, UI bugs, restore and preview checks, what to build next |
-| Fri, Oct 9 | about 3 | 102, from 00:02 to 22:29 | Tested preview and production on phone and desktop, reported bugs (Insights links, driver assign, shareable file links, an N+1 query), checked the build against the brief, asked for vehicle photos, and reviewed and merged pull requests |
-| **Total** | **about 10** | **215** | |
+| Day | Hands-on hours | What the developer did |
+|---|---|---|
+| Wed, Oct 7 | about 4 | Read the brief, set the scope, rules and technology choices, created the Vercel, Neon, Cloudflare, Sentry and Better Stack accounts and tokens, answered the design questions, and reviewed the first working build |
+| Thu, Oct 8 | about 3 | Reviewed the app on a phone (about 16:00 to 16:20), set up the preview environment, then a longer desktop review from about 21:10 to 22:40: what was required against what was built, UI bugs, restore and preview checks, what to build next |
+| Fri, Oct 9 | about 3 | Tested preview and production on phone and desktop, reported bugs (Insights links, driver assign, shareable file links, an N+1 query), checked the build against the brief, asked for vehicle photos, and reviewed and merged pull requests |
+| **Total** | **about 10** | |
 
 | Tool | Used for |
 |---|---|
