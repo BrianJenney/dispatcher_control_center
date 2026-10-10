@@ -1,6 +1,6 @@
 # Dispatch Lite
 
-Dispatcher operations app for a luxury car service. Built for a scored dev test. Read `docs/brief.md` before any work; it is the source of truth for scope and scoring.
+Dispatcher operations app for a luxury car service. Built for a scored dev test. The README is the source of truth for scope and what was built.
 
 ## How we work here
 
@@ -96,7 +96,3 @@ Small, one concern each, conventional prefixes (`feat:`, `fix:`, `test:`, `chore
 ## Phone first
 
 Design at 375px first, then widen. Every page is checked at phone width by the verification skill.
-
-## Tasks and gates
-
-`docs/tasks.md` has the work, in waves. `docs/gates.md` has the checks between waves.
